@@ -16,9 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton(TwilioService::class, function ($app) {
-            return new TwilioService();
-        });  
+        // TwilioService removed
     }
 
     /**

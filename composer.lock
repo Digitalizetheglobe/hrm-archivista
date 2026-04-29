@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3822a09c9b24d777680de9a8e2c7ec9f",
+    "content-hash": "81b2d121b8c3cd748e9c0a47e1c20eda",
     "packages": [
         {
             "name": "anandsiddharth/laravel-paytm-wallet",
@@ -125,61 +125,6 @@
                 "source": "https://github.com/anhskohbo/no-captcha/tree/3.5.0"
             },
             "time": "2023-02-15T16:07:08+00:00"
-        },
-        {
-            "name": "arkitecht/laravel-twilio",
-            "version": "1.6.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Arkitecht/laravel-twilio.git",
-                "reference": "54d74c5313d6ac742a6aca7e6fdbe5f1d95b248d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Arkitecht/laravel-twilio/zipball/54d74c5313d6ac742a6aca7e6fdbe5f1d95b248d",
-                "reference": "54d74c5313d6ac742a6aca7e6fdbe5f1d95b248d",
-                "shasum": ""
-            },
-            "require": {
-                "illuminate/support": "^10|^9|^8|^7|^6|^5",
-                "twilio/sdk": "^6.18|^7|^7.11"
-            },
-            "require-dev": {
-                "orchestra/testbench": "^6.13",
-                "phpunit/phpunit": "^9.5"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "Arkitecht\\Twilio\\Providers\\TwilioServiceProvider"
-                    ],
-                    "aliases": {
-                        "Twilio": "Arkitecht\\Twilio\\Facades\\Twilio"
-                    }
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Arkitecht\\Twilio\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Aaron J. Rubin",
-                    "email": "aaron@arkitech.net"
-                }
-            ],
-            "description": "Laravel Wrapper for the Twilio Rest Client",
-            "support": {
-                "issues": "https://github.com/Arkitecht/laravel-twilio/issues",
-                "source": "https://github.com/Arkitecht/laravel-twilio/tree/1.6.0"
-            },
-            "time": "2023-09-21T23:23:38+00:00"
         },
         {
             "name": "aws/aws-crt-php",
@@ -9843,55 +9788,6 @@
                 "source": "https://github.com/tijsverkoyen/CssToInlineStyles/tree/2.2.6"
             },
             "time": "2023-01-03T09:29:04+00:00"
-        },
-        {
-            "name": "twilio/sdk",
-            "version": "7.12.0",
-            "source": {
-                "type": "git",
-                "url": "git@github.com:twilio/twilio-php.git",
-                "reference": "f281d7b793f02377ab0f38e7166e16820acc3eae"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/twilio/twilio-php/zipball/f281d7b793f02377ab0f38e7166e16820acc3eae",
-                "reference": "f281d7b793f02377ab0f38e7166e16820acc3eae",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.1.0"
-            },
-            "require-dev": {
-                "guzzlehttp/guzzle": "^6.3 || ^7.0",
-                "phpunit/phpunit": ">=7.0 < 10"
-            },
-            "suggest": {
-                "guzzlehttp/guzzle": "An HTTP client to execute the API requests"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Twilio\\": "src/Twilio/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Twilio API Team",
-                    "email": "api@twilio.com"
-                }
-            ],
-            "description": "A PHP wrapper for Twilio's API",
-            "homepage": "https://github.com/twilio/twilio-php",
-            "keywords": [
-                "api",
-                "sms",
-                "twilio"
-            ],
-            "time": "2023-10-19T11:57:30+00:00"
         },
         {
             "name": "vlucas/phpdotenv",

@@ -176,26 +176,7 @@ Route::get('/fix-laravel', function () {
 
 
 
-// Add this with your other routes
-Route::group(
-    [
-        'middleware' => [
-            'auth',
-            'XSS',
-        ],
-    ],
-    function () {
-        // Test Twilio WhatsApp notification route
-        Route::get('/test-twilio-notification', function(TwilioService $twilioService) {
-            $message = "⏰ *Test Notification*\n\nThis is a test WhatsApp message from the system.";
-            $result = $twilioService->sendWhatsAppMessage(
-                env('TWILIO_WHATSAPP_TO'),
-                $message
-            );
-            return redirect()->back()->with('success', __('Test WhatsApp notification sent!'));
-        })->name('test.twilio.notification');
-    }
-);
+// Twilio routes removed
 
 
 // routes/web.php
