@@ -73,7 +73,6 @@
     <link rel="stylesheet" href="{{ asset('assets/fonts/feather.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/fonts/fontawesome.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/fonts/material.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
@@ -91,7 +90,6 @@
     <!-- vendor css -->
 
     <link rel="stylesheet" href="{{ asset('assets/css/customizer.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
 
 
     @if ($SITE_RTL == 'on')
@@ -119,6 +117,23 @@
         }
     </style>
     <link rel="stylesheet" href="{{ asset('css/custom-color.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+
+    <style>
+        /* Immediate fix for mobile menu flicker */
+        @media screen and (max-width: 991px) {
+            .dash-sidebar {
+                left: -280px !important;
+                width: 280px !important;
+                transition: none !important; /* Disable transition on load */
+            }
+            .dash-sidebar.active, .dash-sidebar.mob-sidebar-active {
+                left: 0 !important;
+                width: 280px !important;
+                transition: left 0.3s ease !important; /* Re-enable transition when active */
+            }
+        }
+    </style>
 
     @stack('css-page')
 </head>
@@ -330,9 +345,9 @@
     </script> --}}
 
     <script>
-        if (document.querySelector("#pc-dt-simple")) {
-            const dataTable = new simpleDatatables.DataTable("#pc-dt-simple");
-        }
+        document.querySelectorAll("#pc-dt-simple, .pc-dt-simple, .datatable, #tds-table, [id^='dataTable']").forEach(el => {
+            new simpleDatatables.DataTable(el);
+        });
     </script>
 
     <script>

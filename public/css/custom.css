@@ -755,17 +755,18 @@ a > i.ti-plus{
     
     .dash-sidebar {
         position: fixed;
-        left: -280px;
+        left: -280px !important;
         top: 0;
-        width: 280px;
+        width: 280px !important;
         height: 100vh;
         z-index: 9998;
         transition: left 0.3s ease;
         overflow-y: auto;
     }
     
-    .dash-sidebar.active {
-        left: 0;
+    .dash-sidebar.active,
+    .dash-sidebar.mob-sidebar-active {
+        left: 0 !important;
     }
     
     .dash-sidebar .navbar-wrapper {
@@ -791,7 +792,8 @@ a > i.ti-plus{
         transition: opacity 0.3s ease;
     }
     
-    .mobile-menu-overlay.active {
+    .mobile-menu-overlay.active,
+    .dash-menu-overlay {
         display: block;
         opacity: 1;
     }
@@ -823,12 +825,13 @@ a > i.ti-plus{
 
 @media screen and (max-width: 576px) {
     .dash-sidebar {
-        width: 100%;
-        left: -100%;
+        width: 280px !important;
+        left: -280px !important;
     }
     
-    .dash-sidebar.active {
-        left: 0;
+    .dash-sidebar.active,
+    .dash-sidebar.mob-sidebar-active {
+        left: 0 !important;
     }
     
     .mobile-menu-toggle {
@@ -952,4 +955,72 @@ a > i.ti-plus{
 }
 .color-wrp .color-picker-wrp{
     width: 70px;
+}
+
+/* Re-enable datatable controls and style pagination */
+.dataTable-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+}
+
+.dataTable-info {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.dataTable-pagination-list {
+    display: flex;
+    padding-left: 0;
+    list-style: none;
+    margin-bottom: 0;
+}
+
+.dataTable-pagination-list li {
+    margin: 0 2px;
+}
+
+.dataTable-pagination-list li a {
+    position: relative;
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: #51459d;
+    text-decoration: none;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.dataTable-pagination-list li a:hover {
+    background-color: #f8f9fd;
+    border-color: #dee2e6;
+    color: #51459d;
+}
+
+.dataTable-pagination-list li.active a {
+    z-index: 3;
+    color: #fff;
+    background-color: #51459d;
+    border-color: #51459d;
+}
+
+.dataTable-pagination-list li.disabled a {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+    opacity: 0.6;
+}
+
+.dataTable-dropdown {
+    margin-bottom: 1rem;
+}
+
+.dataTable-selector {
+    display: inline-block;
+    width: auto;
+    padding: 0.375rem 2rem 0.375rem 1rem;
 }

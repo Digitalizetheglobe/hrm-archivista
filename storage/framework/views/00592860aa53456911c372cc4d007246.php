@@ -74,7 +74,6 @@
     <link rel="stylesheet" href="<?php echo e(asset('assets/fonts/feather.css')); ?>">
     <link rel="stylesheet" href="<?php echo e(asset('assets/fonts/fontawesome.css')); ?>">
     <link rel="stylesheet" href="<?php echo e(asset('assets/fonts/material.css')); ?>">
-    <link rel="stylesheet" href="<?php echo e(asset('css/custom.css')); ?>">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
@@ -92,7 +91,6 @@
     <!-- vendor css -->
 
     <link rel="stylesheet" href="<?php echo e(asset('assets/css/customizer.css')); ?>">
-    <link rel="stylesheet" href="<?php echo e(asset('css/custom.css')); ?>">
 
 
     <?php if($SITE_RTL == 'on'): ?>
@@ -120,6 +118,23 @@
         }
     </style>
     <link rel="stylesheet" href="<?php echo e(asset('css/custom-color.css')); ?>">
+    <link rel="stylesheet" href="<?php echo e(asset('css/custom.css')); ?>">
+
+    <style>
+        /* Immediate fix for mobile menu flicker */
+        @media screen and (max-width: 991px) {
+            .dash-sidebar {
+                left: -280px !important;
+                width: 280px !important;
+                transition: none !important; /* Disable transition on load */
+            }
+            .dash-sidebar.active, .dash-sidebar.mob-sidebar-active {
+                left: 0 !important;
+                width: 280px !important;
+                transition: left 0.3s ease !important; /* Re-enable transition when active */
+            }
+        }
+    </style>
 
     <?php echo $__env->yieldPushContent('css-page'); ?>
 </head>
@@ -329,9 +344,9 @@
     
 
     <script>
-        if (document.querySelector("#pc-dt-simple")) {
-            const dataTable = new simpleDatatables.DataTable("#pc-dt-simple");
-        }
+        document.querySelectorAll("#pc-dt-simple, .pc-dt-simple, .datatable, #tds-table, [id^='dataTable']").forEach(el => {
+            new simpleDatatables.DataTable(el);
+        });
     </script>
 
     <script>

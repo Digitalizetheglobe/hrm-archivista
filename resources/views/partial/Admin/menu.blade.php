@@ -21,19 +21,14 @@
         <nav class="dash-sidebar light-sidebar" style="background: linear-gradient(to bottom, #000, #000); height: 715px;">
 @endif
 
-<!-- Mobile Menu Toggle Button -->
-<button class="mobile-menu-toggle d-lg-none" type="button">
-    <span class="hamburger-line"></span>
-    <span class="hamburger-line"></span>
-    <span class="hamburger-line"></span>
-</button>
+
 
 {{-- <nav class="dash-sidebar light-sidebar {{ isset($cust_theme_bg) && $cust_theme_bg == 'on' ? 'transprent-bg' : '' }}"> --}}
 
 <div class="navbar-wrapper">
     <div class="m-header main-logo">
         <a href="{{ route('dashboard') }}" class="b-brand">
-            <img src="{{ asset('storage/uploads/logo/logo.webp') }}" 
+            <img src="{{ asset('storage/uploads/logo/logo.png') }}" 
                 alt="{{ config('app.name', 'Archivista') }}" 
                 class="logo logo-lg" 
                 style="height: 70px;">
@@ -1104,54 +1099,40 @@
 </div>
 </nav>
 
-<!-- Mobile Menu Overlay -->
-<div class="mobile-menu-overlay d-lg-none"></div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
     const dashSidebar = document.querySelector('.dash-sidebar');
-    const overlay = document.querySelector('.mobile-menu-overlay');
     
-    if (mobileMenuToggle && dashSidebar && overlay) {
-        // Toggle menu
-        mobileMenuToggle.addEventListener('click', function() {
-            this.classList.toggle('active');
-            dashSidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-            document.body.style.overflow = dashSidebar.classList.contains('active') ? 'hidden' : '';
-        });
-        
-        // Close menu when clicking overlay
-        overlay.addEventListener('click', function() {
-            mobileMenuToggle.classList.remove('active');
+    function closeMenu() {
+        const mobileMenuToggle = document.querySelector('#mobile-collapse');
+        if (mobileMenuToggle) mobileMenuToggle.classList.remove('active');
+        if (dashSidebar) {
             dashSidebar.classList.remove('active');
-            overlay.classList.remove('active');
-            document.body.style.overflow = '';
-        });
-        
-        // Close menu when window is resized above mobile breakpoint
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 991) {
-                mobileMenuToggle.classList.remove('active');
-                dashSidebar.classList.remove('active');
-                overlay.classList.remove('active');
-                document.body.style.overflow = '';
+            dashSidebar.classList.remove('mob-sidebar-active');
+        }
+        // Theme's overlay removal logic usually handles .dash-menu-overlay
+        const themeOverlay = document.querySelector('.dash-menu-overlay');
+        if (themeOverlay) themeOverlay.remove();
+        document.body.style.overflow = '';
+        document.body.classList.remove('no-scroll');
+    }
+
+    // Close menu when clicking on menu items
+    const menuLinks = document.querySelectorAll('.dash-link');
+    menuLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 991 && !this.closest('.dash-hasmenu')) {
+                closeMenu();
             }
         });
-        
-        // Close menu when clicking on menu items (optional)
-        const menuLinks = document.querySelectorAll('.dash-link');
-        menuLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                if (window.innerWidth <= 991) {
-                    mobileMenuToggle.classList.remove('active');
-                    dashSidebar.classList.remove('active');
-                    overlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
-        });
+    });
+
+    // Ensure it's closed on load (extra safety)
+    if (window.innerWidth <= 991 && dashSidebar) {
+        dashSidebar.classList.remove('active');
+        dashSidebar.classList.remove('mob-sidebar-active');
     }
 });
 </script>
