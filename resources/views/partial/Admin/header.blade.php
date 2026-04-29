@@ -66,8 +66,8 @@
     
     <!-- Marquee Section for Daily Quote -->
     <!-- Marquee Section for Daily Quote -->
-    <div class="quote-container" style="display: flex; justify-content: center; align-items: center; flex-grow: 1;">
-        <marquee behavior="scroll" direction="left" scrollamount="6" style="color: #fd7523; font-size: 18px; font-weight: bold; width: 100%;margin: left 11px;">
+    <div class="quote-container dash-h-item" style="display: flex; justify-content: center; align-items: center; flex-grow: 1; min-width: 0;">
+        <marquee behavior="scroll" direction="left" scrollamount="6" style="color: #fd7523; font-size: 16px; font-weight: bold; width: 100%; margin: 0 10px;">
             " {{ $quote->quote ?? 'Welcome to the DTG! No quote for today.' }} "
         </marquee>
     </div>

@@ -15,10 +15,10 @@
 
 <?php if(isset($setting['cust_theme_bg']) && $setting['cust_theme_bg'] == 'on'): ?>
 <nav class="dash-sidebar light-sidebar transprent-bg" 
-    style="background: linear-gradient(to bottom, #000, #000); height: 750px;">
+    style="background: linear-gradient(to bottom, #000, #000); min-height: 100vh;">
     
     <?php else: ?>
-        <nav class="dash-sidebar light-sidebar" style="background: linear-gradient(to bottom, #000, #000); height: 715px;">
+        <nav class="dash-sidebar light-sidebar" style="background: linear-gradient(to bottom, #000, #000); min-height: 100vh;">
 <?php endif; ?>
 
 

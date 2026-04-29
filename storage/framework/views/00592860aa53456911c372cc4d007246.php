@@ -121,17 +121,25 @@
     <link rel="stylesheet" href="<?php echo e(asset('css/custom.css')); ?>">
 
     <style>
-        /* Immediate fix for mobile menu flicker */
+        /* Immediate fix for mobile menu flicker and header responsiveness */
         @media screen and (max-width: 991px) {
             .dash-sidebar {
                 left: -280px !important;
                 width: 280px !important;
-                transition: none !important; /* Disable transition on load */
+                height: 100vh !important;
+                transition: none !important;
             }
             .dash-sidebar.active, .dash-sidebar.mob-sidebar-active {
                 left: 0 !important;
                 width: 280px !important;
-                transition: left 0.3s ease !important; /* Re-enable transition when active */
+                transition: left 0.3s ease !important;
+            }
+        }
+        
+        /* Hide quote on small mobiles to avoid crowding */
+        @media screen and (max-width: 575px) {
+            .quote-container {
+                display: none !important;
             }
         }
     </style>
