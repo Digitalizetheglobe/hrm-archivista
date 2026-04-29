@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test TinyMCE Editor</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/skins/ui/oxide/skin.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/tinymce.min.js"></script>
+</head>
+<body>
+    <h1>Test TinyMCE Editor</h1>
+    <form>
+        <textarea id="content" name="content">Hello World!</textarea>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, checking TinyMCE...');
+            if (typeof tinymce !== 'undefined') {
+                console.log('TinyMCE found, initializing...');
+                tinymce.init({
+                    selector: '#content',
+                    height: 400,
+                    plugins: ['advlist autolink lists link image charmap print preview anchor', 'searchreplace visualblocks code fullscreen', 'insertdatetime media table paste help wordcount'],
+                    toolbar: 'undo redo | formatselect | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+                    menubar: 'file edit view insert format tools table help',
+                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5; }'
+                });
+                console.log('TinyMCE initialization complete');
+            } else {
+                console.error('TinyMCE not loaded');
+            }
+        });
+    </script>
+</body>
+</html>

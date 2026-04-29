@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Location Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Location Capture Test</h1>
+    
+    <form id="testForm">
+        <div>
+            <label>Clock In:</label>
+            <input type="time" id="clock_in" name="clock_in">
+            <button type="button" onclick="captureLocation('clock_in')">Capture Location</button>
+            <input type="hidden" id="clock_in_latitude" name="clock_in_latitude">
+            <input type="hidden" id="clock_in_longitude" name="clock_in_longitude">
+            <input type="hidden" id="clock_in_location" name="clock_in_location">
+            <div id="clock_in_location_text"></div>
+        </div>
+        
+        <div>
+            <label>Clock Out:</label>
+            <input type="time" id="clock_out" name="clock_out">
+            <button type="button" onclick="captureLocation('clock_out')">Capture Location</button>
+            <input type="hidden" id="clock_out_latitude" name="clock_out_latitude">
+            <input type="hidden" id="clock_out_longitude" name="clock_out_longitude">
+            <input type="hidden" id="clock_out_location" name="clock_out_location">
+            <div id="clock_out_location_text"></div>
+        </div>
+        
+        <button type="submit">Submit</button>
+    </form>
+    
+    <div id="debug"></div>
+
+    <script>
+    function captureLocation(type) {
+        console.log('Capturing location for:', type);
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    console.log('Location captured:', lat, lng);
+                    
+                    // Set hidden field values
+                    document.getElementById(type + '_latitude').value = lat;
+                    document.getElementById(type + '_longitude').value = lng;
+                    
+                    // Get address using reverse geocoding (optional)
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const address = data.display_name || `Lat: ${lat}, Lng: ${lng}`;
+                            document.getElementById(type + '_location').value = address;
+                            document.getElementById(type + '_location_text').textContent = '📍 ' + address;
+                            console.log('Address resolved:', address);
+                        })
+                        .catch(error => {
+                            console.error('Geocoding error:', error);
+                            // Fallback to coordinates
+                            const address = `Lat: ${lat}, Lng: ${lng}`;
+                            document.getElementById(type + '_location').value = address;
+                            document.getElementById(type + '_location_text').textContent = '📍 ' + address;
+                        });
+                },
+                function(error) {
+                    console.error('Error getting location:', error);
+                    document.getElementById(type + '_location_text').textContent = '❌ Location access denied';
+                }
+            );
+        } else {
+            document.getElementById(type + '_location_text').textContent = '❌ Geolocation not supported';
+        }
+    }
+
+    // Debug form submission
+    document.getElementById('testForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {};
+        formData.forEach((value, key) => {
+            data[key] = value;
+        });
+        
+        console.log('Form data being submitted:', data);
+        document.getElementById('debug').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+    });
+    </script>
+</body>
+</html>
