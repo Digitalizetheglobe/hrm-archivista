@@ -233,11 +233,7 @@
                                     <div class="float-end"><i class="ti ti-chevron-right"></i></div>
                                 </a>
 
-                                <a href="#twilio-settings" id="twilio-tab"
-                                    class="list-group-item list-group-item-action border-0">{{ __('Twilio Settings') }}
-                                    <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-                                </a>
-                            @endif
+                                <!-- Twilio settings removed -->
                             <a href="#offer-letter-settings" id="offer-letter-tab"
                                 class="list-group-item list-group-item-action border-0">{{ __('Offer Letter Settings') }}
                                 <div class="float-end"><i class="ti ti-chevron-right"></i></div>
@@ -1438,128 +1434,6 @@
                             </div>
                         </div>
 
-                        <div class="" id="twilio-settings">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5>{{ __('Twilio Settings') }}</h5>
-                                    <small
-                                        class="text-secondary font-weight-bold">{{ __('Twilio Notification Settings') }}</small>
-                                </div>
-                                {{ Form::open(['route' => 'twilio.setting', 'id' => 'twilio-setting', 'method' => 'post', 'class' => 'd-contents']) }}
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-lg-6 col-md-6 col-sm-6 form-group">
-                                            {{ Form::label('Twilio SID', __('Twilio SID'), ['class' => 'col-form-label']) }}
-                                            {{ Form::text('twilio_sid', isset($settings['twilio_sid']) ? $settings['twilio_sid'] : '', ['class' => 'form-control', 'placeholder' => __('Enter Twilio Sid')]) }}
-                                        </div>
-                                        <div class="col-lg-6 col-md-6 col-sm-6 form-group">
-                                            {{ Form::label('Twilio Token', __('Twilio Token'), ['class' => 'col-form-label']) }}
-                                            {{ Form::text('twilio_token', isset($settings['twilio_token']) ? $settings['twilio_token'] : '', ['class' => 'form-control', 'placeholder' => __('Enter Twilio Token')]) }}
-                                        </div>
-                                        <div class="col-lg-6 col-md-6 col-sm-6 form-group">
-                                            {{ Form::label('Twilio From', __('Twilio From'), ['class' => 'col-form-label']) }}
-                                            {{ Form::text('twilio_from', isset($settings['twilio_from']) ? $settings['twilio_from'] : '', ['class' => 'form-control', 'placeholder' => __('Enter Twilio From')]) }}
-                                        </div>
-                                        <div class="col-lg-12 col-md-12 col-sm-12 form-group mb-3">
-                                            {{-- {{ Form::label('Module Setting', __('Module Setting'), ['class' => 'col-form-label']) }} --}}
-                                        </div>
-
-
-                                        <div class="col-md-4">
-                                            <ul class="list-group">
-                                                <li
-                                                    class="list-group-item d-flex align-items-center justify-content-between">
-                                                    {{ Form::label('Payslip create', __('New Monthly Payslip'), ['class' => 'col-form-label']) }}
-                                                    <div class="form-check form-switch d-inline-block float-right">
-                                                        {{ Form::checkbox('twilio_monthly_payslip_notification', '1', isset($settings['twilio_monthly_payslip_notification']) && $settings['twilio_monthly_payslip_notification'] == '1' ? 'checked' : '', ['class' => 'form-check-input', 'id' => 'twilio_monthly_payslip_notification']) }}
-                                                        <label class="col-form-label"
-                                                            for="twilio_monthly_payslip_notification"></label>
-                                                    </div>
-                                                </li>
-
-                                                <li
-                                                    class="list-group-item d-flex align-items-center justify-content-between">
-                                                    {{ Form::label('Leave Approve/Reject', __('Leave Approve/Reject'), ['class' => 'col-form-label']) }}
-                                                    <div class="form-check form-switch d-inline-block float-right">
-                                                        {{ Form::checkbox('twilio_leave_approve_notification', '1', isset($settings['twilio_leave_approve_notification']) && $settings['twilio_leave_approve_notification'] == '1' ? 'checked' : '', ['class' => 'form-check-input', 'id' => 'twilio_leave_approve_notification']) }}
-                                                        <label class="col-form-label"
-                                                            for="twilio_leave_approve_notification"></label>
-                                                    </div>
-                                                </li>
-
-                                                <li
-                                                    class="list-group-item d-flex align-items-center justify-content-between">
-                                                    {{ Form::label('Ticket create', __('New Ticket '), ['class' => 'col-form-label']) }}
-                                                    <div class="form-check form-switch d-inline-block float-right">
-                                                        {{ Form::checkbox('twilio_ticket_notification', '1', isset($settings['twilio_ticket_notification']) && $settings['twilio_ticket_notification'] == '1' ? 'checked' : '', ['class' => 'form-check-input', 'id' => 'twilio_ticket_notification']) }}
-                                                        <label class="col-form-label"
-                                                            for="twilio_ticket_notification"></label>
-                                                    </div>
-                                                </li>
-
-
-                                            </ul>
-                                        </div>
-
-                                        <div class="col-md-4">
-                                            <ul class="list-group">
-                                                <li
-                                                    class="list-group-item d-flex align-items-center justify-content-between">
-                                                    {{ Form::label('Award create', __('New Award'), ['class' => 'col-form-label']) }}
-                                                    <div class="form-check form-switch d-inline-block float-right">
-                                                        {{ Form::checkbox('twilio_award_notification', '1', isset($settings['twilio_award_notification']) && $settings['twilio_award_notification'] == '1' ? 'checked' : '', ['class' => 'form-check-input', 'id' => 'twilio_award_notification']) }}
-                                                        <label class="col-form-label"
-                                                            for="twilio_award_notification"></label>
-                                                    </div>
-                                                </li>
-
-                                                <li
-                                                    class="list-group-item d-flex align-items-center justify-content-between">
-                                                    {{ Form::label('Trip create', __('New Trip '), ['class' => 'col-form-label']) }}
-                                                    <div class="form-check form-switch d-inline-block float-right">
-                                                        {{ Form::checkbox('twilio_trip_notification', '1', isset($settings['twilio_trip_notification']) && $settings['twilio_trip_notification'] == '1' ? 'checked' : '', ['class' => 'form-check-input', 'id' => 'twilio_trip_notification']) }}
-                                                        <label class="col-form-label"
-                                                            for="twilio_trip_notification"></label>
-                                                    </div>
-                                                </li>
-
-                                            </ul>
-                                        </div>
-
-                                        <div class="col-md-4">
-                                            <ul class="list-group">
-                                                <li
-                                                    class="list-group-item d-flex align-items-center justify-content-between">
-                                                    {{ Form::label('Event create', __('New Event'), ['class' => 'col-form-label']) }}
-                                                    <div class="form-check form-switch d-inline-block float-right">
-                                                        {{ Form::checkbox('twilio_event_notification', '1', isset($settings['twilio_event_notification']) && $settings['twilio_event_notification'] == '1' ? 'checked' : '', ['class' => 'form-check-input', 'id' => 'twilio_event_notification']) }}
-                                                        <label class="col-form-label"
-                                                            for="twilio_event_notification"></label>
-                                                    </div>
-                                                </li>
-
-                                                <li
-                                                    class="list-group-item d-flex align-items-center justify-content-between">
-                                                    {{ Form::label('Announcement create', __('New Announcement '), ['class' => 'col-form-label']) }}
-                                                    <div class="form-check form-switch d-inline-block float-right">
-                                                        {{ Form::checkbox('twilio_announcement_notification', '1', isset($settings['twilio_announcement_notification']) && $settings['twilio_announcement_notification'] == '1' ? 'checked' : '', ['class' => 'form-check-input', 'id' => 'twilio_announcement_notification']) }}
-                                                        <label class="col-form-label"
-                                                            for="twilio_announcement_notification"></label>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer text-end">
-                                    <button class="btn-submit btn btn-primary" type="submit">
-                                        {{ __('Save Changes') }}
-                                    </button>
-                                </div>
-                                {{ Form::close() }}
-                            </div>
-                        </div>
-                    @endif
                     <div class="" id="offer-letter-settings">
                         <div class="card">
                             <div class="card-header d-flex justify-content-between">

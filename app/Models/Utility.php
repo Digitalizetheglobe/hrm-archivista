@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\CommonEmailTemplate;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Twilio\Rest\Client;
 use Spatie\GoogleCalendar\Event as GoogleEvent;
 
 class Utility extends Model
@@ -1059,37 +1058,7 @@ class Utility extends Model
         }
     }
 
-    public static function send_twilio_msg($to, $slug, $obj)
-    {
-        $notification_template = NotificationTemplates::where('slug', $slug)->first();
-        if (!empty($notification_template) && !empty($obj)) {
-            $curr_noti_tempLang = NotificationTemplateLangs::where('parent_id', '=', $notification_template->id)->where('lang', \Auth::user()->lang)->where('created_by', '=', \Auth::user()->creatorId())->first();
-            if (empty($curr_noti_tempLang)) {
-                $curr_noti_tempLang = NotificationTemplateLangs::where('parent_id', '=', $notification_template->id)->where('lang', \Auth::user()->lang)->first();
-            }
-            if (empty($curr_noti_tempLang)) {
-                $curr_noti_tempLang       = NotificationTemplateLangs::where('parent_id', '=', $notification_template->id)->where('lang', 'en')->first();
-            }
-            if (!empty($curr_noti_tempLang) && !empty($curr_noti_tempLang->content)) {
-                $msg = self::replaceVariable($curr_noti_tempLang->content, $obj);
-            }
-        }
-        if (isset($msg)) {
-            $settings  = Utility::settings(\Auth::user()->creatorId());
-
-            try {
-                $account_sid    = $settings['twilio_sid'];
-                $auth_token = $settings['twilio_token'];
-                $twilio_number = $settings['twilio_from'];
-                $client = new Client($account_sid, $auth_token);
-                $client->messages->create($to, [
-                    'from' => $twilio_number,
-                    'body' => $msg
-                ]);
-            } catch (\Exception $e) {
-            }
-        }
-    }
+    // Twilio functionality removed
     // public static function colorset()
     // {
 

@@ -848,40 +848,7 @@ class SettingsController extends Controller
     }
 
 
-    public function twilio(Request $request)
-    {
-
-        $post = [];
-        $post['twilio_sid'] = $request->input('twilio_sid');
-        $post['twilio_token'] = $request->input('twilio_token');
-        $post['twilio_from'] = $request->input('twilio_from');
-        $post['twilio_monthly_payslip_notification'] = $request->has('twilio_monthly_payslip_notification') ? $request->input('twilio_monthly_payslip_notification') : 0;
-        $post['twilio_leave_approve_notification'] = $request->has('twilio_leave_approve_notification') ? $request->input('twilio_leave_approve_notification') : 0;
-        $post['twilio_award_notification'] = $request->has('twilio_award_notification') ? $request->input('twilio_award_notification') : 0;
-        $post['twilio_trip_notification'] = $request->has('twilio_trip_notification') ? $request->input('twilio_trip_notification') : 0;
-        $post['twilio_announcement_notification'] = $request->has('twilio_announcement_notification') ? $request->input('twilio_announcement_notification') : 0;
-        $post['twilio_ticket_notification'] = $request->has('twilio_ticket_notification') ? $request->input('twilio_ticket_notification') : 0;
-        $post['twilio_event_notification'] = $request->has('twilio_event_notification') ? $request->input('twilio_event_notification') : 0;
-
-        if (isset($post) && !empty($post) && count($post) > 0) {
-            $created_at = $updated_at = date('Y-m-d H:i:s');
-
-            foreach ($post as $key => $data) {
-                DB::insert(
-                    'INSERT INTO settings (`value`, `name`,`created_by`,`created_at`,`updated_at`) values (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `updated_at` = VALUES(`updated_at`) ',
-                    [
-                        $data,
-                        $key,
-                        Auth::user()->id,
-                        $created_at,
-                        $updated_at,
-                    ]
-                );
-            }
-        }
-
-        return redirect()->back()->with('success', __('Settings updated successfully.'));
-    }
+    // Twilio functionality removed
 
 
     public function testMail(Request $request)

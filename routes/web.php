@@ -2018,8 +2018,7 @@ Route::group(['middleware' => ['verified']], function () {
     //telegram
     Route::post('setting/telegram', [SettingsController::class, 'telegram'])->name('telegram.setting');
 
-    //twilio
-    Route::post('setting/twilio', [SettingsController::class, 'twilio'])->name('twilio.setting');
+    //Twilio removed
 
     // recaptcha
     Route::post('/recaptcha-settings', [SettingsController::class, 'recaptchaSettingStore'])->name('recaptcha.settings.store')->middleware(['auth', 'XSS']);
