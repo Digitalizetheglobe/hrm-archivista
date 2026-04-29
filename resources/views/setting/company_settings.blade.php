@@ -276,7 +276,8 @@
 
                 <div class="col-xl-9">
                     <div class="" id="business-settings">
-                        {{ Form::model($settings, ['route' => 'business.setting', 'method' => 'POST', 'enctype' => 'multipart/form-data']) }}
+                        <form method="POST" action="{{ route('business.setting') }}" enctype="multipart/form-data" class="d-contents">
+    @csrf
                         <div class="row">
                             <div class="col-lg-12 col-sm-12 col-md-12">
                                 <div class="card">

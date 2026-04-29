@@ -21,17 +21,6 @@
       'NoCaptcha' => 'Anhskohbo\\NoCaptcha\\Facades\\NoCaptcha',
     ),
   ),
-  'arkitecht/laravel-twilio' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Arkitecht\\Twilio\\Providers\\TwilioServiceProvider',
-    ),
-    'aliases' => 
-    array (
-      'Twilio' => 'Arkitecht\\Twilio\\Facades\\Twilio',
-    ),
-  ),
   'barryvdh/laravel-debugbar' => 
   array (
     'providers' => 
@@ -198,6 +187,17 @@
     'aliases' => 
     array (
       'GoogleCalendar' => 'Spatie\\GoogleCalendar\\GoogleCalendarFacade',
+    ),
+  ),
+  'spatie/laravel-html' => 
+  array (
+    'aliases' => 
+    array (
+      'Html' => 'Spatie\\Html\\Facades\\Html',
+    ),
+    'providers' => 
+    array (
+      0 => 'Spatie\\Html\\HtmlServiceProvider',
     ),
   ),
   'spatie/laravel-ignition' => 
