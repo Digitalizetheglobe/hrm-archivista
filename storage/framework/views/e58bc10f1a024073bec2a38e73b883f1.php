@@ -1,10 +1,9 @@
-@extends('layouts.admin')
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('Dashboard')); ?>
 
-@section('page-title')
-    {{ __('Dashboard') }}
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <style>
     .fc-prev-button, .fc-next-button {
         padding: 5px 8px !important;
@@ -111,13 +110,14 @@
 
 <div>
     <div class="row">
-        @if (session('status'))
+        <?php if(session('status')): ?>
             <div class="alert alert-success" role="alert">
-                {{ session('status') }}
-            </div>
-        @endif
+                <?php echo e(session('status')); ?>
 
-        @if (\Auth::user()->type == 'employee')
+            </div>
+        <?php endif; ?>
+
+        <?php if(\Auth::user()->type == 'employee'): ?>
             <div class="col-xxl-9">
                 <div class="row">
                     <div class="col-xl-12">
@@ -125,20 +125,20 @@
                             <div class="col-xl-6">
                                 <div class="card">  
                                     <div class="card-header d-flex align-items-center">
-                                        <img src="{{ asset('https://connect360.in//storage/uploads/avatar/' . ($emp->user->avatar ?? 'default-avatar.png')) }}" 
+                                        <img src="<?php echo e(asset('https://connect360.in//storage/uploads/avatar/' . ($emp->user->avatar ?? 'default-avatar.png'))); ?>" 
                                             alt="Profile Image" 
                                             class="rounded-circle me-4" 
                                             width="60" 
                                             height="60">
                                         <div>
-                                            <h4 class="mb-0" style="color:black;">{{ $emp->name }}</h4>
-                                            <small style="font-size: 12px; color:black;">{{ $emp->department->name ?? 'No Department' }} Team</small><small style="font-size:16px; color:black;"> &nbsp{{ $emp->designation->name ?? 'No Designation' }}&nbsp</small><br>
+                                            <h4 class="mb-0" style="color:black;"><?php echo e($emp->name); ?></h4>
+                                            <small style="font-size: 12px; color:black;"><?php echo e($emp->department->name ?? 'No Department'); ?> Team</small><small style="font-size:16px; color:black;"> &nbsp<?php echo e($emp->designation->name ?? 'No Designation'); ?>&nbsp</small><br>
                                         </div>
                                     </div>
                                     <div class="card-body">
-                                        <p><strong>Phone Number:<br></strong> {{ $emp->phone ?? 'N/A' }}</p><br>
-                                        <p><strong>Email Address:<br></strong> {{ $emp->email ?? 'N/A' }}</p><br>
-                                        <p><strong>Joined On:<br></strong> {{ \Carbon\Carbon::parse($emp->company_doj)->format('d M Y') }}</p>
+                                        <p><strong>Phone Number:<br></strong> <?php echo e($emp->phone ?? 'N/A'); ?></p><br>
+                                        <p><strong>Email Address:<br></strong> <?php echo e($emp->email ?? 'N/A'); ?></p><br>
+                                        <p><strong>Joined On:<br></strong> <?php echo e(\Carbon\Carbon::parse($emp->company_doj)->format('d M Y')); ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -146,7 +146,7 @@
                             <div class="col-md-6">
                                 <div class="card" style="height:395px;">
                                     <div class="card-header">
-                                        <h5 style="font-size:20px;color:black">{{ __('Attendance') }}</h5>
+                                        <h5 style="font-size:20px;color:black"><?php echo e(__('Attendance')); ?></h5>
                                         <p id="currentDateTime"></p>
                                     </div>
                                     <div class="card-body text-center p-1">
@@ -163,45 +163,49 @@
                                         </div>
 
                                         <p id="attendanceStatus" class="font-bold">
-                                            @php
+                                            <?php
                                                 $siteVisit = \App\Models\SiteVisit::where('employee_id', $emp->id)->where('date', date('Y-m-d'))->where('status', 'Approved')->first();
-                                            @endphp
+                                            ?>
 
-                                            @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)
+                                            <?php if(!isset($employeeAttendance) || !$employeeAttendance->clock_in): ?>
                                                 <span class="text-primary"><i class="fas fa-fingerprint"></i> Not Punched In</span>
-                                            @elseif ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
-                                                <span class="text-success"><i class="fas fa-fingerprint"></i> Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }}</span>
-                                            @elseif ($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00'))
+                                            <?php elseif($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out): ?>
+                                                <span class="text-success"><i class="fas fa-fingerprint"></i> Punched In at <?php echo e(\Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A')); ?></span>
+                                            <?php elseif($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00')): ?>
                                                 <span class="text-warning"><i class="fas fa-map-marker-alt"></i> Punched Out (Site Visit Pending)</span>
-                                            @elseif ($siteVisit && (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00'))
-                                                <span class="text-success"><i class="fas fa-map-marker-alt"></i> Site Visit Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in_2)->format('h:i A') }}</span>
-                                            @else
-                                                <span class="text-danger"><i class="fas fa-sign-out-alt"></i> Punched Out at {{ \Carbon\Carbon::parse($employeeAttendance->clock_out_2 && $employeeAttendance->clock_out_2 != '00:00:00' ? $employeeAttendance->clock_out_2 : $employeeAttendance->clock_out)->format('h:i A') }}</span>
-                                            @endif
+                                            <?php elseif($siteVisit && (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00')): ?>
+                                                <span class="text-success"><i class="fas fa-map-marker-alt"></i> Site Visit Punched In at <?php echo e(\Carbon\Carbon::parse($employeeAttendance->clock_in_2)->format('h:i A')); ?></span>
+                                            <?php else: ?>
+                                                <span class="text-danger"><i class="fas fa-sign-out-alt"></i> Punched Out at <?php echo e(\Carbon\Carbon::parse($employeeAttendance->clock_out_2 && $employeeAttendance->clock_out_2 != '00:00:00' ? $employeeAttendance->clock_out_2 : $employeeAttendance->clock_out)->format('h:i A')); ?></span>
+                                            <?php endif; ?>
                                         </p>
 
-                                        {{ Form::open(['url' => 'attendanceemployee/attendance', 'method' => 'post', 'id' => 'attendanceForm']) }}
+                                        <?php echo e(Form::open(['url' => 'attendanceemployee/attendance', 'method' => 'post', 'id' => 'attendanceForm'])); ?>
+
                                             <!-- Hidden fields for location capture -->
                                             <input type="hidden" id="latitude" name="latitude">
                                             <input type="hidden" id="longitude" name="longitude">
                                             <input type="hidden" id="location" name="location">
                                             
-                                            @if (empty($employeeAttendance) || (!$employeeAttendance->clock_in))
-                                                <button type="submit" value="0" name="in" id="clock_in" class="btn btn-primary">{{ __('Punch In') }}</button>
-                                            @elseif ($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00'))
-                                                <button type="submit" value="0" name="in" id="clock_in_2" class="btn btn-warning">{{ __('Site Visit In') }}</button>
-                                            @elseif ($siteVisit && (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00'))
+                                            <?php if(empty($employeeAttendance) || (!$employeeAttendance->clock_in)): ?>
+                                                <button type="submit" value="0" name="in" id="clock_in" class="btn btn-primary"><?php echo e(__('Punch In')); ?></button>
+                                            <?php elseif($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00')): ?>
+                                                <button type="submit" value="0" name="in" id="clock_in_2" class="btn btn-warning"><?php echo e(__('Site Visit In')); ?></button>
+                                            <?php elseif($siteVisit && (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00')): ?>
                                                 <button type="button" value="1" name="out" id="clock_out_2" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmClockOutModal">
-                                                    {{ __('Site Visit Out') }}
+                                                    <?php echo e(__('Site Visit Out')); ?>
+
                                                 </button>
-                                            @elseif ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
+                                            <?php elseif($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out): ?>
                                                 <button type="button" value="1" name="out" id="clock_out" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmClockOutModal">
-                                                    {{ __('Punch Out') }}
+                                                    <?php echo e(__('Punch Out')); ?>
+
                                                 </button>
-                                            @else
-                                                <button type="button" class="btn btn-secondary" disabled>{{ __('Completed') }}</button>
-                                            @endif
-                                        {{ Form::close() }}
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-secondary" disabled><?php echo e(__('Completed')); ?></button>
+                                            <?php endif; ?>
+                                        <?php echo e(Form::close()); ?>
+
                                     </div>
                                 </div>
                             </div>
@@ -213,7 +217,7 @@
                             <div class="col-md-6">
                                 <div class="card">
                                     <div class="card-header card-body table-border-style d-flex justify-content-between align-items-center">
-                                        <h5 style="font-size:20px; color:black; margin: 0;">{{ __('Notices') }}</h5>
+                                        <h5 style="font-size:20px; color:black; margin: 0;"><?php echo e(__('Notices')); ?></h5>
                                     </div>
                                     <div class="card-body" style="height: 325px; overflow: auto; padding: 10px; padding-top:25px;">
                                         <div class="table-responsive" style="max-width:452px;">
@@ -225,17 +229,19 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($notices as $notice)
+                                                    <?php $__currentLoopData = $notices; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notice): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                     <tr>
                                                         <td style="word-wrap: break-word; white-space: normal;">
-                                                            {{ Str::limit($notice->title, 50, '...') }}
+                                                            <?php echo e(Str::limit($notice->title, 50, '...')); ?>
+
                                                         </td>
                                                         <td>
-                                                            {{ \Carbon\Carbon::parse($notice->notice_startdate)->format('d M Y') }} - 
-                                                            {{ \Carbon\Carbon::parse($notice->notice_enddate)->format('d M Y') }}
+                                                            <?php echo e(\Carbon\Carbon::parse($notice->notice_startdate)->format('d M Y')); ?> - 
+                                                            <?php echo e(\Carbon\Carbon::parse($notice->notice_enddate)->format('d M Y')); ?>
+
                                                         </td>
                                                     </tr>
-                                                    @endforeach
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                 </tbody>
                                             </table>
                                         </div>
@@ -246,42 +252,42 @@
                             <div class="col-md-6">
                                 <div class="card">
                                     <div class="card-header card-body table-border-style">
-                                        <h5 style="font-size:20px;color:black">{{ __('TO-DO Lists') }}</h5>
+                                        <h5 style="font-size:20px;color:black"><?php echo e(__('TO-DO Lists')); ?></h5>
                                     </div>
                                     <div class="card-body" style="height: 324px; overflow:auto;">
                                         <div class="table-responsive"> 
                                             <table class="table">
                                                 <thead>
                                                     <tr>
-                                                    <th>{{ __('Task Title') }}</th>
-                                                    <th>{{ __('Priority') }}</th>
-                                                    <th>{{ __('Due Date') }}</th>
-                                                    <th>{{ __('Status') }}</th>
+                                                    <th><?php echo e(__('Task Title')); ?></th>
+                                                    <th><?php echo e(__('Priority')); ?></th>
+                                                    <th><?php echo e(__('Due Date')); ?></th>
+                                                    <th><?php echo e(__('Status')); ?></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody class="list">
-                                                    @foreach ($todos as $todo)
+                                                    <?php $__currentLoopData = $todos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $todo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                         <tr>
-                                                            <td>{{ $todo->task }}</td>
+                                                            <td><?php echo e($todo->task); ?></td>
                                                             <td>
-                                                                @if($todo->priority == 1)
-                                                                    <span class="badge bg-danger">{{ __('High') }}</span>
-                                                                @elseif($todo->priority == 2)
-                                                                    <span class="badge bg-warning">{{ __('Medium') }}</span>
-                                                                @else
-                                                                    <span class="badge bg-success">{{ __('Low') }}</span>
-                                                                @endif
+                                                                <?php if($todo->priority == 1): ?>
+                                                                    <span class="badge bg-danger"><?php echo e(__('High')); ?></span>
+                                                                <?php elseif($todo->priority == 2): ?>
+                                                                    <span class="badge bg-warning"><?php echo e(__('Medium')); ?></span>
+                                                                <?php else: ?>
+                                                                    <span class="badge bg-success"><?php echo e(__('Low')); ?></span>
+                                                                <?php endif; ?>
                                                             </td>
-                                                            <td>{{ \Carbon\Carbon::parse($todo->expires_at)->format('d M Y') }}</td>
+                                                            <td><?php echo e(\Carbon\Carbon::parse($todo->expires_at)->format('d M Y')); ?></td>
                                                             <td>
-                                                                @if($todo->is_completed)
-                                                                    <span class="badge bg-success">{{ __('Completed') }}</span>
-                                                                @else
-                                                                    <span class="badge bg-danger">{{ __('Pending') }}</span>
-                                                                @endif
+                                                                <?php if($todo->is_completed): ?>
+                                                                    <span class="badge bg-success"><?php echo e(__('Completed')); ?></span>
+                                                                <?php else: ?>
+                                                                    <span class="badge bg-danger"><?php echo e(__('Pending')); ?></span>
+                                                                <?php endif; ?>
                                                             </td>
                                                         </tr>
-                                                    @endforeach
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                 </tbody>
                                             </table>
                                         </div>
@@ -300,52 +306,54 @@
                     
                     <div class="card flex-grow-1">
                         <div class="card-header">
-                            <h5 style="font-size:20px;color:black">{{ __("This Month Event's") }}</h5>
+                            <h5 style="font-size:20px;color:black"><?php echo e(__("This Month Event's")); ?></h5>
                         </div>
                         <div class="card-body">
-                            @if(isset($monthlyEvents) && count($monthlyEvents) > 0)
+                            <?php if(isset($monthlyEvents) && count($monthlyEvents) > 0): ?>
                                 <div class="events-container">
-                                    @foreach($monthlyEvents as $event)
-                                        <div class="event-item d-flex align-items-center mb-3 p-2 rounded {{ $event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event' }}">
+                                    <?php $__currentLoopData = $monthlyEvents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $event): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <div class="event-item d-flex align-items-center mb-3 p-2 rounded <?php echo e($event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event'); ?>">
                                             <div class="event-avatar me-3">
-                                                <img src="{{ asset('storage/uploads/avatar/' . $event['avatar']) }}" 
-                                                     alt="{{ $event['employee_name'] }}" 
+                                                <img src="<?php echo e(asset('storage/uploads/avatar/' . $event['avatar'])); ?>" 
+                                                     alt="<?php echo e($event['employee_name']); ?>" 
                                                      class="rounded-circle" 
                                                      width="45" 
                                                      height="45"
-                                                     onerror="this.src='{{ asset('storage/avatars/avatar.png') }}'">
+                                                     onerror="this.src='<?php echo e(asset('storage/avatars/avatar.png')); ?>'">
                                             </div>
                                             <div class="event-details flex-grow-1">
-                                                <h6 class="mb-1 fw-bold">{{ $event['employee_name'] }}</h6>
-                                                <p class="mb-1 {{ $event['type'] == 'birthday' ? 'text-primary' : 'text-success' }} fw-semibold">
-                                                    {{ $event['message'] }}
+                                                <h6 class="mb-1 fw-bold"><?php echo e($event['employee_name']); ?></h6>
+                                                <p class="mb-1 <?php echo e($event['type'] == 'birthday' ? 'text-primary' : 'text-success'); ?> fw-semibold">
+                                                    <?php echo e($event['message']); ?>
+
                                                 </p>
                                                 <small class="text-muted">
-                                                    <i class="fas fa-calendar-alt me-1"></i>{{ $event['date'] }} • 
-                                                    <i class="fas fa-building me-1"></i>{{ $event['department'] }}
+                                                    <i class="fas fa-calendar-alt me-1"></i><?php echo e($event['date']); ?> • 
+                                                    <i class="fas fa-building me-1"></i><?php echo e($event['department']); ?>
+
                                                 </small>
                                             </div>
                                             <div class="event-icon">
-                                                @if($event['type'] == 'birthday')
+                                                <?php if($event['type'] == 'birthday'): ?>
                                                     <div class="birthday-icon">
                                                         <i class="fas fa-birthday-cake text-primary"></i>
                                                     </div>
-                                                @else
+                                                <?php else: ?>
                                                     <div class="anniversary-icon">
                                                         <i class="fas fa-award text-success"></i>
                                                     </div>
-                                                @endif
+                                                <?php endif; ?>
                                             </div>
                                         </div>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
-                            @else
+                            <?php else: ?>
                                 <div class="text-center py-4">
                                     <i class="fas fa-calendar-times text-muted mb-3" style="font-size: 2rem;"></i>
                                     <p class="text-muted mb-0">No events this month</p>
                                     <small class="text-muted">Check back next month for upcoming celebrations!</small>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                     
@@ -353,8 +361,8 @@
                         <div class="card-header">
                             <div class="row">
                                 <div class="col-lg-6">
-                                    <h5>{{ __('Calendar') }}</h5>
-                                    <!-- <input type="hidden" id="path_admin" value="{{ url('/') }}"> -->
+                                    <h5><?php echo e(__('Calendar')); ?></h5>
+                                    <!-- <input type="hidden" id="path_admin" value="<?php echo e(url('/')); ?>"> -->
                                 </div>
                                 
                             </div>
@@ -365,7 +373,7 @@
                     </div>
                 </div>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 </div>
 
@@ -387,13 +395,13 @@
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('script-page')
-    <script src="{{ asset('assets/js/plugins/main.min.js') }}"></script>
-    <script src="{{ asset('assets/js/plugins/apexcharts.min.js') }}"></script>
+<?php $__env->startPush('script-page'); ?>
+    <script src="<?php echo e(asset('assets/js/plugins/main.min.js')); ?>"></script>
+    <script src="<?php echo e(asset('assets/js/plugins/apexcharts.min.js')); ?>"></script>
 
-    @if (Auth::user()->type == 'employee')
+    <?php if(Auth::user()->type == 'employee'): ?>
     <script type="text/javascript">
     $(document).ready(function() {
         get_data();
@@ -410,7 +418,7 @@
 
         $.ajax({
             data: {
-                "_token": "{{ csrf_token() }}",
+                "_token": "<?php echo e(csrf_token()); ?>",
                 'calender_type': calender_type
             },
             success: function(data) {
@@ -437,7 +445,7 @@
         });
     }
     </script>
-    @endif
+    <?php endif; ?>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -467,22 +475,22 @@
             let clockOutTime = localStorage.getItem("clockOutTime") && !isNewDay() ? new Date(localStorage.getItem("clockOutTime")) : null;
             let isPunchedOut = localStorage.getItem("isPunchedOut") === "true" && !isNewDay();
 
-            @if(isset($employeeAttendance) && $employeeAttendance->clock_in)
+            <?php if(isset($employeeAttendance) && $employeeAttendance->clock_in): ?>
                 if (!clockInTime) {
-                    clockInTime = new Date("{{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->toIso8601String() }}");
+                    clockInTime = new Date("<?php echo e(\Carbon\Carbon::parse($employeeAttendance->clock_in)->toIso8601String()); ?>");
                     localStorage.setItem("clockInTime", clockInTime.toISOString());
                 }
-            @endif
+            <?php endif; ?>
 
-            @if(isset($employeeAttendance) && $employeeAttendance->clock_out && $employeeAttendance->clock_out !== '00:00:00')
+            <?php if(isset($employeeAttendance) && $employeeAttendance->clock_out && $employeeAttendance->clock_out !== '00:00:00'): ?>
                 if (!clockOutTime) {
-                    clockOutTime = new Date("{{ \Carbon\Carbon::parse($employeeAttendance->clock_out)->toIso8601String() }}");
+                    clockOutTime = new Date("<?php echo e(\Carbon\Carbon::parse($employeeAttendance->clock_out)->toIso8601String()); ?>");
                     localStorage.setItem("clockOutTime", clockOutTime.toISOString());
                     localStorage.setItem("isPunchedOut", "true");
                     localStorage.setItem("lastClockOutDate", new Date().toLocaleDateString());
                     isPunchedOut = true;
                 }
-            @endif
+            <?php endif; ?>
 
             function updateTimeDisplay() {
                 let now = new Date();
@@ -637,7 +645,7 @@
         });
     </script>
 
-    @endpush
+    <?php $__env->stopPush(); ?>
 
 <style>
 /* Simple modal styling */
@@ -663,3 +671,4 @@
     min-width: 120px;
 }
 </style>
+<?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/dashboard/dashboard.blade.php ENDPATH**/ ?>

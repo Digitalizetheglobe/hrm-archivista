@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Punch Out Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .btn { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        .btn-danger { background: #dc3545; color: white; border: none; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-content { background: white; margin: 100px auto; padding: 20px; width: 300px; border-radius: 8px; }
+        .debug { background: #f8f9fa; padding: 10px; margin: 10px 0; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Punch Out Debug Test</h1>
+    
+    <div class="debug" id="debugInfo">
+        <h3>Debug Information:</h3>
+        <div id="debugOutput">Loading...</div>
+    </div>
+
+    <button type="button" class="btn btn-danger" id="testClockOut">Test Punch Out</button>
+    
+    <!-- Simple Modal -->
+    <div id="testModal" class="modal">
+        <div class="modal-content">
+            <h3>Confirm Clock Out</h3>
+            <p>Are you sure you want to clock out?</p>
+            <button type="button" class="btn btn-danger" id="confirmBtn">Yes, Clock Out</button>
+            <button type="button" class="btn" id="cancelBtn">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let debugOutput = document.getElementById('debugOutput');
+        
+        function log(message) {
+            console.log(message);
+            debugOutput.innerHTML += '<br>' + message;
+        }
+
+        function testGeolocation() {
+            log('Testing geolocation...');
+            
+            if (!navigator.geolocation) {
+                log('❌ Geolocation not supported');
+                return false;
+            }
+            
+            log('✅ Geolocation supported');
+            
+            // Test location capture
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    log('✅ Location captured: ' + position.coords.latitude + ', ' + position.coords.longitude);
+                },
+                function(error) {
+                    log('❌ Location error: ' + error.message);
+                },
+                { timeout: 5000 }
+            );
+            
+            return true;
+        }
+
+        function testModal() {
+            log('Testing modal...');
+            
+            const modal = document.getElementById('testModal');
+            const testBtn = document.getElementById('testClockOut');
+            const confirmBtn = document.getElementById('confirmBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            
+            if (!modal) {
+                log('❌ Modal not found');
+                return false;
+            }
+            
+            if (!testBtn) {
+                log('❌ Test button not found');
+                return false;
+            }
+            
+            log('✅ Modal and button found');
+            
+            // Test button click
+            testBtn.addEventListener('click', function() {
+                log('🔘 Button clicked!');
+                modal.style.display = 'block';
+            });
+            
+            // Test close buttons
+            confirmBtn.addEventListener('click', function() {
+                log('✅ Confirm clicked');
+                modal.style.display = 'none';
+            });
+            
+            cancelBtn.addEventListener('click', function() {
+                log('❌ Cancel clicked');
+                modal.style.display = 'none';
+            });
+            
+            // Test button state
+            log('Button disabled: ' + testBtn.disabled);
+            log('Button visible: ' + (testBtn.offsetWidth > 0 && testBtn.offsetHeight > 0));
+            
+            return true;
+        }
+
+        // Run tests
+        window.addEventListener('load', function() {
+            log('=== Starting Debug Tests ===');
+            
+            log('User Agent: ' + navigator.userAgent);
+            log('Document ready: ' + (document.readyState === 'complete'));
+            
+            // Test modal
+            testModal();
+            
+            // Test geolocation
+            testGeolocation();
+            
+            log('=== Tests Complete ===');
+        });
+    </script>
+</body>
+</html>
