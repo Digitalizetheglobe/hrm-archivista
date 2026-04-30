@@ -543,164 +543,270 @@
                 console.log('Punch Out button enabled');
             }
 
+            // ONE-TIME PERMISSION CHECK ON PAGE LOAD
+            checkLocationPermissionOnLoad();
+
             if (!isPunchedOut) {
                 setInterval(updateProgress, 1000);
             }
 
             if (clockInButton) {
                 clockInButton.addEventListener("click", function (e) {
-                    e.preventDefault(); // Prevent form submission initially
-                    
+                    e.preventDefault();
                     console.log('Punch In button clicked!');
-                    const btn = clockInButton;
-                    const originalText = btn.innerText;
-                    
-                    // Disable button and show loading
-                    btn.disabled = true;
-                    btn.innerText = "Getting location...";
-                    
-                    // Get location (simple version)
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                            function(position) {
-                                console.log('Location captured for Punch In:', position.coords.latitude, position.coords.longitude);
-                                
-                                // Set location values
-                                document.getElementById('latitude').value = position.coords.latitude;
-                                document.getElementById('longitude').value = position.coords.longitude;
-                                document.getElementById('location').value = "Location captured";
-                                
-                                btn.innerText = "Submitting...";
-                                
-                                // Update localStorage
-                                let now = new Date();
-                                localStorage.setItem("clockInTime", now.toISOString());
-                                localStorage.removeItem("isPunchedOut");
-                                localStorage.removeItem("clockOutTime");
-                                localStorage.removeItem("lastClockOutDate");
-                                clockInTime = now;
-                                clockOutTime = null;
-                                isPunchedOut = false;
-                                updateUI();
-                                
-                                // Submit form
-                                setTimeout(() => {
-                                    document.getElementById('attendanceForm').submit();
-                                }, 1000);
-                                
-                            },
-                            function(error) {
-                                console.log('Location failed for Punch In:', error.message);
-                                
-                                // Set default location values
-                                document.getElementById('latitude').value = '0';
-                                document.getElementById('longitude').value = '0';
-                                document.getElementById('location').value = 'Location unavailable';
-                                
-                                btn.innerText = "Submitting without location...";
-                                
-                                // Update localStorage
-                                let now = new Date();
-                                localStorage.setItem("clockInTime", now.toISOString());
-                                localStorage.removeItem("isPunchedOut");
-                                localStorage.removeItem("clockOutTime");
-                                localStorage.removeItem("lastClockOutDate");
-                                clockInTime = now;
-                                clockOutTime = null;
-                                isPunchedOut = false;
-                                updateUI();
-                                
-                                // Submit form
-                                setTimeout(() => {
-                                    document.getElementById('attendanceForm').submit();
-                                }, 1000);
-                            },
-                            { timeout: 10000 }
-                        );
-                    } else {
-                        console.log('Geolocation not supported for Punch In');
-                        
-                        // Set default location values
-                        document.getElementById('latitude').value = '0';
-                        document.getElementById('longitude').value = '0';
-                        document.getElementById('location').value = 'Location not supported';
-                        
-                        btn.innerText = "Submitting...";
-                        
-                        // Update localStorage
-                        let now = new Date();
-                        localStorage.setItem("clockInTime", now.toISOString());
-                        localStorage.removeItem("isPunchedOut");
-                        localStorage.removeItem("clockOutTime");
-                        localStorage.removeItem("lastClockOutDate");
-                        clockInTime = now;
-                        clockOutTime = null;
-                        isPunchedOut = false;
-                        updateUI();
-                        
-                        // Submit form
-                        setTimeout(() => {
-                            document.getElementById('attendanceForm').submit();
-                        }, 1000);
-                    }
+                    handleLocationRequest('punch_in', clockInButton);
                 });
             }
 
-            // SIMPLE PUNCH OUT HANDLER
+            // NATIVE LOCATION PERMISSION SYSTEM
+            let locationPermissionGranted = false;
+            let locationPermissionChecked = false;
+
+            function handleLocationRequest(action, button) {
+                const originalText = button.innerText;
+                button.disabled = true;
+                button.innerText = "Getting location...";
+
+                // Check if we already know the permission status
+                if (locationPermissionGranted) {
+                    // Permission already granted, get location directly
+                    getLocationAndSubmit(action, button);
+                    return;
+                }
+
+                // Check permission status first
+                if (navigator.permissions) {
+                    navigator.permissions.query({ name: 'geolocation' }).then(result => {
+                        locationPermissionChecked = true;
+                        
+                        if (result.state === 'granted') {
+                            locationPermissionGranted = true;
+                            getLocationAndSubmit(action, button);
+                        } else if (result.state === 'prompt') {
+                            // Will trigger native browser permission dialog
+                            getLocationAndSubmit(action, button);
+                        } else if (result.state === 'denied') {
+                            // Permission denied, show simple error
+                            showSimpleLocationError(action, 'Location permission was denied. Please enable location access in your browser settings.');
+                            button.disabled = false;
+                            button.innerText = originalText;
+                        }
+                    }).catch(() => {
+                        // Permissions API not supported, try directly
+                        getLocationAndSubmit(action, button);
+                    });
+                } else {
+                    // Fallback: try directly (will show native permission if needed)
+                    getLocationAndSubmit(action, button);
+                }
+            }
+
+            function getLocationAndSubmit(action, button) {
+                if (!navigator.geolocation) {
+                    showSimpleLocationError(action, 'Your browser does not support location services. Please use a modern browser.');
+                    button.disabled = false;
+                    button.innerText = action === 'punch_in' ? 'Punch In' : 'Punch Out';
+                    return;
+                }
+
+                // Fast options for quick location
+                const fastOptions = {
+                    enableHighAccuracy: false,  // Faster but less accurate
+                    timeout: 3000,             // Reduced to 3s for speed
+                    maximumAge: 120000         // Allow cached location (2 minutes)
+                };
+
+                let locationTimeout;
+                let locationFound = false;
+
+                // Set a timeout to prevent hanging
+                locationTimeout = setTimeout(() => {
+                    if (!locationFound) {
+                        console.log('Fast location timeout, trying fallback...');
+                        tryFallbackLocation(action, button);
+                    }
+                }, 2500); // 2.5s fallback
+
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        locationFound = true;
+                        clearTimeout(locationTimeout);
+                        
+                        console.log('Fast location captured:', position.coords.latitude, position.coords.longitude);
+                        
+                        // Mark permission as granted for future use
+                        locationPermissionGranted = true;
+                        locationPermissionChecked = true;
+                        
+                        button.innerText = "Submitting...";
+                        
+                        // Set coordinates immediately
+                        document.getElementById('latitude').value = position.coords.latitude;
+                        document.getElementById('longitude').value = position.coords.longitude;
+                        document.getElementById('location').value = "Location captured";
+                        
+                        // Submit immediately for speed
+                        submitAttendance(action);
+                        
+                        // Get address in background (non-blocking)
+                        getAddressInBackground(position.coords.latitude, position.coords.longitude);
+                    },
+                    function(error) {
+                        locationFound = true;
+                        clearTimeout(locationTimeout);
+                        
+                        console.log('Fast location failed:', error.code);
+                        
+                        // Try fallback for certain errors
+                        if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
+                            tryFallbackLocation(action, button);
+                        } else {
+                            handleLocationError(action, button, error);
+                        }
+                    },
+                    fastOptions
+                );
+            }
+
+            function tryFallbackLocation(action, button) {
+                console.log('Trying fallback location method...');
+                
+                // Very fast options for fallback
+                const fallbackOptions = {
+                    enableHighAccuracy: false,
+                    timeout: 2000,
+                    maximumAge: 300000  // 5 minutes cached
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        console.log('Fallback location captured:', position.coords.latitude, position.coords.longitude);
+                        
+                        button.innerText = "Submitting...";
+                        
+                        // Set coordinates immediately
+                        document.getElementById('latitude').value = position.coords.latitude;
+                        document.getElementById('longitude').value = position.coords.longitude;
+                        document.getElementById('location').value = "Location captured";
+                        
+                        // Submit immediately
+                        submitAttendance(action);
+                        
+                        // Get address in background
+                        getAddressInBackground(position.coords.latitude, position.coords.longitude);
+                    },
+                    function(error) {
+                        console.log('Fallback location failed:', error.code);
+                        handleLocationError(action, button, error);
+                    },
+                    fallbackOptions
+                );
+            }
+
+            function handleLocationError(action, button, error) {
+                let errorMessage = '';
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'Location permission was denied. Please enable location access in your browser settings.';
+                        locationPermissionGranted = false;
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Location information unavailable. Please ensure GPS/location services are enabled.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'Location request timed out. Please check your connection and try again.';
+                        break;
+                    default:
+                        errorMessage = 'Unable to get location. Please try again.';
+                        break;
+                }
+                
+                showSimpleLocationError(action, errorMessage);
+                button.disabled = false;
+                button.innerText = action === 'punch_in' ? 'Punch In' : 'Punch Out';
+            }
+
+            function getAddressInBackground(lat, lon) {
+                // Get address in background without blocking
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update location field if still on page
+                        const locationField = document.getElementById('location');
+                        if (locationField && locationField.value === "Location captured") {
+                            locationField.value = data.display_name || "Location found";
+                        }
+                    })
+                    .catch(error => {
+                        console.log("Background geocoding skipped:", error.message);
+                    });
+            }
+
+            function showSimpleLocationError(action, message) {
+                // Simple alert instead of custom modal for native feel
+                alert(message);
+            }
+
+            function checkLocationPermissionOnLoad() {
+                // Check permission status on page load (silent)
+                if (navigator.permissions) {
+                    navigator.permissions.query({ name: 'geolocation' }).then(result => {
+                        locationPermissionChecked = true;
+                        
+                        if (result.state === 'granted') {
+                            locationPermissionGranted = true;
+                            console.log('Location permission already granted');
+                        } else if (result.state === 'prompt') {
+                            console.log('Location permission not yet requested');
+                            // Don't request on page load, wait for user action
+                        } else if (result.state === 'denied') {
+                            locationPermissionGranted = false;
+                            console.log('Location permission denied');
+                        }
+                    }).catch(() => {
+                        console.log('Permissions API not supported');
+                    });
+                } else {
+                    console.log('Permissions API not available');
+                }
+            }
+
+            function submitAttendance(action) {
+                // Update localStorage
+                let now = new Date();
+                
+                if (action === 'punch_in') {
+                    localStorage.setItem("clockInTime", now.toISOString());
+                    localStorage.removeItem("isPunchedOut");
+                    localStorage.removeItem("clockOutTime");
+                    localStorage.removeItem("lastClockOutDate");
+                    clockInTime = now;
+                    clockOutTime = null;
+                    isPunchedOut = false;
+                } else {
+                    localStorage.removeItem("clockInTime");
+                    localStorage.removeItem("clockOutTime");
+                    localStorage.removeItem("isPunchedOut");
+                    localStorage.setItem("lastClockOutDate", now.toLocaleDateString());
+                    clockOutTime = now;
+                    isPunchedOut = true;
+                }
+                
+                updateUI();
+                
+                // Submit the form
+                setTimeout(() => {
+                    document.getElementById('attendanceForm').submit();
+                }, 500);
+            }
+
+            // PUNCH OUT HANDLER
             if (confirmClockOutBtn) {
                 confirmClockOutBtn.addEventListener("click", function () {
                     console.log('Confirm Clock Out button clicked!');
-                    simpleClockOut();
+                    handleLocationRequest('punch_out', confirmClockOutBtn);
                 });
-            }
-
-            function simpleClockOut() {
-                const btn = document.getElementById('confirmClockOutBtn');
-                const originalText = btn.innerText;
-                
-                // Disable button and show loading
-                btn.disabled = true;
-                btn.innerText = "Getting location...";
-                
-                // Get location (simple version)
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        function(position) {
-                            console.log('Location captured:', position.coords.latitude, position.coords.longitude);
-                            
-                            // Set location values
-                            document.getElementById('latitude').value = position.coords.latitude;
-                            document.getElementById('longitude').value = position.coords.longitude;
-                            document.getElementById('location').value = "Location captured";
-                            
-                            btn.innerText = "Submitting...";
-                            
-                            // Submit form
-                            setTimeout(() => {
-                                document.getElementById('attendanceForm').submit();
-                            }, 1000);
-                            
-                        },
-                        function(error) {
-                            console.log('Location failed:', error.message);
-                            
-                            // Still submit without location
-                            btn.innerText = "Submitting without location...";
-                            
-                            setTimeout(() => {
-                                document.getElementById('attendanceForm').submit();
-                            }, 1000);
-                        },
-                        { timeout: 10000 }
-                    );
-                } else {
-                    console.log('Geolocation not supported');
-                    btn.innerText = "Submitting...";
-                    
-                    setTimeout(() => {
-                        document.getElementById('attendanceForm').submit();
-                    }, 1000);
-                }
             }
 
             // At the start of your script, add this check:

@@ -971,12 +971,9 @@ class AttendanceEmployeeController extends Controller
 
         // ================= PUNCH IN (Normal) =================
         if (!$attendance) {
-            // Location is now optional - allow punch in without location
-            if (!$latitude || !$longitude) {
-                // Set default values if location not available
-                $latitude = '0';
-                $longitude = '0';
-                $location = 'Location unavailable';
+            // Location is MANDATORY for Punch In
+            if (!$latitude || !$longitude || $latitude == '0' || $longitude == '0') {
+                return redirect()->back()->with('error', __('Location is required for Punch In. Please enable location services and try again.'));
             }
 
             $attendance = new AttendanceEmployee();
@@ -991,16 +988,10 @@ class AttendanceEmployeeController extends Controller
             $attendance->total_rest = '00:00:00';
             $attendance->created_by = \Auth::user()->id;
             
-            // Only set location if it's not the default values
-            if ($latitude != '0' && $longitude != '0') {
-                $attendance->clock_in_latitude = $latitude;
-                $attendance->clock_in_longitude = $longitude;
-                $attendance->clock_in_location = $this->geocodeCoordinates($latitude, $longitude);
-            } else {
-                $attendance->clock_in_latitude = null;
-                $attendance->clock_in_longitude = null;
-                $attendance->clock_in_location = 'Location not captured';
-            }
+            // Set location data
+            $attendance->clock_in_latitude = $latitude;
+            $attendance->clock_in_longitude = $longitude;
+            $attendance->clock_in_location = $this->geocodeCoordinates($latitude, $longitude);
             
             $attendance->save();
 
@@ -1011,28 +1002,16 @@ class AttendanceEmployeeController extends Controller
         if ($siteVisit) {
             // PUNCH IN (Site Visit)
             if (empty($attendance->clock_in_2) || $attendance->clock_in_2 === '00:00:00') {
-                // Location is now optional for Site Visit as well
-                if (!$latitude || !$longitude) {
-                    // Set default values if location not available
-                    $latitude = '0';
-                    $longitude = '0';
-                    $location = 'Location unavailable';
+                // Location is MANDATORY for Site Visit Punch In
+                if (!$latitude || !$longitude || $latitude == '0' || $longitude == '0') {
+                    return redirect()->back()->with('error', __('Location is required for Site Visit Punch In. Please enable location services and try again.'));
                 }
 
                 $attendance->clock_in_2 = $time;
-                
-                // Only set location if it's not the default values
-                if ($latitude != '0' && $longitude != '0') {
-                    $attendance->clock_in_2_latitude = $latitude;
-                    $attendance->clock_in_2_longitude = $longitude;
-                    $attendance->clock_in_2_location = $this->geocodeCoordinates($latitude, $longitude);
-                    $attendance->clock_in_2_location_captured_at = now();
-                } else {
-                    $attendance->clock_in_2_latitude = null;
-                    $attendance->clock_in_2_longitude = null;
-                    $attendance->clock_in_2_location = 'Location not captured';
-                    $attendance->clock_in_2_location_captured_at = now();
-                }
+                $attendance->clock_in_2_latitude = $latitude;
+                $attendance->clock_in_2_longitude = $longitude;
+                $attendance->clock_in_2_location = $this->geocodeCoordinates($latitude, $longitude);
+                $attendance->clock_in_2_location_captured_at = now();
                 
                 $attendance->save();
 
@@ -1041,28 +1020,16 @@ class AttendanceEmployeeController extends Controller
 
             // PUNCH OUT (Site Visit)
             if (empty($attendance->clock_out_2) || $attendance->clock_out_2 === '00:00:00') {
-                // Location is now optional for Site Visit Punch Out as well
-                if (!$latitude || !$longitude) {
-                    // Set default values if location not available
-                    $latitude = '0';
-                    $longitude = '0';
-                    $location = 'Location unavailable';
+                // Location is MANDATORY for Site Visit Punch Out
+                if (!$latitude || !$longitude || $latitude == '0' || $longitude == '0') {
+                    return redirect()->back()->with('error', __('Location is required for Site Visit Punch Out. Please enable location services and try again.'));
                 }
 
                 $attendance->clock_out_2 = $time;
-                
-                // Only set location if it's not the default values
-                if ($latitude != '0' && $longitude != '0') {
-                    $attendance->clock_out_2_latitude = $latitude;
-                    $attendance->clock_out_2_longitude = $longitude;
-                    $attendance->clock_out_2_location = $this->geocodeCoordinates($latitude, $longitude);
-                    $attendance->clock_out_2_location_captured_at = now();
-                } else {
-                    $attendance->clock_out_2_latitude = null;
-                    $attendance->clock_out_2_longitude = null;
-                    $attendance->clock_out_2_location = 'Location not captured';
-                    $attendance->clock_out_2_location_captured_at = now();
-                }
+                $attendance->clock_out_2_latitude = $latitude;
+                $attendance->clock_out_2_longitude = $longitude;
+                $attendance->clock_out_2_location = $this->geocodeCoordinates($latitude, $longitude);
+                $attendance->clock_out_2_location_captured_at = now();
 
                 $attendance->save();
 
@@ -1077,12 +1044,9 @@ class AttendanceEmployeeController extends Controller
                 return redirect()->back()->with('error', __('Please complete your Site Visit punches before normal Punch Out.'));
             }
 
-            // Location is now optional for Punch Out as well
-            if (!$latitude || !$longitude) {
-                // Set default values if location not available
-                $latitude = '0';
-                $longitude = '0';
-                $location = 'Location unavailable';
+            // Location is MANDATORY for Punch Out
+            if (!$latitude || !$longitude || $latitude == '0' || $longitude == '0') {
+                return redirect()->back()->with('error', __('Location is required for Punch Out. Please enable location services and try again.'));
             }
 
             $attendance->clock_out = $time;
@@ -1104,16 +1068,10 @@ class AttendanceEmployeeController extends Controller
             $otSec = $totalSec - (8.5 * 3600);
             $attendance->overtime = ($otSec > 0) ? gmdate('H:i:s', $otSec) : '00:00:00';
 
-            // Only set location if it's not the default values
-            if ($latitude != '0' && $longitude != '0') {
-                $attendance->clock_out_latitude = $latitude;
-                $attendance->clock_out_longitude = $longitude;
-                $attendance->clock_out_location = $this->geocodeCoordinates($latitude, $longitude);
-            } else {
-                $attendance->clock_out_latitude = null;
-                $attendance->clock_out_longitude = null;
-                $attendance->clock_out_location = 'Location not captured';
-            }
+            // Set location data
+            $attendance->clock_out_latitude = $latitude;
+            $attendance->clock_out_longitude = $longitude;
+            $attendance->clock_out_location = $this->geocodeCoordinates($latitude, $longitude);
 
             $attendance->save();
 
