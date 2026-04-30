@@ -555,48 +555,175 @@
                     confirmClockOutBtn.disabled = true;
                     confirmClockOutBtn.innerText = "Capturing Location...";
 
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                            function(position) {
-                                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        document.getElementById('latitude').value = position.coords.latitude;
-                                        document.getElementById('longitude').value = position.coords.longitude;
-                                        document.getElementById('location').value = data.display_name || "Unknown Location";
+                    // Enhanced location request with mobile-like behavior
+                    requestLocationWithPermission();
+                });
+            }
 
-                                        confirmClockOutBtn.innerText = "Submitting...";
-                                        performClockOut();
-                                    })
-                                    .catch(error => {
-                                        console.error("Clock Out Geocoding Error:", error);
-                                        document.getElementById('latitude').value = position.coords.latitude;
-                                        document.getElementById('longitude').value = position.coords.longitude;
-                                        document.getElementById('location').value = "Location found, address unavailable";
+            // Mobile-like location permission request
+            function requestLocationWithPermission() {
+                // Check if geolocation is supported
+                if (!navigator.geolocation) {
+                    showLocationPermissionDialog("Your browser doesn't support location services. Please update your browser or use a different device.", false);
+                    return;
+                }
 
-                                        confirmClockOutBtn.innerText = "Submitting...";
-                                        performClockOut();
-                                    });
-                            },
-                            function(error) {
-                                let errorMsg = "Could not access location.";
-                                switch(error.code) {
-                                    case error.PERMISSION_DENIED:
-                                        errorMsg = "Location permission denied. Please allow location access.";
-                                        break;
-                                    case error.POSITION_UNAVAILABLE:
-                                        errorMsg = "Location information is unavailable. Please ensure GPS is ON.";
-                                        break;
-                                    case error.TIMEOUT:
-                                        errorMsg = "Location request timed out. Proceeding with clock out.";
-                                        break;
-                                }
-                                alert(errorMsg);
-                                
-                                if (error.code === error.TIMEOUT) {
-                                    performClockOut();
-                                } else {
-                                    confirmClockOutBtn.disabled = false;
+                // Check if we already have permission
+                if (navigator.permissions) {
+                    navigator.permissions.query({ name: 'geolocation' }).then(result => {
+                        if (result.state === 'granted') {
+                            // Permission already granted, get location immediately
+                            getCurrentLocationForAttendance();
+                        } else if (result.state === 'prompt') {
+                            // Will show permission prompt
+                            showLocationPermissionDialog("Please allow location access to mark attendance with location verification.", true, () => {
+                                getCurrentLocationForAttendance();
+                            });
+                        } else if (result.state === 'denied') {
+                            // Permission denied, show settings instructions
+                            showLocationPermissionDialog("Location permission was denied. Please enable location access in your browser settings.", false);
+                        }
+                    }).catch(() => {
+                        // Fallback if permissions API not supported
+                        getCurrentLocationForAttendance();
+                    });
+                } else {
+                    // Fallback for older browsers
+                    getCurrentLocationForAttendance();
+                }
+            }
+
+            // Get current location for attendance
+            function getCurrentLocationForAttendance() {
+                confirmClockOutBtn.innerText = "Getting Location...";
+                
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        confirmClockOutBtn.innerText = "Getting Address...";
+                        
+                        // Get address from coordinates
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                document.getElementById('latitude').value = position.coords.latitude;
+                                document.getElementById('longitude').value = position.coords.longitude;
+                                document.getElementById('location').value = data.display_name || "Location found, address unavailable";
+
+                                confirmClockOutBtn.innerText = "Submitting...";
+                                performClockOut();
+                            })
+                            .catch(error => {
+                                console.error("Geocoding Error:", error);
+                                // Still submit with coordinates even if address fails
+                                document.getElementById('latitude').value = position.coords.latitude;
+                                document.getElementById('longitude').value = position.coords.longitude;
+                                document.getElementById('location').value = "Location found, address unavailable";
+
+                                confirmClockOutBtn.innerText = "Submitting...";
+                                performClockOut();
+                            });
+                    },
+                    function(error) {
+                        let errorMsg = "Location access required for attendance.";
+                        let canProceed = false;
+                        
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMsg = "Location permission denied. Please allow location access to mark attendance with location verification.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMsg = "Location information unavailable. Please ensure GPS/location services are enabled.";
+                                canProceed = true; // Allow proceeding without location
+                                break;
+                            case error.TIMEOUT:
+                                errorMsg = "Location request timed out. Please try again or proceed without location.";
+                                canProceed = true;
+                                break;
+                        }
+                        
+                        showLocationPermissionDialog(errorMsg, canProceed, () => {
+                            performClockOut();
+                        });
+                    },
+                    options
+                );
+            }
+
+            // Mobile-like permission dialog
+            function showLocationPermissionDialog(message, canProceed, onProceed = null) {
+                // Create modal overlay
+                const modalOverlay = document.createElement('div');
+                modalOverlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                `;
+
+                // Create dialog box
+                const dialogBox = document.createElement('div');
+                dialogBox.style.cssText = `
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                    max-width: 350px;
+                    text-align: center;
+                `;
+
+                dialogBox.innerHTML = `
+                    <div style="font-size: 24px; margin-bottom: 15px;">📍</div>
+                    <h3 style="margin: 0 0 15px 0; color: #333;">Location Access</h3>
+                    <p style="margin: 0 0 20px 0; color: #666; line-height: 1.4;">${message}</p>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        ${canProceed ? `<button id="proceedBtn" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Proceed Without Location</button>` : ''}
+                        <button id="retryBtn" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">${canProceed ? 'Try Again' : 'OK'}</button>
+                    </div>
+                `;
+
+                modalOverlay.appendChild(dialogBox);
+                document.body.appendChild(modalOverlay);
+
+                // Handle button clicks
+                document.getElementById('retryBtn').addEventListener('click', () => {
+                    document.body.removeChild(modalOverlay);
+                    if (canProceed && onProceed) {
+                        onProceed();
+                    } else {
+                        confirmClockOutBtn.disabled = false;
+                        confirmClockOutBtn.innerText = "Confirm Clock Out";
+                    }
+                });
+
+                if (canProceed) {
+                    document.getElementById('proceedBtn').addEventListener('click', () => {
+                        document.body.removeChild(modalOverlay);
+                        if (onProceed) {
+                            onProceed();
+                        }
+                    });
+                }
+
+                // Close on overlay click
+                modalOverlay.addEventListener('click', (e) => {
+                    if (e.target === modalOverlay) {
+                        document.body.removeChild(modalOverlay);
+                        confirmClockOutBtn.disabled = false;
+                        confirmClockOutBtn.innerText = "Confirm Clock Out";
+                    }
+                });
                                     confirmClockOutBtn.innerText = originalText;
                                 }
                             },
@@ -678,47 +805,57 @@
                         btn.innerText = "Capturing Location...";
 
                         if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(
-                                function(position) {
-                                    document.getElementById('latitude').value = position.coords.latitude;
-                                    document.getElementById('longitude').value = position.coords.longitude;
-                                    
-                                    // Submit form
-                                    btn.innerText = "Submitting...";
-                                    document.getElementById('attendanceForm').submit();
-                                },
-                                function(error) {
-                                    let errorMsg = "Could not access location.";
-                                    switch(error.code) {
-                                        case error.PERMISSION_DENIED:
-                                            errorMsg = "Location permission denied. Please allow location access in your app settings.";
-                                            break;
-                                        case error.POSITION_UNAVAILABLE:
-                                            errorMsg = "Location information is unavailable. Please ensure your GPS is turned ON.";
-                                            break;
-                                        case error.TIMEOUT:
-                                            errorMsg = "The request to get user location timed out. Submitting without location.";
-                                            break;
-                                    }
-                                    
-                                    alert(errorMsg);
-                                    
-                                    // Restore button if needed, but the user asked to submit anyway in previous version
-                                    // Given the backend requirement, we should probably NOT submit if we need location
-                                    // But I'll follow the existing pattern of "Submit anyway" if it's a timeout
-                                    if (error.code === error.TIMEOUT) {
-                                        document.getElementById("attendanceForm").submit();
-                                    } else {
-                                        btn.disabled = false;
-                                        btn.innerText = originalText;
-                                    }
-                                },
-                                { 
-                                    enableHighAccuracy: true, 
-                                    timeout: 15000, 
-                                    maximumAge: 0 
+                            const options = { 
+                                enableHighAccuracy: true, 
+                                timeout: 15000, 
+                                maximumAge: 0 
+                            };
+
+                            function successCallback(position) {
+                                document.getElementById('latitude').value = position.coords.latitude;
+                                document.getElementById('longitude').value = position.coords.longitude;
+                                
+                                btn.innerText = "Submitting...";
+                                document.getElementById('attendanceForm').submit();
+                            }
+
+                            function errorCallback(error) {
+                                // Fallback to low accuracy if high accuracy fails
+                                if (options.enableHighAccuracy && error.code === error.POSITION_UNAVAILABLE) {
+                                    console.log("High accuracy failed, trying low accuracy...");
+                                    options.enableHighAccuracy = false;
+                                    options.timeout = 20000;
+                                    navigator.geolocation.getCurrentPosition(successCallback, finalErrorCallback, options);
+                                    return;
                                 }
-                            );
+                                finalErrorCallback(error);
+                            }
+
+                            function finalErrorCallback(error) {
+                                let errorMsg = "Could not access location.";
+                                switch(error.code) {
+                                    case error.PERMISSION_DENIED:
+                                        errorMsg = "Location permission denied. Please allow location access in your app settings.";
+                                        break;
+                                    case error.POSITION_UNAVAILABLE:
+                                        errorMsg = "Location information is unavailable. Please ensure your GPS is turned ON and you have a clear view of the sky.";
+                                        break;
+                                    case error.TIMEOUT:
+                                        errorMsg = "The request to get user location timed out. Submitting without location.";
+                                        break;
+                                }
+                                
+                                alert(errorMsg);
+                                
+                                if (error.code === error.TIMEOUT) {
+                                    document.getElementById("attendanceForm").submit();
+                                } else {
+                                    btn.disabled = false;
+                                    btn.innerText = originalText;
+                                }
+                            }
+
+                            navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
                         } else {
                             alert("Geolocation is not supported by this device.");
                             document.getElementById("attendanceForm").submit();
