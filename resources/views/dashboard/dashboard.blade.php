@@ -549,15 +549,100 @@
 
             if (clockInButton) {
                 clockInButton.addEventListener("click", function (e) {
-                    let now = new Date();
-                    localStorage.setItem("clockInTime", now.toISOString());
-                    localStorage.removeItem("isPunchedOut");
-                    localStorage.removeItem("clockOutTime");
-                    localStorage.removeItem("lastClockOutDate");
-                    clockInTime = now;
-                    clockOutTime = null;
-                    isPunchedOut = false;
-                    updateUI();
+                    e.preventDefault(); // Prevent form submission initially
+                    
+                    console.log('Punch In button clicked!');
+                    const btn = clockInButton;
+                    const originalText = btn.innerText;
+                    
+                    // Disable button and show loading
+                    btn.disabled = true;
+                    btn.innerText = "Getting location...";
+                    
+                    // Get location (simple version)
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            function(position) {
+                                console.log('Location captured for Punch In:', position.coords.latitude, position.coords.longitude);
+                                
+                                // Set location values
+                                document.getElementById('latitude').value = position.coords.latitude;
+                                document.getElementById('longitude').value = position.coords.longitude;
+                                document.getElementById('location').value = "Location captured";
+                                
+                                btn.innerText = "Submitting...";
+                                
+                                // Update localStorage
+                                let now = new Date();
+                                localStorage.setItem("clockInTime", now.toISOString());
+                                localStorage.removeItem("isPunchedOut");
+                                localStorage.removeItem("clockOutTime");
+                                localStorage.removeItem("lastClockOutDate");
+                                clockInTime = now;
+                                clockOutTime = null;
+                                isPunchedOut = false;
+                                updateUI();
+                                
+                                // Submit form
+                                setTimeout(() => {
+                                    document.getElementById('attendanceForm').submit();
+                                }, 1000);
+                                
+                            },
+                            function(error) {
+                                console.log('Location failed for Punch In:', error.message);
+                                
+                                // Set default location values
+                                document.getElementById('latitude').value = '0';
+                                document.getElementById('longitude').value = '0';
+                                document.getElementById('location').value = 'Location unavailable';
+                                
+                                btn.innerText = "Submitting without location...";
+                                
+                                // Update localStorage
+                                let now = new Date();
+                                localStorage.setItem("clockInTime", now.toISOString());
+                                localStorage.removeItem("isPunchedOut");
+                                localStorage.removeItem("clockOutTime");
+                                localStorage.removeItem("lastClockOutDate");
+                                clockInTime = now;
+                                clockOutTime = null;
+                                isPunchedOut = false;
+                                updateUI();
+                                
+                                // Submit form
+                                setTimeout(() => {
+                                    document.getElementById('attendanceForm').submit();
+                                }, 1000);
+                            },
+                            { timeout: 10000 }
+                        );
+                    } else {
+                        console.log('Geolocation not supported for Punch In');
+                        
+                        // Set default location values
+                        document.getElementById('latitude').value = '0';
+                        document.getElementById('longitude').value = '0';
+                        document.getElementById('location').value = 'Location not supported';
+                        
+                        btn.innerText = "Submitting...";
+                        
+                        // Update localStorage
+                        let now = new Date();
+                        localStorage.setItem("clockInTime", now.toISOString());
+                        localStorage.removeItem("isPunchedOut");
+                        localStorage.removeItem("clockOutTime");
+                        localStorage.removeItem("lastClockOutDate");
+                        clockInTime = now;
+                        clockOutTime = null;
+                        isPunchedOut = false;
+                        updateUI();
+                        
+                        // Submit form
+                        setTimeout(() => {
+                            document.getElementById('attendanceForm').submit();
+                        }, 1000);
+                    }
                 });
             }
 
