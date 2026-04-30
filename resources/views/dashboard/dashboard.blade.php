@@ -551,47 +551,58 @@
             // In your clock out confirmation handler:
             if (confirmClockOutBtn) {
                 confirmClockOutBtn.addEventListener("click", function () {
-                    // Capture location before clocking out
+                    const originalText = confirmClockOutBtn.innerText;
+                    confirmClockOutBtn.disabled = true;
+                    confirmClockOutBtn.innerText = "Capturing Location...";
+
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
                             function(position) {
                                 fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
                                     .then(response => response.json())
                                     .then(data => {
-                                        // Set location data for punch out
                                         document.getElementById('latitude').value = position.coords.latitude;
                                         document.getElementById('longitude').value = position.coords.longitude;
                                         document.getElementById('location').value = data.display_name || "Unknown Location";
 
-                                        console.log("Clock Out Location:", {
-                                            lat: position.coords.latitude,
-                                            lng: position.coords.longitude,
-                                            location: data.display_name || "Unknown Location"
-                                        });
-
-                                        // Proceed with clock out
+                                        confirmClockOutBtn.innerText = "Submitting...";
                                         performClockOut();
                                     })
                                     .catch(error => {
                                         console.error("Clock Out Geocoding Error:", error);
-                                        alert("Location found but address could not be resolved. Proceeding with clock out.");
-
-                                        // Set location data without address
                                         document.getElementById('latitude').value = position.coords.latitude;
                                         document.getElementById('longitude').value = position.coords.longitude;
                                         document.getElementById('location').value = "Location found, address unavailable";
 
+                                        confirmClockOutBtn.innerText = "Submitting...";
                                         performClockOut();
                                     });
                             },
                             function(error) {
-                                console.error("Clock Out Geolocation error:", error);
-                                alert("Could not access your location. Proceeding with clock out.");
-                                performClockOut();
+                                let errorMsg = "Could not access location.";
+                                switch(error.code) {
+                                    case error.PERMISSION_DENIED:
+                                        errorMsg = "Location permission denied. Please allow location access.";
+                                        break;
+                                    case error.POSITION_UNAVAILABLE:
+                                        errorMsg = "Location information is unavailable. Please ensure GPS is ON.";
+                                        break;
+                                    case error.TIMEOUT:
+                                        errorMsg = "Location request timed out. Proceeding with clock out.";
+                                        break;
+                                }
+                                alert(errorMsg);
+                                
+                                if (error.code === error.TIMEOUT) {
+                                    performClockOut();
+                                } else {
+                                    confirmClockOutBtn.disabled = false;
+                                    confirmClockOutBtn.innerText = originalText;
+                                }
                             },
                             {
                                 enableHighAccuracy: true,
-                                timeout: 10000,
+                                timeout: 15000,
                                 maximumAge: 0
                             }
                         );
@@ -660,20 +671,56 @@
                 if (btn) {
                     btn.addEventListener("click", function (e) {
                         e.preventDefault();
+                        
+                        // Disable button and show loading
+                        const originalText = btn.innerText;
+                        btn.disabled = true;
+                        btn.innerText = "Capturing Location...";
+
                         if (navigator.geolocation) {
                             navigator.geolocation.getCurrentPosition(
                                 function(position) {
                                     document.getElementById('latitude').value = position.coords.latitude;
                                     document.getElementById('longitude').value = position.coords.longitude;
+                                    
+                                    // Submit form
+                                    btn.innerText = "Submitting...";
                                     document.getElementById('attendanceForm').submit();
                                 },
                                 function(error) {
-                                    alert("Could not access location. Submitting without it.");
-                                    document.getElementById("attendanceForm").submit();
+                                    let errorMsg = "Could not access location.";
+                                    switch(error.code) {
+                                        case error.PERMISSION_DENIED:
+                                            errorMsg = "Location permission denied. Please allow location access in your app settings.";
+                                            break;
+                                        case error.POSITION_UNAVAILABLE:
+                                            errorMsg = "Location information is unavailable. Please ensure your GPS is turned ON.";
+                                            break;
+                                        case error.TIMEOUT:
+                                            errorMsg = "The request to get user location timed out. Submitting without location.";
+                                            break;
+                                    }
+                                    
+                                    alert(errorMsg);
+                                    
+                                    // Restore button if needed, but the user asked to submit anyway in previous version
+                                    // Given the backend requirement, we should probably NOT submit if we need location
+                                    // But I'll follow the existing pattern of "Submit anyway" if it's a timeout
+                                    if (error.code === error.TIMEOUT) {
+                                        document.getElementById("attendanceForm").submit();
+                                    } else {
+                                        btn.disabled = false;
+                                        btn.innerText = originalText;
+                                    }
                                 },
-                                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                                { 
+                                    enableHighAccuracy: true, 
+                                    timeout: 15000, 
+                                    maximumAge: 0 
+                                }
                             );
                         } else {
+                            alert("Geolocation is not supported by this device.");
                             document.getElementById("attendanceForm").submit();
                         }
                     });
