@@ -171,9 +171,13 @@
                                             {!! Form::label('employee_type', __('Employee Type'), ['class' => 'form-label']) !!}
                                             <select class="form-control" name="employee_type" id="employee_type">
                                                 <option value="">{{ __('Select Employee Type') }}</option>
-                                                <option value="Contract">{{ __('Contract') }}</option>
+                                                <option value="Consultant">{{ __('Consultant') }}</option>
                                                 <option value="Payroll">{{ __('Payroll') }}</option>
                                             </select>
+                                        </div>
+                                        <div class="form-group col-md-6" id="per_day_rate_field" style="display: none;">
+                                            {!! Form::label('per_day_rate', __('Per Day Rate'), ['class' => 'form-label']) !!}
+                                            {!! Form::number('per_day_rate', null, ['class' => 'form-control', 'step' => '0.01', 'min' => '0', 'placeholder' => 'Enter per day rate']) !!}
                                         </div>
                                     </div>
 
@@ -242,17 +246,7 @@
                     </div>
                 </div>
 
-                <!-- New Job Allocation Card -->
-                <div class="card em-card mt-3">
-                    <div class="card-header">
-                        <h5>{{ __('Job Allocation') }}</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                           
-                        </div>
-                    </div>
-                </div>
+
 
                 <div class="float-end">
                     <button type="submit" class="btn  btn-primary">{{ 'Create' }}</button>
@@ -316,6 +310,17 @@
             if (day < 10) day = "0" + day;
             var today = now.getFullYear() + '-' + month + '-' + day;
             $('.current_date').val(today);
+        });
+
+        // Show/hide per day rate field based on employee type selection
+        $(document).on('change', '#employee_type', function() {
+            var employeeType = $(this).val();
+            if (employeeType === 'Consultant' || employeeType === 'Payroll') {
+                $('#per_day_rate_field').show();
+            } else {
+                $('#per_day_rate_field').hide();
+                $('#per_day_rate').val(''); // Clear the value when hidden
+            }
         });
     </script>
 @endpush

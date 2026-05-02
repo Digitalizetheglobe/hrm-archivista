@@ -32,6 +32,7 @@ class Employee extends Model
         'company_doj',
         'company_dol',
         'employee_type',
+        'per_day_rate',
         'confirm_of_employment',
         'primary_skill',
         'secondary_skill',

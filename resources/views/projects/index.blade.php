@@ -24,6 +24,12 @@
             class="btn btn-sm btn-primary">
             <i class="ti ti-file-import"></i>
         </a>
+        
+        {{-- Export Button --}}
+        <a href="{{ route('projects.export') }}" data-bs-toggle="tooltip" title="Export"
+            class="btn btn-sm btn-primary">
+            <i class="ti ti-file-export"></i>
+        </a>
     @endcan
 @endsection
 

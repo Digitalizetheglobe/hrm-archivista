@@ -312,6 +312,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('projects/import', [ProjectController::class, 'import'])->name('projects.import');
     Route::post('projects/process-import', [ProjectController::class, 'processImport'])->name('projects.process-import');
 
+    Route::get('projects/export', [ProjectController::class, 'export'])->name('projects.export');
+
 });
 
 
@@ -2162,6 +2164,8 @@ Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('
 
 Route::get('clients/import', [ClientController::class, 'import'])->name('clients.import');
 Route::post('clients/import', [ClientController::class, 'processImport'])->name('clients.processImport');
+
+Route::get('clients/export', [ClientController::class, 'export'])->name('clients.export');
 
 
 Route::middleware(['auth'])->group(function() {

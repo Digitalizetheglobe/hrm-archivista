@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ClientsImport;
+use App\Exports\ClientsExport;
 
 class ClientController extends Controller
 {
@@ -163,5 +164,13 @@ class ClientController extends Controller
         }
     }
 
-    
+    public function export()
+    {
+        if (Gate::denies('Create Employee')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        return Excel::download(new ClientsExport(), 'clients_' . date('Y-m-d') . '.xlsx');
+    }
+
 }

@@ -10,6 +10,7 @@ use App\Models\Employee;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; // For direct SQL queries
 use App\Imports\ProjectsImport;
+use App\Exports\ProjectsExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 
@@ -128,5 +129,13 @@ class ProjectController extends Controller
         ->route('projects.index')
         ->with('success', 'Projects imported successfully!');
 }
+
+    public function export()
+    {
+        if (Auth::user()->can('Create Employee')) {
+            return Excel::download(new ProjectsExport(), 'projects_' . date('Y-m-d') . '.xlsx');
+        }
+        return redirect()->back()->with('error', 'Permission denied.');
+    }
 }
 

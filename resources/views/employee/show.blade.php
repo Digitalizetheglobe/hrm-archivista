@@ -111,10 +111,10 @@
                                                 <td>{{ $employee->designation->name }}</td>
                                             </tr>
                                             @endif
-                                            @if($employee->hourly_charged)
+                                            @if($employee->per_day_rate)
                                             <tr>
-                                                <th>{{ __('Hourly Rate') }}</th>
-                                                <td>{{ \Auth::user()->priceFormat($employee->hourly_charged) }}</td>
+                                                <th>{{ __('Per Day Rate') }}</th>
+                                                <td>{{ \Auth::user()->priceFormat($employee->per_day_rate) }}</td>
                                             </tr>
                                             @endif
                                             <tr>

@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use WhichBrowser\Parser;
 
@@ -80,9 +81,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->authenticate();
 
-        $request->session()->regenerate();
-
         $user = Auth::user();
+        
+        // Invalidate previous sessions for this user
+        $this->invalidatePreviousSessions($user);
+        
+        $request->session()->regenerate();
+        
+        // Track current session
+        $this->trackCurrentSession($user, $request);
         if ($user->is_active == 0) {
             auth()->logout();
             return redirect()->back();
@@ -205,8 +212,6 @@ class AuthenticatedSessionController extends Controller
             $login_detail->save();
         }
 
-        // $user->last_login = date('Y-m-d H:i:s');
-        // $user->save();
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 
@@ -271,6 +276,13 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request)
     {
+        $user = Auth::user();
+        
+        if ($user) {
+            // Clear session tracking
+            $user->current_session_id = null;
+            $user->save();
+        }
 
         Auth::guard('web')->logout();
 
@@ -279,5 +291,43 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+    
+    /**
+     * Invalidate previous sessions for the user
+     */
+    private function invalidatePreviousSessions($user)
+    {
+        if ($user->current_session_id) {
+            // Delete the previous session from database
+            DB::table('sessions')
+                ->where('id', $user->current_session_id)
+                ->delete();
+        }
+    }
+    
+    /**
+     * Track the current session for the user
+     */
+    private function trackCurrentSession($user, $request)
+    {
+        $sessionId = $request->session()->getId();
+        
+        // Update user with current session info
+        $user->current_session_id = $sessionId;
+        $user->last_login_at = now();
+        $user->last_login_ip = $request->ip();
+        
+        // Get device information
+        $whichbrowser = new \WhichBrowser\Parser($request->userAgent());
+        $deviceInfo = [
+            'browser' => $whichbrowser->browser->name ?? 'Unknown',
+            'platform' => $whichbrowser->os->name ?? 'Unknown',
+            'device_type' => $whichbrowser->device->type ?? 'desktop',
+            'user_agent' => $request->userAgent()
+        ];
+        $user->last_login_device = json_encode($deviceInfo);
+        
+        $user->save();
     }
 }

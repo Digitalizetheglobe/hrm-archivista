@@ -169,20 +169,25 @@
                                         {{ Form::date('company_doj', is_object($employee) ? $employee->company_doj : null, ['class' => 'form-control current_date', 'required' => 'required', 'autocomplete' => 'off', 'placeholder' => 'Select company date of joining']) }}
                                     </div>
                                     <div class="form-group col-md-6">
-                                        {!! Form::label('employee_type', __('Employee Type'), ['class' => 'form-label']) !!}
-                                        <select class="form-control" name="employee_type" id="employee_type">
-                                            <option value="">{{ __('Select Employee Type') }}</option>
-                                            <option value="Contract" {{ (is_object($employee) && $employee->employee_type == 'Contract') ? 'selected' : '' }}>{{ __('Contract') }}</option>
-                                            <option value="Payroll" {{ (is_object($employee) && $employee->employee_type == 'Payroll') ? 'selected' : '' }}>{{ __('Payroll') }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="form-group col-md-6">
                                         {!! Form::label('company_dol', __('Company Date Of Leaving'), ['class' => 'form-label']) !!}
                                         {{ Form::date('company_dol', is_object($employee) ? $employee->company_dol : null, ['class' => 'form-control', 'placeholder' => 'Select company date of leaving']) }}
                                     </div>
                                 </div>
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        {!! Form::label('employee_type', __('Employee Type'), ['class' => 'form-label']) !!}
+                                        <select class="form-control" name="employee_type" id="employee_type">
+                                            <option value="">{{ __('Select Employee Type') }}</option>
+                                            <option value="Consultant" {{ (is_object($employee) && $employee->employee_type == 'Consultant') ? 'selected' : '' }}>{{ __('Consultant') }}</option>
+                                            <option value="Payroll" {{ (is_object($employee) && $employee->employee_type == 'Payroll') ? 'selected' : '' }}>{{ __('Payroll') }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-6" id="per_day_rate_field" style="display: none;">
+                                        {!! Form::label('per_day_rate', __('Per Day Rate'), ['class' => 'form-label']) !!}
+                                        {!! Form::number('per_day_rate', is_object($employee) ? $employee->per_day_rate : null, ['class' => 'form-control', 'step' => '0.01', 'min' => '0', 'placeholder' => 'Enter per day rate']) !!}
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
 
@@ -249,16 +254,7 @@
                             </div>
                         </div>
                     </div>
-
-                     <!-- Job Allocation Card -->
-                     <div class="card em-card mt-3">
-                            <div class="card-header">
-                                <h5>{{ __('Job Allocation') }}</h5>
-                            </div>
-                            <div class="card-body">
-                                
-                            </div>
-                        </div>
+=
                 </div>
 
                 
@@ -321,6 +317,23 @@
                     $(this).val(today);
                 }
             });
+
+            // Initialize per day rate field visibility based on current employee type
+            var employeeType = $('#employee_type').val();
+            if (employeeType === 'Consultant' || employeeType === 'Payroll') {
+                $('#per_day_rate_field').show();
+            }
+        });
+
+        // Show/hide per day rate field based on employee type selection
+        $(document).on('change', '#employee_type', function() {
+            var employeeType = $(this).val();
+            if (employeeType === 'Consultant' || employeeType === 'Payroll') {
+                $('#per_day_rate_field').show();
+            } else {
+                $('#per_day_rate_field').hide();
+                $('#per_day_rate').val(''); // Clear the value when hidden
+            }
         });
     </script>
 @endpush
