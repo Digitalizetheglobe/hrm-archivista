@@ -8,8 +8,14 @@
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                <label class="form-label font-bold">{{ __('Date') }}</label>
-                <p>{{ Auth::user()->dateFormat($siteVisit->date) }}</p>
+                <label class="form-label font-bold">{{ __('Start Date') }}</label>
+                <p>{{ Auth::user()->dateFormat($siteVisit->start_date) }}</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label class="form-label font-bold">{{ __('End Date') }}</label>
+                <p>{{ Auth::user()->dateFormat($siteVisit->end_date) }}</p>
             </div>
         </div>
         <div class="col-md-12">

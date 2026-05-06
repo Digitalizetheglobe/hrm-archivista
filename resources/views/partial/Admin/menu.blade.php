@@ -489,6 +489,9 @@
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('payslip.index') }}">{{ __('Payslip') }}</a>
                         </li>
                         <li class="dash-item">
+                            <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('invoice.index') }}">{{ __('Invoice') }}</a>
+                        </li>
+                        <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('deduction.index') }}">{{ __('Deduction') }}</a>
                         </li>
                         <li class="dash-item">
@@ -519,6 +522,9 @@
                         </li>
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('payslip.index') }}">{{ __('Payslip') }}</a>
+                        </li>
+                        <li class="dash-item">
+                            <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('invoice.index') }}">{{ __('Invoice') }}</a>
                         </li>
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('deduction.index') }}">{{ __('Deduction') }}</a>

@@ -1,62 +1,63 @@
-@extends('layouts.admin')
+<?php $__env->startSection('page-title'); ?>
+   <?php echo e(__('Manage Employee Salary')); ?>
 
-@section('page-title')
-   {{ __('Manage Employee Salary') }}
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ __('Home') }}</a></li>
-    <li class="breadcrumb-item">{{ __('Employee Salary') }}</li>
-@endsection
+<?php $__env->startSection('breadcrumb'); ?>
+    <li class="breadcrumb-item"><a href="<?php echo e(route('dashboard')); ?>"><?php echo e(__('Home')); ?></a></li>
+    <li class="breadcrumb-item"><?php echo e(__('Employee Salary')); ?></li>
+<?php $__env->stopSection(); ?>
 
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="row">
 
     <div class="col-md-12 col-lg-12 col-sm-12 col-xl-12">
         <div class="card">
             <div class="card-header card-body table-border-style">
-                {{-- <h5></h5> --}}
+                
                 <div class="table-responsive">
                     <table class="table" id="pc-dt-simple">
                         <thead>
                             <tr>
-                                <th>{{ __('Employee Id') }}</th>
-                                <th>{{ __('Name') }}</th>
-                                <th>{{ __('Payroll Type') }}</th>
-                                <th>{{ __('Salary') }}</th>
-                                <th>{{ __('Net Salary') }}</th>
-                                <th width="200px">{{ __('Action') }}</th>
+                                <th><?php echo e(__('Employee Id')); ?></th>
+                                <th><?php echo e(__('Name')); ?></th>
+                                <th><?php echo e(__('Payroll Type')); ?></th>
+                                <th><?php echo e(__('Salary')); ?></th>
+                                <th><?php echo e(__('Net Salary')); ?></th>
+                                <th width="200px"><?php echo e(__('Action')); ?></th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($employees as $employee)
+                            <?php $__currentLoopData = $employees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $employee): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
                                     <td>
-                                        <a href="{{ route('setsalary.show', \Illuminate\Support\Facades\Crypt::encrypt($employee->id)) }}"
+                                        <a href="<?php echo e(route('setsalary.show', \Illuminate\Support\Facades\Crypt::encrypt($employee->id))); ?>"
                                             class="btn btn-outline-primary">
-                                            {{ \Auth::user()->employeeIdFormat($employee->employee_id) }}
+                                            <?php echo e(\Auth::user()->employeeIdFormat($employee->employee_id)); ?>
+
                                         </a>
                                     </td>
-                                    <td>{{ $employee->name }}</td>
-                                    <td>{{ !empty($employee->getSalaryTypeName()) ? $employee->getSalaryTypeName() : '-' }}</td>
-                                    <td>{{ \Auth::user()->priceFormat($employee->set_salary ?? 0) }}</td>
-                                    <td>{{ !empty($employee->get_net_salary()) ? \Auth::user()->priceFormat($employee->get_net_salary()) : '-' }}
+                                    <td><?php echo e($employee->name); ?></td>
+                                    <td><?php echo e(!empty($employee->getSalaryTypeName()) ? $employee->getSalaryTypeName() : '-'); ?></td>
+                                    <td><?php echo e(\Auth::user()->priceFormat($employee->set_salary ?? 0)); ?></td>
+                                    <td><?php echo e(!empty($employee->get_net_salary()) ? \Auth::user()->priceFormat($employee->get_net_salary()) : '-'); ?>
+
                                     </td>
                                     <td class="Action">
                                         <span>
                                             <div class="action-btn bg-warning ms-2">
                                                 <button type="button" 
                                                     class="mx-3 btn btn-sm align-items-center" data-bs-toggle="tooltip"
-                                                    title="" data-bs-original-title="{{ __('View') }}"
-                                                    onclick="openSalaryModal('{{ $employee->name }}', '{{ $employee->id }}', '{{ $employee->set_salary ?? 0 }}')">
+                                                    title="" data-bs-original-title="<?php echo e(__('View')); ?>"
+                                                    onclick="openSalaryModal('<?php echo e($employee->name); ?>', '<?php echo e($employee->id); ?>', '<?php echo e($employee->set_salary ?? 0); ?>')">
                                                     <i class="ti ti-eye text-white"></i>
                                                 </button>
                                             </div>
                                         </span>
                                     </td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
@@ -125,7 +126,7 @@ function saveSalary(btn) {
     var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     
     // Make AJAX call to save the salary
-    fetch(`{{ url('/employee/update/sallary') }}/${employeeId}`, {
+    fetch(`<?php echo e(url('/employee/update/sallary')); ?>/${employeeId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -163,4 +164,6 @@ function showSuccessModal(message) {
 }
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/setsalary/index.blade.php ENDPATH**/ ?>

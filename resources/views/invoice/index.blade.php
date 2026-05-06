@@ -1,12 +1,12 @@
 @extends('layouts.admin')
 
 @section('page-title')
-    {{ __('Payslip') }}
+    {{ __('Invoice') }}
 @endsection
 
 @section('breadcrumb')
     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ __('Dashboard') }}</a></li>
-    <li class="breadcrumb-item">{{ __('payslip') }}</li>
+    <li class="breadcrumb-item">{{ __('invoice') }}</li>
 @endsection
 
 @section('content')
@@ -14,7 +14,7 @@
         <div class="col-sm-12 col-lg-12 col-xl-12 col-md-12 mt-4">
             <div class="card">
                 <div class="card-body">
-                    {{ Form::open(['route' => ['payslip.store'], 'method' => 'POST', 'id' => 'payslip_form']) }}
+                    {{ Form::open(['route' => ['invoice.store'], 'method' => 'POST', 'id' => 'invoice_form']) }}
                     <div class="d-flex align-items-center justify-content-end">
                         <div class="col-xl-2 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
                             <div class="btn-box">
@@ -30,9 +30,9 @@
                         </div>
                         <div class="col-auto float-end ms-2 mt-4">
                             <a href="#" class="btn  btn-primary"
-                                onclick="document.getElementById('payslip_form').submit(); return false;"
-                                data-bs-toggle="tooltip" title="{{ __('payslip') }}"
-                                data-original-title="{{ __('payslip') }}">{{ __('Generate Payslip') }}
+                                onclick="document.getElementById('invoice_form').submit(); return false;"
+                                data-bs-toggle="tooltip" title="{{ __('invoice') }}"
+                                data-original-title="{{ __('invoice') }}">{{ __('Generate Invoice') }}
                             </a>
                         </div>
                     </div>
@@ -48,7 +48,7 @@
                 <div class="row">
                     <div class="col-md-4" style="margin-bottom: 10px;">
                         <div class="d-flex align-items-center justify-content-start">
-                            <h5>{{ __('Find Employee Payslip') }}</h5>
+                            <h5>{{ __('Find Employee Invoice') }}</h5>
                         </div>
                     </div>
                     <div class="col-md-8">
@@ -74,15 +74,14 @@
                                 </div>
                             </div>
                             @if (Auth::user()->type == 'company' || Auth::user()->type == 'hr')
-                                {{ Form::open(['route' => ['payslip.export'], 'method' => 'POST', 'id' => 'payslip_form']) }}
+                                {{ Form::open(['route' => ['invoice.export'], 'method' => 'POST', 'id' => 'invoice_export_form']) }}
                                 <input type="hidden" name="filter_month" class="filter_month">
                                 <input type="hidden" name="filter_year" class="filter_year">
                                 <input type="submit" value="{{ __('Export') }}" class="btn btn-primary">
                                 {{ Form::close() }}
                             @endif
-                            {{-- </div> --}}
                             <div class="ml-2 float-end">
-                                @can('Create Pay Slip')
+                                @can('Manage Pay Slip')
                                     <input type="button" value="{{ __('Bulk Payment') }}" class="btn btn-primary"
                                         style="margin-left: 5px" id="bulk_payment">
                                 @endcan
@@ -100,7 +99,6 @@
                                 @if (\Auth::user()->type != 'employee')
                                     <th>{{ __('Name') }}</th>
                                 @endif
-
                                 <th>{{ __('Salary') }}</th>
                                 <th>{{ __('Net Salary') }}</th>
                                 <th>{{ __('Status') }}</th>
@@ -139,7 +137,7 @@
                 var datePicker = year + '-' + month;
 
                 $.ajax({
-                    url: '{{ route('payslip.search_json') }}',
+                    url: '{{ route('invoice.search_json') }}',
                     type: 'POST',
                     data: {
                         "datePicker": datePicker,
@@ -178,21 +176,21 @@
 
                             if (data != 0) {
                                 var payslip =
-                                    '<a href="#" data-url="{{ url('payslip/pdf/') }}/' + id +
+                                    '<a href="#" data-url="{{ url('invoice/pdf/') }}/' + id +
                                     '/' + datePicker +
-                                    '" data-size="md-pdf"  data-ajax-popup="true" class="btn btn-primary" data-title="{{ __('Employee Payslip') }}">' +
-                                    '{{ __('Payslip') }}' + '</a> ';
+                                    '" data-size="md-pdf"  data-ajax-popup="true" class="btn btn-primary" data-title="{{ __('Employee Invoice') }}">' +
+                                    '{{ __('Invoice') }}' + '</a> ';
                             }
 
                             if (status == "UnPaid" && data != 0) {
-                                clickToPaid = '<a href="{{ url('payslip/paysalary/') }}/' + id +
+                                clickToPaid = '<a href="{{ url('invoice/paysalary/') }}/' + id +
                                     '/' + datePicker + '"  class="view-btn primary-bg btn-sm">' +
                                     '{{ __('Click To Paid') }}' + '</a>  ';
                             }
 
                             if (data != 0) {
                                 view =
-                                    '<a href="#" data-url="{{ url('payslip/showemployee/') }}/' +
+                                    '<a href="#" data-url="{{ url('invoice/showemployee/') }}/' +
                                     payslip_id +
                                     '"  data-ajax-popup="true" class="view-btn gray-bg" data-title="{{ __('View Employee Detail') }}">' +
                                     '{{ __('View') }}' + '</a>';
@@ -200,13 +198,13 @@
 
                             if (data != 0 && status == "UnPaid") {
                                 edit =
-                                    '<a href="#" data-url="{{ url('payslip/editemployee/') }}/' +
+                                    '<a href="#" data-url="{{ url('invoice/editemployee/') }}/' +
                                     payslip_id +
                                     '"  data-ajax-popup="true" class="view-btn blue-bg" data-title="{{ __('Edit Employee salary') }}">' +
                                     '{{ __('Edit') }}' + '</a>';
                             }
 
-                            var url = '{{ route('payslip.delete', ':id') }}';
+                            var url = '{{ route('invoice.delete', ':id') }}';
                             url = url.replace(':id', payslip_id);
 
                             @if (\Auth::user()->type == 'company' || \Auth::user()->type == 'employee')
@@ -238,16 +236,16 @@
                                 var employee_id = valueOfElement[1];
                                 var payslip_id = valueOfElement[6];
 
-                                if (valueOfElement[6] != 0) {
+                                if (valueOfElement[7] != 0) {
                                     var payslip =
-                                        '<a href="#" data-url="{{ url('payslip/pdf/') }}/' +
+                                        '<a href="#" data-url="{{ url('invoice/pdf/') }}/' +
                                         id + '/' + datePicker +
-                                        '" data-size="lg"  data-ajax-popup="true" class=" btn-sm btn btn-warning" data-title="{{ __('Employee Payslip') }}">' +
-                                        '{{ __('Payslip') }}' + '</a> ';
+                                        '" data-size="lg"  data-ajax-popup="true" class=" btn-sm btn btn-warning" data-title="{{ __('Employee Invoice') }}">' +
+                                        '{{ __('Invoice') }}' + '</a> ';
                                 }
                                 if (valueOfElement[5] == "UnPaid" && valueOfElement[6] != 0) {
                                     var clickToPaid =
-                                        '<a href="{{ url('payslip/paysalary/') }}/' + id +
+                                        '<a href="{{ url('invoice/paysalary/') }}/' + id +
                                         '/' + datePicker +
                                         '"  class="btn-sm btn btn-primary">' +
                                         '{{ __('Click To Paid') }}' + '</a>  ';
@@ -256,7 +254,7 @@
                                 }
                                 if (valueOfElement[6] != 0 && valueOfElement[5] == "UnPaid") {
                                     var edit =
-                                        '<a href="#" data-url="{{ url('payslip/editemployee/') }}/' +
+                                        '<a href="#" data-url="{{ url('invoice/editemployee/') }}/' +
                                         payslip_id +
                                         '"  data-ajax-popup="true" class="btn-sm btn btn-info" data-title="{{ __('Edit Employee salary') }}">' +
                                         '{{ __('Edit') }}' + '</a>';
@@ -264,7 +262,7 @@
                                     var edit = '';
                                 }
 
-                                var url = '{{ route('payslip.delete', ':id') }}';
+                                var url = '{{ route('invoice.delete', ':id') }}';
                                 url = url.replace(':id', payslip_id);
 
                                 @if (\Auth::user()->type == 'company' || \Auth::user()->type == 'hr')
@@ -322,36 +320,23 @@
             });
 
             //bulkpayment Click
-            $(document).on("click", "#bulk_payment", function() {
-                var month = $(".month_date").val();
-                var year = $(".year_date").val();
-                var datePicker = year + '_' + month;
-
-            });
-            $(document).on('click', '#bulk_payment',
-                'a[data-ajax-popup="true"], button[data-ajax-popup="true"], div[data-ajax-popup="true"]',
-                function() {
+            $(document).on('click', '#bulk_payment', function() {
                     var month = $(".month_date").val();
                     var year = $(".year_date").val();
                     var datePicker = year + '-' + month;
 
                     var title = 'Bulk Payment';
                     var size = 'md';
-                    var url = 'payslip/bulk_pay_create/' + datePicker;
-
-                    // return false;
+                    var url = 'invoice/bulk_pay_create/' + datePicker;
 
                     $("#commonModal .modal-title").html(title);
                     $("#commonModal .modal-dialog").addClass('modal-' + size);
                     $.ajax({
                         url: url,
                         success: function(data) {
-                            // alert(data);
-                            // return false;
                             if (data.length) {
                                 $('#commonModal .body').html(data);
                                 $("#commonModal").modal('show');
-                                // common_bind();
                             } else {
                                 show_toastr('error', 'Permission denied.');
                                 $("#commonModal").modal('hide');
@@ -365,7 +350,7 @@
                 });
 
             $(document).on("click", ".payslip_delete", function() {
-                var confirmation = confirm("are you sure you want to delete this payslip?");
+                var confirmation = confirm("are you sure you want to delete this invoice?");
                 var url = $(this).data('url');
 
                 if (confirmation) {
@@ -374,8 +359,7 @@
                         url: url,
                         dataType: "JSON",
                         success: function(data) {
-                            // show_toastr(data.status, data.msg, 'data.status');
-                            show_toastr('error', 'Payslip Deleted Successfully', 'success');
+                            show_toastr('error', 'Invoice Deleted Successfully', 'success');
 
                             setTimeout(function() {
                                 location.reload();

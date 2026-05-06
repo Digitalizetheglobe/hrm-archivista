@@ -52,10 +52,39 @@ class AttendanceEmployeeController extends Controller
         if ($clockOut == '00:00:00' || empty($clockOut)) {
             // Check if current time is after midnight (12:00 AM)
             $currentDateTime = new DateTime();
-            $midnightToday = new DateTime($date . ' 00:00:00');
+            $midnightToday = new DateTime($date . ' 23:59:59'); // End of the attendance day
             
             if ($currentDateTime > $midnightToday) {
-                $status = 'Single Punch In';
+                // If after midnight, mark punch out as company end time
+                $endTime = Utility::getValByName('company_end_time');
+                $clockOut = !empty($endTime) ? $endTime . ':00' : '18:00:00';
+                
+                // Re-calculate worked hours with this new clockOut
+                $workedSeconds = strtotime($clockOut) - strtotime($clockIn);
+                $workedHours = $workedSeconds / 3600;
+                
+                if ($workedHours < $halfDayHours) {
+                    $status = 'Half Day';
+                } elseif ($workedHours < $workingHours) {
+                    $status = 'Early Leaving';
+                } else {
+                    $status = 'Present';
+                }
+
+                // Recalculate early leaving/overtime for this automatic punch-out
+                if (strtotime($clockOut) < strtotime($date . ' ' . $endTime)) {
+                    $totalEarlyLeavingSeconds = strtotime($date . ' ' . $endTime) - strtotime($clockOut);
+                    $hours = floor($totalEarlyLeavingSeconds / 3600);
+                    $mins = floor($totalEarlyLeavingSeconds / 60 % 60);
+                    $secs = floor($totalEarlyLeavingSeconds % 60);
+                    $earlyLeaving = sprintf('%02d:%02d:%02d', $hours, $mins, $secs);
+                } elseif (strtotime($clockOut) > strtotime($date . ' ' . $endTime)) {
+                    $totalOvertimeSeconds = strtotime($clockOut) - strtotime($date . ' ' . $endTime);
+                    $hours = floor($totalOvertimeSeconds / 3600);
+                    $mins = floor($totalOvertimeSeconds / 60 % 60);
+                    $secs = floor($totalOvertimeSeconds % 60);
+                    $overtime = sprintf('%02d:%02d:%02d', $hours, $mins, $secs);
+                }
             } else {
                 $status = 'Half Day'; // Still same day, mark as half day
                 $clockOut = date('H:i:s', strtotime($clockIn) + (4 * 3600)); // 4 hours after punch-in
@@ -960,9 +989,9 @@ class AttendanceEmployeeController extends Controller
         $longitude = $request->input('longitude', null);
         $accuracy = $request->input('accuracy', null);
 
-        // Check for approved site visit
         $siteVisit = \App\Models\SiteVisit::where('employee_id', $employeeId)
-            ->where('date', $date)
+            ->where('start_date', '<=', $date)
+            ->where('end_date', '>=', $date)
             ->where('status', 'Approved')
             ->first();
 

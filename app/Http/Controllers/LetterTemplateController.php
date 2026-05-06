@@ -164,7 +164,11 @@ class LetterTemplateController extends Controller
 
         // Extract variables from template content
         preg_match_all('/\{([^}]+)\}/', $letterTemplate->content, $matches);
-        $variables = $matches[1];
+        $variables = array_unique($matches[1]); // Ensure variables are unique
+
+        if (request()->ajax()) {
+            return view('letter_templates.generate_modal', compact('letterTemplate', 'variables'));
+        }
 
         return view('letter_templates.generate', compact('letterTemplate', 'variables'));
     }

@@ -164,7 +164,11 @@
 
                                         <p id="attendanceStatus" class="font-bold">
                                             @php
-                                                $siteVisit = \App\Models\SiteVisit::where('employee_id', $emp->id)->where('date', date('Y-m-d'))->where('status', 'Approved')->first();
+                                                $siteVisit = \App\Models\SiteVisit::where('employee_id', $emp->id)
+                                                    ->where('start_date', '<=', date('Y-m-d'))
+                                                    ->where('end_date', '>=', date('Y-m-d'))
+                                                    ->where('status', 'Approved')
+                                                    ->first();
                                             @endphp
 
                                             @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)

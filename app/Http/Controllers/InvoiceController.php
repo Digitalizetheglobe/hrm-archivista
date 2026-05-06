@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\PayslipExport;
+use App\Exports\InvoiceExport;
 use App\Models\Allowance;
 use App\Models\Commission;
 use App\Models\Employee;
 use App\Models\Loan;
 use App\Mail\InvoiceSend;
-use App\Mail\PayslipSend;
 use App\Models\AccountList;
 use App\Models\Expense;
 use App\Models\OtherPayment;
 use App\Models\Overtime;
-use App\Models\PaySlip;
+use App\Models\Invoice;
 use App\Models\Resignation;
 use App\Models\SaturationDeduction;
 use App\Models\Termination;
@@ -25,7 +24,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
 
-class PaySlipController extends Controller
+class InvoiceController extends Controller
 {
 
     public function index()
@@ -57,23 +56,8 @@ class PaySlipController extends Controller
             for ($i = 0; $i < 10; $i++) {
                 $year[$tempyear + $i] = $tempyear + $i;
             }
-            // $year = [
 
-            //     '2021' => '2021',
-            //     '2022' => '2022',
-            //     '2023' => '2023',
-            //     '2024' => '2024',
-            //     '2025' => '2025',
-            //     '2026' => '2026',
-            //     '2027' => '2027',
-            //     '2028' => '2028',
-            //     '2029' => '2029',
-            //     '2030' => '2030',
-            //     '2031' => '2031',
-            //     '2032' => '2032',
-            // ];
-
-            return view('payslip.index', compact('employees', 'month', 'year'));
+            return view('invoice.index', compact('employees', 'month', 'year'));
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
@@ -106,25 +90,28 @@ class PaySlipController extends Controller
 
 
         $formate_month_year = $year . '-' . $month;
-        $validatePaysilp    = PaySlip::where('salary_month', '=', $formate_month_year)->where('created_by', \Auth::user()->creatorId())->pluck('employee_id');
-        $payslip_employee   = Employee::where('created_by', \Auth::user()->creatorId())->where('company_doj', '<=', date($year . '-' . $month . '-t'))->where('employee_type', 'Payroll')->count();
+        $validatePaysilp    = Invoice::where('salary_month', '=', $formate_month_year)->where('created_by', \Auth::user()->creatorId())->pluck('employee_id');
+        $payslip_employee   = Employee::where('created_by', \Auth::user()->creatorId())->where('company_doj', '<=', date($year . '-' . $month . '-t'))->whereIn('employee_type', ['Contract', 'Consultant'])->count();
+        if ($payslip_employee == 0) {
+            return redirect()->route('invoice.index')->with('error', __('No contract or consultant employees found for invoice generation. Please ensure your employees are marked as "Contract" or "Consultant" type in their profile.'));
+        }
 
         if ($payslip_employee > count($validatePaysilp)) {
             $employees = Employee::where('created_by', \Auth::user()->creatorId())
                 ->where('company_doj', '<=', date($year . '-' . $month . '-t'))
                 ->whereNotIn('employee_id', $validatePaysilp)
                 ->where('set_salary', '>', 0)
-                ->where('employee_type', 'Payroll')
+                ->whereIn('employee_type', ['Contract', 'Consultant'])
                 ->get();
                 
             if ($employees->isEmpty()) {
-                return redirect()->route('payslip.index')->with('info', __('No eligible employees found for payslip generation. Employees must have valid salaries set.'));
+                return redirect()->route('invoice.index')->with('info', __('No eligible contract employees found for invoice generation. Employees must have valid salaries set.'));
             }
             
             $generatedCount = 0;
             foreach ($employees as $employee) {
 
-                $chek = PaySlip::where(['employee_id' => $employee->id, 'salary_month' => $formate_month_year])->first();
+                $chek = Invoice::where(['employee_id' => $employee->id, 'salary_month' => $formate_month_year])->first();
                 $terminationDate = Termination::where('employee_id', $employee->id)
                     ->whereDate('termination_date', '<=', Carbon::create($year, $month)->endOfMonth())
                     ->exists();
@@ -138,7 +125,7 @@ class PaySlipController extends Controller
                 }
 
                 if (!$chek && $chek == null) {
-                    $payslipEmployee                       = new PaySlip();
+                    $payslipEmployee                       = new Invoice();
                     $payslipEmployee->employee_id          = $employee->id;
                     $payslipEmployee->net_payble           = $employee->get_net_salary();
                     $payslipEmployee->salary_month         = $formate_month_year;
@@ -157,7 +144,6 @@ class PaySlipController extends Controller
                     //Slack Notification
                     $setting  = Utility::settings(\Auth::user()->creatorId());
                     if (isset($setting['monthly_payslip_notification']) && $setting['monthly_payslip_notification'] == 1) {
-                        // $msg = __("Payslip generated of") . ' ' . $formate_month_year . '.';
                         $uArr = [
                             'year' => $formate_month_year,
                         ];
@@ -166,7 +152,6 @@ class PaySlipController extends Controller
                     //Telegram Notification
                     $setting  = Utility::settings(\Auth::user()->creatorId());
                     if (isset($setting['telegram_monthly_payslip_notification']) && $setting['telegram_monthly_payslip_notification'] == 1) {
-                        // $msg = __("Payslip generated of") . ' ' . $formate_month_year . '.';
 
                         $uArr = [
                             'year' => $formate_month_year,
@@ -179,7 +164,6 @@ class PaySlipController extends Controller
                     $setting  = Utility::settings(\Auth::user()->creatorId());
                     $emp = Employee::where('id', $payslipEmployee->employee_id)->first();
                     if (isset($setting['twilio_monthly_payslip_notification']) && $setting['twilio_monthly_payslip_notification'] == 1) {
-                        // $msg = __("Payslip generated of") . ' ' . $formate_month_year . '.';
 
                         $uArr = [
                             'year' => $formate_month_year,
@@ -192,25 +176,24 @@ class PaySlipController extends Controller
                     $webhook =  Utility::webhookSetting($module);
                     if ($webhook) {
                         $parameter = json_encode($payslipEmployee);
-                        // 1 parameter is  URL , 2 parameter is data , 3 parameter is method
                         $status = Utility::WebhookCall($webhook['url'], $parameter, $webhook['method']);
                         if ($status == true) {
-                            return redirect()->back()->with('success', __('Successfully generated :count payslips for employees with valid salaries.', ['count' => $generatedCount]));
+                            return redirect()->back()->with('success', __('Successfully generated :count invoices for contract and consultant employees with valid salaries.', ['count' => $generatedCount]));
                         } else {
                             return redirect()->back()->with('error', __('Webhook call failed.'));
                         }
                     }
                 }
             }
-            return redirect()->route('payslip.index')->with('success', __('Successfully generated :count payslips for employees with valid salaries.', ['count' => $generatedCount]));
+            return redirect()->route('invoice.index')->with('success', __('Successfully generated :count invoices for contract and consultant employees with valid salaries.', ['count' => $generatedCount]));
         } else {
-            return redirect()->route('payslip.index')->with('error', __('Payslip Already created.'));
+            return redirect()->route('invoice.index')->with('error', __('Invoices already created for all eligible contract and consultant employees for this month.'));
         }
     }
 
     public function destroy($id)
     {
-        $payslip = PaySlip::find($id);
+        $payslip = Invoice::find($id);
 
         $payslip->delete();
 
@@ -220,40 +203,40 @@ class PaySlipController extends Controller
     public function showemployee($paySlip)
     {
 
-        $payslip = PaySlip::find($paySlip);
+        $payslip = Invoice::find($paySlip);
 
 
-        return view('payslip.show', compact('payslip'));
+        return view('invoice.show', compact('payslip'));
     }
 
     public function search_json(Request $request)
     {
         $formate_month_year = $request->datePicker;
-        $validatePaysilp    = PaySlip::where('salary_month', '=', $formate_month_year)->where('created_by', \Auth::user()->creatorId())->get()->toarray();
+        $validatePaysilp    = Invoice::where('salary_month', '=', $formate_month_year)->where('created_by', \Auth::user()->creatorId())->get()->toarray();
         $data = [];
         if (empty($validatePaysilp)) {
             $data = [];
             return;
         } else {
-            $paylip_employee = PaySlip::select(
+            $paylip_employee = Invoice::select(
                 [
                     'employees.id',
                     'employees.employee_id',
                     'employees.name',
                     'employees.set_salary',
-                    'pay_slips.basic_salary',
-                    'pay_slips.net_payble',
-                    'pay_slips.id as pay_slip_id',
-                    'pay_slips.status',
+                    'in_voices.basic_salary',
+                    'in_voices.net_payble',
+                    'in_voices.id as pay_slip_id',
+                    'in_voices.status',
                     'employees.user_id',
                 ]
             )->leftjoin(
                 'employees',
                 function ($join) {
-                    $join->on('employees.id', '=', 'pay_slips.employee_id');
+                    $join->on('employees.id', '=', 'in_voices.employee_id');
                 }
             )
-            ->where('pay_slips.salary_month', '=', $formate_month_year)
+            ->where('in_voices.salary_month', '=', $formate_month_year)
             ->where('employees.created_by', \Auth::user()->creatorId())->get();
 
             foreach ($paylip_employee as $employee) {
@@ -299,14 +282,12 @@ class PaySlipController extends Controller
 
     public function paysalary($id, $date)
     {
-        $employeePayslip = PaySlip::where('employee_id', '=', $id)->where('created_by', \Auth::user()->creatorId())->where('salary_month', '=', $date)->first();
+        $employeePayslip = Invoice::where('employee_id', '=', $id)->where('created_by', \Auth::user()->creatorId())->where('salary_month', '=', $date)->first();
         $get_employee = Employee::where('id', $id)->where('created_by', \Auth::user()->creatorId())->first();
         $get_account = AccountList::where('id', $get_employee->account_type)->where('created_by', \Auth::user()->creatorId())->first();
         $initial_balance = !empty($get_account->initial_balance) ? $get_account->initial_balance : 0;
-        $net_salary = !empty($employeePayslip->net_payble) ? $employeePayslip->net_payble : 0;
         if (!empty($employeePayslip)) {
-            // Recalculate and save the accurate net salary before paying
-            $accurateNetSalary = Utility::calculateNetSalary($id, $date);
+            $accurateNetSalary = Utility::calculateNetInvoiceSalary($id, $date);
             $employeePayslip->net_payble = $accurateNetSalary;
             $employeePayslip->status = 1;
             $employeePayslip->save();
@@ -329,30 +310,30 @@ class PaySlipController extends Controller
                 $set_expense->save();
             }
 
-            return redirect()->route('payslip.index')->with('success', __('Payslip Payment successfully.'));
+            return redirect()->route('invoice.index')->with('success', __('Invoice Payment successfully.'));
         } else {
-            return redirect()->route('payslip.index')->with('error', __('Payslip Payment failed.'));
+            return redirect()->route('invoice.index')->with('error', __('Invoice Payment failed.'));
         }
     }
 
     public function bulk_pay_create($date)
     {
-        $Employees       = PaySlip::where('salary_month', $date)->where('created_by', \Auth::user()->creatorId())->get();
-        $unpaidEmployees = PaySlip::where('salary_month', $date)->where('created_by', \Auth::user()->creatorId())->where('status', '=', 0)->get();
+        $Employees       = Invoice::where('salary_month', $date)->where('created_by', \Auth::user()->creatorId())->get();
+        $unpaidEmployees = Invoice::where('salary_month', $date)->where('created_by', \Auth::user()->creatorId())->where('status', '=', 0)->get();
 
-        return view('payslip.bulkcreate', compact('Employees', 'unpaidEmployees', 'date'));
+        return view('invoice.bulkcreate', compact('Employees', 'unpaidEmployees', 'date'));
     }
 
     public function bulkpayment(Request $request, $date)
     {
-        $unpaidEmployees = PaySlip::where('salary_month', $date)->where('created_by', \Auth::user()->creatorId())->where('status', '=', 0)->get();
+        $unpaidEmployees = Invoice::where('salary_month', $date)->where('created_by', \Auth::user()->creatorId())->where('status', '=', 0)->get();
 
         foreach ($unpaidEmployees as $employee) {
             $employee->status = 1;
             $employee->save();
         }
 
-        return redirect()->route('payslip.index')->with('success', __('Payslip Bulk Payment successfully.'));
+        return redirect()->route('invoice.index')->with('success', __('Invoice Bulk Payment successfully.'));
     }
 
     public function employeepayslip()
@@ -363,32 +344,32 @@ class PaySlipController extends Controller
             ]
         )->first();
 
-        $payslip = PaySlip::where('employee_id', '=', $employees->id)->get();
+        $payslip = Invoice::where('employee_id', '=', $employees->id)->get();
 
-        return view('payslip.employeepayslip', compact('payslip'));
+        return view('invoice.employeepayslip', compact('payslip'));
     }
 
     public function pdf($id, $month)
     {
-        $payslip  = PaySlip::where('employee_id', $id)->where('salary_month', $month)->where('created_by', \Auth::user()->creatorId())->first();
+        $payslip  = Invoice::where('employee_id', $id)->where('salary_month', $month)->where('created_by', \Auth::user()->creatorId())->first();
 
         $employee = Employee::find($payslip->employee_id);
 
-        $payslipDetail = Utility::employeePayslipDetail($id, $month);
+        $payslipDetail = Utility::employeeInvoiceDetail($id, $month);
 
-        return view('payslip.pdf', compact('payslip', 'employee', 'payslipDetail'));
+        return view('invoice.pdf', compact('payslip', 'employee', 'payslipDetail'));
     }
 
     public function send($id, $month)
     {
-        $payslip  = PaySlip::where('employee_id', $id)->where('salary_month', $month)->where('created_by', \Auth::user()->creatorId())->first();
+        $payslip  = Invoice::where('employee_id', $id)->where('salary_month', $month)->where('created_by', \Auth::user()->creatorId())->first();
         $employee = Employee::find($payslip->employee_id);
 
         $payslip->name  = $employee->name;
         $payslip->email = $employee->email;
 
         $payslipId    = Crypt::encrypt($payslip->id);
-        $payslip->url = route('payslip.payslipPdf', $payslipId);
+        $payslip->url = route('invoice.payslipPdf', $payslipId);
         $setings = Utility::settings();
 
         if ($setings['new_payroll'] == 1) {
@@ -400,30 +381,29 @@ class PaySlipController extends Controller
             ];
 
             $resp = Utility::sendEmailTemplate('new_payroll', [$payslip->email], $uArr);
-            return redirect()->back()->with('success', __('Payslip successfully sent.')  . ((!empty($resp) && $resp['is_success'] == false && !empty($resp['error'])) ? '<br> <span class="text-danger">' . $resp['error'] . '</span>' : ''));
+            return redirect()->back()->with('success', __('Invoice successfully sent.')  . ((!empty($resp) && $resp['is_success'] == false && !empty($resp['error'])) ? '<br> <span class="text-danger">' . $resp['error'] . '</span>' : ''));
         }
 
-        return redirect()->back()->with('success', __('Payslip successfully sent.'));
+        return redirect()->back()->with('success', __('Invoice successfully sent.'));
     }
 
     public function payslipPdf($id)
     {
         $payslipId = Crypt::decrypt($id);
-        // $payslip  = PaySlip::where('id', $payslipId)->where('created_by', \Auth::user()->creatorId())->first();
-        $payslip  = PaySlip::where('id', $payslipId)->where('employee_id', $payslipId)->first();
+        $payslip  = Invoice::where('id', $payslipId)->first();
         $month = $payslip->salary_month;
         $employee = Employee::find($payslip->employee_id);
 
-        $payslipDetail = Utility::employeePayslipDetail($payslip->employee_id, $month);
+        $payslipDetail = Utility::employeeInvoiceDetail($payslip->employee_id, $month);
 
-        return view('payslip.payslipPdf', compact('payslip', 'employee', 'payslipDetail'));
+        return view('invoice.payslipPdf', compact('payslip', 'employee', 'payslipDetail'));
     }
 
     public function editEmployee($paySlip)
     {
-        $payslip = PaySlip::find($paySlip);
+        $payslip = Invoice::find($paySlip);
 
-        return view('payslip.salaryEdit', compact('payslip'));
+        return view('invoice.salaryEdit', compact('payslip'));
     }
 
     public function updateEmployee(Request $request, $id)
@@ -496,7 +476,7 @@ class PaySlipController extends Controller
             }
         }
 
-        $payslipEmployee                       = PaySlip::find($request->payslip_id);
+        $payslipEmployee                       = Invoice::find($request->payslip_id);
         $payslipEmployee->allowance            = Employee::allowance($payslipEmployee->employee_id);
         $payslipEmployee->commission           = Employee::commission($payslipEmployee->employee_id);
         $payslipEmployee->loan                 = Employee::loan($payslipEmployee->employee_id);
@@ -506,13 +486,13 @@ class PaySlipController extends Controller
         $payslipEmployee->net_payble           = Employee::find($payslipEmployee->employee_id)->get_net_salary();
         $payslipEmployee->save();
 
-        return redirect()->route('payslip.index')->with('success', __('Employee payroll successfully updated.'));
+        return redirect()->route('invoice.index')->with('success', __('Contract or Consultant employee invoice successfully updated.'));
     }
 
-    public function PayslipExport(Request $request)
+    public function InvoiceExport(Request $request)
     {
-        $name = 'payslip_' . date('Y-m-d i:h:s');
-        $data = \Excel::download(new PayslipExport($request), $name . '.xlsx');
+        $name = 'invoice_' . date('Y-m-d i:h:s');
+        $data = \Excel::download(new InvoiceExport($request), $name . '.xlsx');
         ob_end_clean();
 
         return $data;

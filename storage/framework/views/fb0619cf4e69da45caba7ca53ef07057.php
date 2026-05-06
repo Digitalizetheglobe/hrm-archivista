@@ -1,46 +1,52 @@
-@extends('layouts.admin')
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('Payslip')); ?>
 
-@section('page-title')
-    {{ __('Payslip') }}
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ __('Dashboard') }}</a></li>
-    <li class="breadcrumb-item">{{ __('payslip') }}</li>
-@endsection
+<?php $__env->startSection('breadcrumb'); ?>
+    <li class="breadcrumb-item"><a href="<?php echo e(route('dashboard')); ?>"><?php echo e(__('Dashboard')); ?></a></li>
+    <li class="breadcrumb-item"><?php echo e(__('payslip')); ?></li>
+<?php $__env->stopSection(); ?>
 
-@section('content')
-    @if (\Auth::user()->type == 'company' || \Auth::user()->type == 'hr')
+<?php $__env->startSection('content'); ?>
+    <?php if(\Auth::user()->type == 'company' || \Auth::user()->type == 'hr'): ?>
         <div class="col-sm-12 col-lg-12 col-xl-12 col-md-12 mt-4">
             <div class="card">
                 <div class="card-body">
-                    {{ Form::open(['route' => ['payslip.store'], 'method' => 'POST', 'id' => 'payslip_form']) }}
+                    <?php echo e(Form::open(['route' => ['payslip.store'], 'method' => 'POST', 'id' => 'payslip_form'])); ?>
+
                     <div class="d-flex align-items-center justify-content-end">
                         <div class="col-xl-2 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
                             <div class="btn-box">
-                                {{ Form::label('month', __('Select Month'), ['class' => 'form-label']) }}
-                                {{ Form::select('month', $month, date('m'), ['class' => 'form-control select', 'id' => 'month']) }}
+                                <?php echo e(Form::label('month', __('Select Month'), ['class' => 'form-label'])); ?>
+
+                                <?php echo e(Form::select('month', $month, date('m'), ['class' => 'form-control select', 'id' => 'month'])); ?>
+
                             </div>
                         </div>
                         <div class="col-xl-2 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
                             <div class="btn-box">
-                                {{ Form::label('year', __('Select Year'), ['class' => 'form-label']) }}
-                                {{ Form::select('year', $year, date('Y'), ['class' => 'form-control select']) }}
+                                <?php echo e(Form::label('year', __('Select Year'), ['class' => 'form-label'])); ?>
+
+                                <?php echo e(Form::select('year', $year, date('Y'), ['class' => 'form-control select'])); ?>
+
                             </div>
                         </div>
                         <div class="col-auto float-end ms-2 mt-4">
                             <a href="#" class="btn  btn-primary"
                                 onclick="document.getElementById('payslip_form').submit(); return false;"
-                                data-bs-toggle="tooltip" title="{{ __('payslip') }}"
-                                data-original-title="{{ __('payslip') }}">{{ __('Generate Payslip') }}
+                                data-bs-toggle="tooltip" title="<?php echo e(__('payslip')); ?>"
+                                data-original-title="<?php echo e(__('payslip')); ?>"><?php echo e(__('Generate Payslip')); ?>
+
                             </a>
                         </div>
                     </div>
-                    {{ Form::close() }}
+                    <?php echo e(Form::close()); ?>
+
                 </div>
             </div>
         </div>
-    @endif
+    <?php endif; ?>
 
     <div class="col-12">
         <div class="card">
@@ -48,7 +54,7 @@
                 <div class="row">
                     <div class="col-md-4" style="margin-bottom: 10px;">
                         <div class="d-flex align-items-center justify-content-start">
-                            <h5>{{ __('Find Employee Payslip') }}</h5>
+                            <h5><?php echo e(__('Find Employee Payslip')); ?></h5>
                         </div>
                     </div>
                     <div class="col-md-8">
@@ -58,34 +64,38 @@
                                     <select class="form-control month_date " name="year" tabindex="-1"
                                         aria-hidden="true">
                                         <option value="--">--</option>
-                                        @foreach ($month as $k => $mon)
-                                            @php
+                                        <?php $__currentLoopData = $month; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k => $mon): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php
                                                 $selected = date('m') == $k ? 'selected' : '';
-                                            @endphp
-                                            <option value="{{ $k }}" {{ $selected }}>{{ $mon }}
+                                            ?>
+                                            <option value="<?php echo e($k); ?>" <?php echo e($selected); ?>><?php echo e($mon); ?>
+
                                             </option>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-xl-2 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
                                 <div class="btn-box">
-                                    {{ Form::select('year', $year, date('Y'), ['class' => 'form-control year_date ']) }}
+                                    <?php echo e(Form::select('year', $year, date('Y'), ['class' => 'form-control year_date '])); ?>
+
                                 </div>
                             </div>
-                            @if (Auth::user()->type == 'company' || Auth::user()->type == 'hr')
-                                {{ Form::open(['route' => ['payslip.export'], 'method' => 'POST', 'id' => 'payslip_form']) }}
+                            <?php if(Auth::user()->type == 'company' || Auth::user()->type == 'hr'): ?>
+                                <?php echo e(Form::open(['route' => ['payslip.export'], 'method' => 'POST', 'id' => 'payslip_form'])); ?>
+
                                 <input type="hidden" name="filter_month" class="filter_month">
                                 <input type="hidden" name="filter_year" class="filter_year">
-                                <input type="submit" value="{{ __('Export') }}" class="btn btn-primary">
-                                {{ Form::close() }}
-                            @endif
-                            {{-- </div> --}}
+                                <input type="submit" value="<?php echo e(__('Export')); ?>" class="btn btn-primary">
+                                <?php echo e(Form::close()); ?>
+
+                            <?php endif; ?>
+                            
                             <div class="ml-2 float-end">
-                                @can('Create Pay Slip')
-                                    <input type="button" value="{{ __('Bulk Payment') }}" class="btn btn-primary"
+                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Create Pay Slip')): ?>
+                                    <input type="button" value="<?php echo e(__('Bulk Payment')); ?>" class="btn btn-primary"
                                         style="margin-left: 5px" id="bulk_payment">
-                                @endcan
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -96,15 +106,15 @@
                     <table class="table" id="pc-dt-render-column-cells">
                         <thead>
                             <tr>
-                                <th>{{ __('Employee Id') }}</th>
-                                @if (\Auth::user()->type != 'employee')
-                                    <th>{{ __('Name') }}</th>
-                                @endif
+                                <th><?php echo e(__('Employee Id')); ?></th>
+                                <?php if(\Auth::user()->type != 'employee'): ?>
+                                    <th><?php echo e(__('Name')); ?></th>
+                                <?php endif; ?>
 
-                                <th>{{ __('Salary') }}</th>
-                                <th>{{ __('Net Salary') }}</th>
-                                <th>{{ __('Status') }}</th>
-                                <th>{{ __('Action') }}</th>
+                                <th><?php echo e(__('Salary')); ?></th>
+                                <th><?php echo e(__('Net Salary')); ?></th>
+                                <th><?php echo e(__('Status')); ?></th>
+                                <th><?php echo e(__('Action')); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -114,9 +124,9 @@
             </div>
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('script-page')
+<?php $__env->startPush('script-page'); ?>
     <script>
         $(document).ready(function() {
             callback();
@@ -129,8 +139,8 @@
                 $('.filter_year').val(year);
 
                 if (month == '') {
-                    month = '{{ date('m', strtotime('last month')) }}';
-                    year = '{{ date('Y') }}';
+                    month = '<?php echo e(date('m', strtotime('last month'))); ?>';
+                    year = '<?php echo e(date('Y')); ?>';
 
                     $('.filter_month').val(month);
                     $('.filter_year').val(year);
@@ -139,11 +149,11 @@
                 var datePicker = year + '-' + month;
 
                 $.ajax({
-                    url: '{{ route('payslip.search_json') }}',
+                    url: '<?php echo e(route('payslip.search_json')); ?>',
                     type: 'POST',
                     data: {
                         "datePicker": datePicker,
-                        "_token": "{{ csrf_token() }}",
+                        "_token": "<?php echo e(csrf_token()); ?>",
                     },
                     success: function(data) {
                         var datatable_data = {
@@ -178,44 +188,44 @@
 
                             if (data != 0) {
                                 var payslip =
-                                    '<a href="#" data-url="{{ url('payslip/pdf/') }}/' + id +
+                                    '<a href="#" data-url="<?php echo e(url('payslip/pdf/')); ?>/' + id +
                                     '/' + datePicker +
-                                    '" data-size="md-pdf"  data-ajax-popup="true" class="btn btn-primary" data-title="{{ __('Employee Payslip') }}">' +
-                                    '{{ __('Payslip') }}' + '</a> ';
+                                    '" data-size="md-pdf"  data-ajax-popup="true" class="btn btn-primary" data-title="<?php echo e(__('Employee Payslip')); ?>">' +
+                                    '<?php echo e(__('Payslip')); ?>' + '</a> ';
                             }
 
                             if (status == "UnPaid" && data != 0) {
-                                clickToPaid = '<a href="{{ url('payslip/paysalary/') }}/' + id +
+                                clickToPaid = '<a href="<?php echo e(url('payslip/paysalary/')); ?>/' + id +
                                     '/' + datePicker + '"  class="view-btn primary-bg btn-sm">' +
-                                    '{{ __('Click To Paid') }}' + '</a>  ';
+                                    '<?php echo e(__('Click To Paid')); ?>' + '</a>  ';
                             }
 
                             if (data != 0) {
                                 view =
-                                    '<a href="#" data-url="{{ url('payslip/showemployee/') }}/' +
+                                    '<a href="#" data-url="<?php echo e(url('payslip/showemployee/')); ?>/' +
                                     payslip_id +
-                                    '"  data-ajax-popup="true" class="view-btn gray-bg" data-title="{{ __('View Employee Detail') }}">' +
-                                    '{{ __('View') }}' + '</a>';
+                                    '"  data-ajax-popup="true" class="view-btn gray-bg" data-title="<?php echo e(__('View Employee Detail')); ?>">' +
+                                    '<?php echo e(__('View')); ?>' + '</a>';
                             }
 
                             if (data != 0 && status == "UnPaid") {
                                 edit =
-                                    '<a href="#" data-url="{{ url('payslip/editemployee/') }}/' +
+                                    '<a href="#" data-url="<?php echo e(url('payslip/editemployee/')); ?>/' +
                                     payslip_id +
-                                    '"  data-ajax-popup="true" class="view-btn blue-bg" data-title="{{ __('Edit Employee salary') }}">' +
-                                    '{{ __('Edit') }}' + '</a>';
+                                    '"  data-ajax-popup="true" class="view-btn blue-bg" data-title="<?php echo e(__('Edit Employee salary')); ?>">' +
+                                    '<?php echo e(__('Edit')); ?>' + '</a>';
                             }
 
-                            var url = '{{ route('payslip.delete', ':id') }}';
+                            var url = '<?php echo e(route('payslip.delete', ':id')); ?>';
                             url = url.replace(':id', payslip_id);
 
-                            @if (\Auth::user()->type == 'company' || \Auth::user()->type == 'employee')
+                            <?php if(\Auth::user()->type == 'company' || \Auth::user()->type == 'employee'): ?>
                                 if (data != 0) {
                                     deleted = '<a href="#"  data-url="' + url +
                                         '" class="payslip_delete view-btn red-bg" >' +
-                                        '{{ __('Delete') }}' + '</a>';
+                                        '<?php echo e(__('Delete')); ?>' + '</a>';
                                 }
-                            @endif
+                            <?php endif; ?>
 
                             return view + payslip + clickToPaid + edit + deleted + form;
                         }
@@ -240,43 +250,43 @@
 
                                 if (valueOfElement[6] != 0) {
                                     var payslip =
-                                        '<a href="#" data-url="{{ url('payslip/pdf/') }}/' +
+                                        '<a href="#" data-url="<?php echo e(url('payslip/pdf/')); ?>/' +
                                         id + '/' + datePicker +
-                                        '" data-size="lg"  data-ajax-popup="true" class=" btn-sm btn btn-warning" data-title="{{ __('Employee Payslip') }}">' +
-                                        '{{ __('Payslip') }}' + '</a> ';
+                                        '" data-size="lg"  data-ajax-popup="true" class=" btn-sm btn btn-warning" data-title="<?php echo e(__('Employee Payslip')); ?>">' +
+                                        '<?php echo e(__('Payslip')); ?>' + '</a> ';
                                 }
                                 if (valueOfElement[5] == "UnPaid" && valueOfElement[6] != 0) {
                                     var clickToPaid =
-                                        '<a href="{{ url('payslip/paysalary/') }}/' + id +
+                                        '<a href="<?php echo e(url('payslip/paysalary/')); ?>/' + id +
                                         '/' + datePicker +
                                         '"  class="btn-sm btn btn-primary">' +
-                                        '{{ __('Click To Paid') }}' + '</a>  ';
+                                        '<?php echo e(__('Click To Paid')); ?>' + '</a>  ';
                                 } else {
                                     var clickToPaid = '';
                                 }
                                 if (valueOfElement[6] != 0 && valueOfElement[5] == "UnPaid") {
                                     var edit =
-                                        '<a href="#" data-url="{{ url('payslip/editemployee/') }}/' +
+                                        '<a href="#" data-url="<?php echo e(url('payslip/editemployee/')); ?>/' +
                                         payslip_id +
-                                        '"  data-ajax-popup="true" class="btn-sm btn btn-info" data-title="{{ __('Edit Employee salary') }}">' +
-                                        '{{ __('Edit') }}' + '</a>';
+                                        '"  data-ajax-popup="true" class="btn-sm btn btn-info" data-title="<?php echo e(__('Edit Employee salary')); ?>">' +
+                                        '<?php echo e(__('Edit')); ?>' + '</a>';
                                 } else {
                                     var edit = '';
                                 }
 
-                                var url = '{{ route('payslip.delete', ':id') }}';
+                                var url = '<?php echo e(route('payslip.delete', ':id')); ?>';
                                 url = url.replace(':id', payslip_id);
 
-                                @if (\Auth::user()->type == 'company' || \Auth::user()->type == 'hr')
+                                <?php if(\Auth::user()->type == 'company' || \Auth::user()->type == 'hr'): ?>
                                     var deleted = '<a href="#"  data-url="' + url +
                                         '" class="payslip_delete view-btn btn btn-danger ms-1 btn-sm"  >' +
-                                        '{{ __('Delete') }}' + '</a>';
-                                @else
+                                        '<?php echo e(__('Delete')); ?>' + '</a>';
+                                <?php else: ?>
                                     var deleted = '';
-                                @endif
+                                <?php endif; ?>
 
                                 var url_employee = valueOfElement['url'];
-                                @if (\Auth::user()->type == 'company' || \Auth::user()->type == 'hr')
+                                <?php if(\Auth::user()->type == 'company' || \Auth::user()->type == 'hr'): ?>
                                     tr +=
                                         '<tr>' +
                                         '<td> <a class="btn btn-outline-primary" href="' +
@@ -288,7 +298,7 @@
                                         '<td>' + payslip + clickToPaid + edit + deleted +
                                         '</td>' +
                                         '</tr>';
-                                @else
+                                <?php else: ?>
                                     tr +=
                                         '<tr>' +
                                         '<td> <a class="btn btn-outline-primary" href="' +
@@ -299,12 +309,12 @@
                                         '<td>' + payslip + clickToPaid + edit + deleted +
                                         '</td>' +
                                         '</tr>';
-                                @endif
+                                <?php endif; ?>
                             });
                         } else {
                             var colspan = $('#pc-dt-render-column-cells thead tr th').length;
                             var tr = '<tr><td class="dataTables-empty" colspan="' + colspan +
-                                '">{{ __('No entries found') }}</td></tr>';
+                                '"><?php echo e(__('No entries found')); ?></td></tr>';
                         }
 
                         $('#pc-dt-render-column-cells tbody').html(tr);
@@ -386,4 +396,6 @@
             });
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/payslip/index.blade.php ENDPATH**/ ?>

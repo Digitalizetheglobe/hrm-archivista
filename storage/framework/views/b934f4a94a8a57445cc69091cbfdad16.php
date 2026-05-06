@@ -1,4 +1,4 @@
-@php
+<?php
 // Enable detailed error logging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -1104,17 +1104,17 @@ try {
     ]);
     throw $th; // Re-throw after logging
 }
-@endphp
+?>
 
 <div class="modal-body">
     <div class="text-md-end mb-2">
         <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" data-bs-placement="bottom"
-            title="{{ __('Download') }}" onclick="saveAsPDF()"><span class="fa fa-download"></span></a>
+            title="<?php echo e(__('Download')); ?>" onclick="saveAsPDF()"><span class="fa fa-download"></span></a>
 
-        @if (\Auth::user()->type == 'company' || \Auth::user()->type == 'hr')
-            <a title="Mail Send" href="{{ route('payslip.send', [$employee->id, $payslip->salary_month]) }}" 
+        <?php if(\Auth::user()->type == 'company' || \Auth::user()->type == 'hr'): ?>
+            <a title="Mail Send" href="<?php echo e(route('payslip.send', [$employee->id, $payslip->salary_month])); ?>" 
                 class="btn btn-sm btn-warning"><span class="fa fa-paper-plane"></span></a>
-        @endif
+        <?php endif; ?>
     </div>
     
     <style>
@@ -1142,14 +1142,15 @@ try {
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
                             <td style="width: 30%; border-right: 2px solid #000; padding: 4px; text-align: center; vertical-align: middle;">
-                                <img style="border: 1px solid black;" src="{{ asset('storage/uploads/logo/logo.png') }}" width="120px" onerror="this.onerror=null; this.src='{{ url('storage/uploads/logo/logo.svg') }}';">
+                                <img style="border: 1px solid black;" src="<?php echo e(asset('storage/uploads/logo/logo.png')); ?>" width="120px" onerror="this.onerror=null; this.src='<?php echo e(url('storage/uploads/logo/logo.svg')); ?>';">
                                 <br>
                            
                             </td>
                             <td style="padding: 4px; text-align: center;">
-                                <h2 style="margin: 0; font-size: 20px; font-weight: bold;">{{ \Utility::getValByName('company_name') }}</h2>
+                                <h2 style="margin: 0; font-size: 20px; font-weight: bold;"><?php echo e(\Utility::getValByName('company_name')); ?></h2>
                                 <div style="font-size: 14px; margin: 8px 0;">
-                                    <strong>Office Address :</strong> {{ $officeAddress }}
+                                    <strong>Office Address :</strong> <?php echo e($officeAddress); ?>
+
                                 </div>
                                 
                             </td>
@@ -1158,7 +1159,7 @@ try {
 
                     <!-- Salary Slip Title -->
                     <div style="border-top: 2px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; background-color: #f8f9fa;">
-                        <h3 style="margin: 0; font-size: 18px; font-weight: bold;">Salary Slip for {{ strtoupper(date('F - Y', strtotime($payslip->salary_month))) }}</h3>
+                        <h3 style="margin: 0; font-size: 18px; font-weight: bold;">Salary Slip for <?php echo e(strtoupper(date('F - Y', strtotime($payslip->salary_month)))); ?></h3>
                     </div>
 
                     
@@ -1170,19 +1171,19 @@ try {
                                 <table style="width: 100%; border-collapse: collapse;">
                                     <tr style="border-bottom: 1px solid #000;">
                                         <td style="padding: 4px; font-weight: bold;">Employee Name :</td>
-                                        <td style="padding: 4px; border-left: 1px solid #000;">{{ ucwords(strtolower($employee->name)) }}</td>
+                                        <td style="padding: 4px; border-left: 1px solid #000;"><?php echo e(ucwords(strtolower($employee->name))); ?></td>
                                     </tr>
                                     <tr style="border-bottom: 1px solid #000;">
                                         <td style="padding: 4px; font-weight: bold;">Department:</td>
-                                        <td style="padding: 4px; border-left: 1px solid #000;">{{ $employee->department->name ?? 'Assistant Manager - Talent Acquisition' }}</td>
+                                        <td style="padding: 4px; border-left: 1px solid #000;"><?php echo e($employee->department->name ?? 'Assistant Manager - Talent Acquisition'); ?></td>
                                     </tr>
                                     <tr style="border-bottom: 1px solid #000;">
                                         <td style="padding: 4px; font-weight: bold;">Date of Joining:</td>
-                                        <td style="padding: 4px; border-left: 1px solid #000;">{{ \Auth::user()->dateFormat($employee->company_doj) }}</td>
+                                        <td style="padding: 4px; border-left: 1px solid #000;"><?php echo e(\Auth::user()->dateFormat($employee->company_doj)); ?></td>
                                     </tr>
                                     <tr style="border-bottom: 1px solid #000;">
                                         <td style="padding: 4px; font-weight: bold;">ESIC Number:</td>
-                                        <td style="padding: 4px; border-left: 1px solid #000;">{{ $employee->esic_no ?? 'N/A' }}</td>
+                                        <td style="padding: 4px; border-left: 1px solid #000;"><?php echo e($employee->esic_no ?? 'N/A'); ?></td>
                                     </tr>
                                     
                                 </table>
@@ -1193,19 +1194,19 @@ try {
                                 <table style="width: 100%; border-collapse: collapse;">
                                     <tr style="border-bottom: 1px solid #000;">
                                         <td style="padding: 4px; font-weight: bold;">Employee ID :</td>
-                                        <td style="padding: 4px; border-left: 1px solid #000;">{{ \Auth::user()->employeeIdFormat($employee->employee_id) }}</td>   
+                                        <td style="padding: 4px; border-left: 1px solid #000;"><?php echo e(\Auth::user()->employeeIdFormat($employee->employee_id)); ?></td>   
                                     </tr>
                                     <tr style="border-bottom: 1px solid #000;">
                                         <td style="padding: 4px; font-weight: bold;">Designation :</td>
-                                        <td style="padding: 4px; border-left: 1px solid #000;">{{ $employee->designation->name ?? 'Assistant Manager - Talent Acquisition' }}</td>
+                                        <td style="padding: 4px; border-left: 1px solid #000;"><?php echo e($employee->designation->name ?? 'Assistant Manager - Talent Acquisition'); ?></td>
                                     </tr>
                                     <tr style="border-bottom: 1px solid #000;">
                                         <td style="padding: 4px; font-weight: bold;">PF Number :</td>
-                                        <td style="padding: 4px; border-left: 1px solid #000;">{{ $pfNumber }}</td>
+                                        <td style="padding: 4px; border-left: 1px solid #000;"><?php echo e($pfNumber); ?></td>
                                     </tr>
                                     <tr style="border-bottom: 1px solid #000;">
                                         <td style="padding: 4px; font-weight: bold;">Bank Account Number:</td>
-                                        <td style="padding: 4px; border-left: 1px solid #000;">{{ $employee->bank_ac_no ?? 'N/A' }}</td>
+                                        <td style="padding: 4px; border-left: 1px solid #000;"><?php echo e($employee->bank_ac_no ?? 'N/A'); ?></td>
                                     </tr>
                                 </table>
                             </td>
@@ -1228,27 +1229,27 @@ try {
                                         <th style="padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: center;">Availed</th>
                                         <th style="padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; text-align: center;">Cl. Bal</th>
                                     </tr>
-                                    @if(!empty($leaveDetails))
-                                        @php
+                                    <?php if(!empty($leaveDetails)): ?>
+                                        <?php
                                             $totalAvailed = 0;
-                                        @endphp
-                                        @foreach($leaveDetails as $leave)
+                                        ?>
+                                        <?php $__currentLoopData = $leaveDetails; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <tr>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: center;">{{ $leave['title'] }}</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: right;">{{ number_format($leave['opening_balance'], 2) }}</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: right;">{{ number_format($leave['credited'], 2) }}</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: right;">{{ number_format($leave['availed'], 2) }}</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($leave['closing_balance'], 2) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: center;"><?php echo e($leave['title']); ?></td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: right;"><?php echo e(number_format($leave['opening_balance'], 2)); ?></td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: right;"><?php echo e(number_format($leave['credited'], 2)); ?></td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: right;"><?php echo e(number_format($leave['availed'], 2)); ?></td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(number_format($leave['closing_balance'], 2)); ?></td>
                                         </tr>
-                                        @php
+                                        <?php
                                             $totalAvailed += $leave['availed'];
-                                        @endphp
-                                        @endforeach
-                                    @else
+                                        ?>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    <?php else: ?>
                                         <tr>
                                             <td colspan="6" style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: center;">No leave records found</td>
                                         </tr>
-                                    @endif
+                                    <?php endif; ?>
                                 </table>
                             </td>
                             
@@ -1264,15 +1265,15 @@ try {
                                     </tr>
                                     <tr>
                                         <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Present Days</td>
-                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ $presentDays }}</td>
+                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e($presentDays); ?></td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Weekly Off</td>
-                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($weeklyOff, 2) }}</td>
+                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(number_format($weeklyOff, 2)); ?></td>
                                     </tr>
                                     <tr >
                                         <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Total Leave</td>
-                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($totalAvailed, 2) }}</td>
+                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(number_format($totalAvailed, 2)); ?></td>
                                     </tr>
 
                                     <tr>
@@ -1281,15 +1282,15 @@ try {
                                     </tr>
                                     <tr>
                                         <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">PH</td>
-                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($holidays, 2) }}</td>
+                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(number_format($holidays, 2)); ?></td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">LWP</td>
-                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($lwpDays, 2) }}</td>
+                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(number_format($lwpDays, 2)); ?></td>
                                     </tr>
                                     <tr style="background-color: #f8f9fa;">
                                         <td style="padding: 4px; font-size: 11px; font-weight: bold; border-right: 1px solid #000;">Days Payable</td>
-                                        <td style="padding: 4px; font-size: 11px; font-weight: bold; text-align: right;">{{ number_format($calculatedDaysPayable, 2) }}</td>
+                                        <td style="padding: 4px; font-size: 11px; font-weight: bold; text-align: right;"><?php echo e(number_format($calculatedDaysPayable, 2)); ?></td>
                                     </tr>
                                 </table>
                             </td>
@@ -1313,43 +1314,43 @@ try {
                                         </tr>
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Basic</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($basicComponent) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($basicComponent)); ?></td>
                                         </tr>
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Medical</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($medicalComponent) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($medicalComponent)); ?></td>
                                         </tr>
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">HRA</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($hraComponent) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($hraComponent)); ?></td>
                                         </tr>
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">CONVEYANCE</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($conveyanceComponent) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($conveyanceComponent)); ?></td>
                                         </tr>
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">EDUCATION</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($educationAllowance) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($educationAllowance)); ?></td>
                                         </tr>
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">EXECUTIVE</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($executive) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($executive)); ?></td>
                                         </tr>
-                                        @if(!empty($employeeAllowances))
-                                            @foreach($employeeAllowances as $allowance)
+                                        <?php if(!empty($employeeAllowances)): ?>
+                                            <?php $__currentLoopData = $employeeAllowances; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $allowance): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <tr>
-                                                <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">{{ strtoupper($allowance['type']) }}</td>
-                                                <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($allowance['amount']) }}</td>
+                                                <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;"><?php echo e(strtoupper($allowance['type'])); ?></td>
+                                                <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($allowance['amount'])); ?></td>
                                             </tr>
-                                            @endforeach
-                                        @endif
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        <?php endif; ?>
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Extra Allowance</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($extraAllowance ?? 0) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($extraAllowance ?? 0)); ?></td>
                                         </tr>
                                         <tr style="background-color: #f8f9fa;">
                                             <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000;">Gross Earning (A)</td>
-                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right;">{{ \Auth::user()->priceFormat($grossSalaryWithExtra) }}</td>
+                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right;"><?php echo e(\Auth::user()->priceFormat($grossSalaryWithExtra)); ?></td>
                                         </tr>
                                     </table>
                                 </td>
@@ -1367,42 +1368,42 @@ try {
 
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">ESI</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($esiDeduction) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($esiDeduction)); ?></td>
                                         </tr>
 
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">PF</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($pfDeduction) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($pfDeduction)); ?></td>
                                         </tr>
 
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Professional Tax</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($ptDeduction) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($ptDeduction)); ?></td>
                                         </tr>
 
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">MLWF</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($mlwfDeduction) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($mlwfDeduction)); ?></td>
                                         </tr>
 
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Advance</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($advanceDeduction) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($advanceDeduction)); ?></td>
                                         </tr>
 
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Other Deduction</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($otherDeduction) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($otherDeduction)); ?></td>
                                         </tr>
                                         
                                         <tr>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Absent Deduction</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($deductionForAbsent) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($deductionForAbsent)); ?></td>
                                         </tr>
 
                                         <tr style="background-color: #f8f9fa;">
                                             <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000;">Total Deductions (B)</td>
-                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right;">{{ \Auth::user()->priceFormat($totalDeductions) }}</td>
+                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right;"><?php echo e(\Auth::user()->priceFormat($totalDeductions)); ?></td>
                                         </tr>
                                     </table>
                                 </td>
@@ -1417,21 +1418,21 @@ try {
                                             <th style="padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000;">Month</th>
                                             <th style="padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; text-align: right;">Amount (Rs.)</th>
                                         </tr>
-                                        @if(!empty($annualIncomeData))
-                                            @foreach($annualIncomeData as $income)
+                                        <?php if(!empty($annualIncomeData)): ?>
+                                            <?php $__currentLoopData = $annualIncomeData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $income): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <tr>
-                                                <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">{{ $income['month'] }}</td>
-                                                <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($income['amount']) }}</td>
+                                                <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;"><?php echo e($income['month']); ?></td>
+                                                <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;"><?php echo e(\Auth::user()->priceFormat($income['amount'])); ?></td>
                                             </tr>
-                                            @endforeach
-                                        @else
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        <?php else: ?>
                                             <tr>
                                                 <td colspan="2" style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: center;">No income records found</td>
                                             </tr>
-                                        @endif
+                                        <?php endif; ?>
                                         <tr style="background-color: #f8f9fa;">
                                             <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000;">Total</td>
-                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right;">{{ \Auth::user()->priceFormat($totalAnnualIncome) }}</td>
+                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right;"><?php echo e(\Auth::user()->priceFormat($totalAnnualIncome)); ?></td>
                                         </tr>
                                     </table>
                                 </td>
@@ -1446,11 +1447,11 @@ try {
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr style="background-color: #f8f9fa;">
                                 <td style="padding: 2px; font-size: 12px; font-weight: bold; border-right: 1px solid #000; border-bottom: 1px solid #000;">Net Pay (A - B)</td>
-                                <td style="padding: 2px; font-size: 12px; font-weight: bold; text-align: left; border-bottom: 1px solid #000;">{{ \Auth::user()->priceFormat($netSalary) }}</td>
+                                <td style="padding: 2px; font-size: 12px; font-weight: bold; text-align: left; border-bottom: 1px solid #000;"><?php echo e(\Auth::user()->priceFormat($netSalary)); ?></td>
                             </tr>
                             <tr>
                                 <td style="padding: 2px; font-size: 11px; font-weight: bold; border-right: 1px solid #000;">Total Pay</td>
-                                <td style="padding: 2px; font-size: 11px;">{{ ucwords($netSalaryInWords) }}</td>
+                                <td style="padding: 2px; font-size: 11px;"><?php echo e(ucwords($netSalaryInWords)); ?></td>
                             </tr>
                         </table>
                     </div>
@@ -1464,13 +1465,13 @@ try {
         </div>
     </div>
 </div>
-<script type="text/javascript" src="{{ asset('js/html2pdf.bundle.min.js') }}"></script>
+<script type="text/javascript" src="<?php echo e(asset('js/html2pdf.bundle.min.js')); ?>"></script>
 <script>
     function saveAsPDF() {
         var element = document.getElementById('printableArea');
         var opt = {
             margin: 0.1,
-            filename: '{{ $employee->name }}_{{ $payslip->salary_month }}_payslip',
+            filename: '<?php echo e($employee->name); ?>_<?php echo e($payslip->salary_month); ?>_payslip',
             image: {
                 type: 'jpeg',
                 quality: 1
@@ -1492,3 +1493,4 @@ try {
     }
 </script>
 
+<?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/payslip/pdf.blade.php ENDPATH**/ ?>

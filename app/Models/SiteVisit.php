@@ -8,7 +8,8 @@ class SiteVisit extends Model
 {
     protected $fillable = [
         'employee_id',
-        'date',
+        'start_date',
+        'end_date',
         'location',
         'status',
         'reason',

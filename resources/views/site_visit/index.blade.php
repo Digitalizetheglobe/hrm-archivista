@@ -31,7 +31,8 @@
                                     @if(Auth::user()->type != 'employee')
                                         <th>{{ __('Employee') }}</th>
                                     @endif
-                                    <th>{{ __('Date') }}</th>
+                                    <th>{{ __('Start Date') }}</th>
+                                    <th>{{ __('End Date') }}</th>
                                     <th>{{ __('Location') }}</th>
                                     <th>{{ __('Status') }}</th>
                                     <th width="200px">{{ __('Action') }}</th>
@@ -43,7 +44,8 @@
                                         @if(Auth::user()->type != 'employee')
                                             <td>{{ !empty($siteVisit->employee) ? $siteVisit->employee->name : '' }}</td>
                                         @endif
-                                        <td>{{ Auth::user()->dateFormat($siteVisit->date) }}</td>
+                                        <td>{{ Auth::user()->dateFormat($siteVisit->start_date) }}</td>
+                                        <td>{{ Auth::user()->dateFormat($siteVisit->end_date) }}</td>
                                         <td>{{ $siteVisit->location }}</td>
                                         <td>
                                             @if($siteVisit->status == 'Pending')

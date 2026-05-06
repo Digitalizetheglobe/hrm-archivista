@@ -37,7 +37,8 @@ class SiteVisitController extends Controller
         $validator = \Validator::make(
             $request->all(),
             [
-                'date' => 'required|date',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
                 'location' => 'required',
             ]
         );
@@ -54,7 +55,8 @@ class SiteVisitController extends Controller
             $siteVisit->employee_id = $request->employee_id;
         }
         
-        $siteVisit->date = $request->date;
+        $siteVisit->start_date = $request->start_date;
+        $siteVisit->end_date = $request->end_date;
         $siteVisit->location = $request->location;
         $siteVisit->status = 'Pending';
         $siteVisit->created_by = Auth::user()->creatorId();

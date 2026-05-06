@@ -20,33 +20,43 @@
     <script type="text/javascript">
         $(document).ready(function() {
             // Auto-generate date field
-            $('#auto_date').click(function() {
+            $('#auto_date').off('click').on('click', function() {
                 var today = new Date();
                 var formattedDate = today.toISOString().split('T')[0];
                 $('#date').val(formattedDate);
             });
 
             // Handle form submission with AJAX
-            $('#generateForm').submit(function(e) {
+            $('#generateForm').off('submit').on('submit', function(e) {
                 e.preventDefault();
                 
-                var submitBtn = $(this).find('button[type="submit"]');
+                var form = $(this);
+                var submitBtn = form.find('button[type="submit"]');
                 var originalText = submitBtn.html();
                 
                 // Show loading state
-                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> {{ __("Generating...") }}');
+                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> {{ __("Generating...") }}');
                 
                 $.ajax({
-                    url: $(this).attr('action'),
+                    url: form.attr('action'),
                     method: 'POST',
-                    data: $(this).serialize(),
+                    data: form.serialize(),
                     success: function(response) {
                         if (response.success) {
-                            // Open PDF in new tab for preview and download
-                            window.open(response.download_url, '_blank');
+                            // Create a hidden link to trigger direct download without new tab
+                            var downloadLink = document.createElement("a");
+                            downloadLink.href = response.download_url;
+                            downloadLink.download = response.filename || 'letter.pdf';
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
                             
                             // Show success message
-                            alert('{{ __("PDF generated successfully! The PDF has been opened in a new tab where you can preview and download it.") }}');
+                            if (window.show_toastr) {
+                                show_toastr('Success', '{{ __("Letter generated successfully!") }}', 'success');
+                            } else {
+                                alert('{{ __("Letter generated successfully!") }}');
+                            }
                         }
                     },
                     error: function(xhr) {

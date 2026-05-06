@@ -30,7 +30,8 @@
                                     <?php if(Auth::user()->type != 'employee'): ?>
                                         <th><?php echo e(__('Employee')); ?></th>
                                     <?php endif; ?>
-                                    <th><?php echo e(__('Date')); ?></th>
+                                    <th><?php echo e(__('Start Date')); ?></th>
+                                    <th><?php echo e(__('End Date')); ?></th>
                                     <th><?php echo e(__('Location')); ?></th>
                                     <th><?php echo e(__('Status')); ?></th>
                                     <th width="200px"><?php echo e(__('Action')); ?></th>
@@ -42,7 +43,8 @@
                                         <?php if(Auth::user()->type != 'employee'): ?>
                                             <td><?php echo e(!empty($siteVisit->employee) ? $siteVisit->employee->name : ''); ?></td>
                                         <?php endif; ?>
-                                        <td><?php echo e(Auth::user()->dateFormat($siteVisit->date)); ?></td>
+                                        <td><?php echo e(Auth::user()->dateFormat($siteVisit->start_date)); ?></td>
+                                        <td><?php echo e(Auth::user()->dateFormat($siteVisit->end_date)); ?></td>
                                         <td><?php echo e($siteVisit->location); ?></td>
                                         <td>
                                             <?php if($siteVisit->status == 'Pending'): ?>

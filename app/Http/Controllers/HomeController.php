@@ -275,12 +275,14 @@ class HomeController extends Controller
                 });
 
                 // Check if any site visits are scheduled for today (for card visibility)
-                $hasTodaySiteVisits = \App\Models\SiteVisit::where('date', '=', $currentDate)
+                $hasTodaySiteVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
+                    ->where('end_date', '>=', $currentDate)
                     ->where('status', 'Approved')
                     ->exists();
 
                 // Fetch site attendance for today (only for those who have punched in)
-                $todaySiteVisits = \App\Models\SiteVisit::where('date', '=', $currentDate)
+                $todaySiteVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
+                    ->where('end_date', '>=', $currentDate)
                     ->where('status', 'Approved')
                     ->get();
 

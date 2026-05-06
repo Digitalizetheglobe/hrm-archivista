@@ -34,6 +34,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\AllowanceController;
 use App\Http\Controllers\PaySlipController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\DeductionController;
 use App\Http\Controllers\ResignationController;
 use App\Http\Controllers\TravelController;
@@ -1122,6 +1123,22 @@ Route::group(['middleware' => ['verified']], function () {
             'XSS',
         ]
     );
+
+    // Invoice routes
+    Route::get('invoice/paysalary/{id}/{date}', [InvoiceController::class, 'paysalary'])->name('invoice.paysalary')->middleware(['auth', 'XSS']);
+    Route::get('invoice/bulk_pay_create/{date}', [InvoiceController::class, 'bulk_pay_create'])->name('invoice.bulk_pay_create')->middleware(['auth', 'XSS']);
+    Route::post('invoice/bulkpayment/{date}', [InvoiceController::class, 'bulkpayment'])->name('invoice.bulkpayment')->middleware(['auth', 'XSS']);
+    Route::post('invoice/search_json', [InvoiceController::class, 'search_json'])->name('invoice.search_json')->middleware(['auth', 'XSS']);
+    Route::get('invoice/employeepayslip', [InvoiceController::class, 'employeepayslip'])->name('invoice.employeepayslip')->middleware(['auth', 'XSS']);
+    Route::get('invoice/showemployee/{id}', [InvoiceController::class, 'showemployee'])->name('invoice.showemployee')->middleware(['auth', 'XSS']);
+    Route::get('invoice/editemployee/{id}', [InvoiceController::class, 'editemployee'])->name('invoice.editemployee')->middleware(['auth', 'XSS']);
+    Route::post('invoice/editemployee/{id}/{month}', [InvoiceController::class, 'updateEmployee'])->name('invoice.updateemployee')->middleware(['auth', 'XSS']);
+    Route::get('invoice/pdf/{id}/{m}', [InvoiceController::class, 'pdf'])->name('invoice.pdf')->middleware(['auth', 'XSS']);
+    Route::get('invoice/payslipPdf/{id}', [InvoiceController::class, 'payslipPdf'])->name('invoice.payslipPdf')->middleware(['auth', 'XSS']);
+    Route::get('invoice/send/{id}/{m}', [InvoiceController::class, 'send'])->name('invoice.send')->middleware(['auth', 'XSS']);
+    Route::get('invoice/delete/{id}', [InvoiceController::class, 'destroy'])->name('invoice.delete')->middleware(['auth', 'XSS']);
+    Route::post('invoice/export', [InvoiceController::class, 'InvoiceExport'])->name('invoice.export')->middleware(['auth', 'XSS']);
+    Route::resource('invoice', InvoiceController::class)->middleware(['auth', 'XSS']);
 
     // Letter Templates
     Route::get('letter_templates/generate-letter/{id}', [LetterTemplateController::class, 'generateLetter'])->name('letter_templates.generate')->middleware(['auth', 'XSS']);

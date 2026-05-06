@@ -189,6 +189,13 @@ class SetSalaryController extends Controller
 
     public function employeeUpdateSalary(Request $request, $id)
     {
+        // Debug logging
+        \Log::info('employeeUpdateSalary called', [
+            'request_data' => $request->all(),
+            'employee_id' => $id,
+            'is_ajax' => $request->ajax()
+        ]);
+
         $validator = \Validator::make(
             $request->all(),
             [
@@ -197,14 +204,43 @@ class SetSalaryController extends Controller
         );
         if ($validator->fails()) {
             $messages = $validator->getMessageBag();
+            
+            \Log::error('Validation failed', [
+                'errors' => $messages->toArray(),
+                'request_data' => $request->all()
+            ]);
 
+            if ($request->ajax()) {
+                return response()->json(['error' => $messages->first()], 400);
+            }
             return redirect()->back()->with('error', $messages->first());
         }
-        $employee = Employee::findOrFail($id);
-        $employee->set_salary = $request->set_salary;
-        $employee->save();
+        
+        try {
+            $employee = Employee::findOrFail($id);
+            \Log::info('Employee found', ['employee' => $employee->toArray()]);
+            
+            $employee->set_salary = $request->set_salary;
+            $employee->save();
+            
+            \Log::info('Salary updated successfully', ['employee_id' => $id, 'new_salary' => $request->set_salary]);
 
-        return redirect()->back()->with('success', 'Employee Salary Updated.');
+            if ($request->ajax()) {
+                return response()->json(['success' => 'Employee Salary Updated.']);
+            }
+            return redirect()->back()->with('success', 'Employee Salary Updated.');
+        } catch (\Exception $e) {
+            \Log::error('Error updating salary', [
+                'error' => $e->getMessage(),
+                'employee_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Database error: ' . $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Database error: ' . $e->getMessage());
+        }
     }
 
     public function employeeSalary()

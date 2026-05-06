@@ -322,7 +322,9 @@ class Utility extends Model
         'employee_termination' => 'Employee Termination',
         'leave_status' => 'Leave Status',
         'contract' => 'Contract',
+        'new_invoice' => 'New Invoice',
     ];
+
 
     public static function employeePayslipDetail($employeeId, $month)
     {
@@ -2745,4 +2747,453 @@ class Utility extends Model
             $user->save();
         }
     }
+
+    public static function calculateNetSalary($employeeId, $month)
+    {
+        try {
+            $employee = Employee::find($employeeId);
+            $payslip = PaySlip::where('employee_id', $employeeId)->where('salary_month', $month)->first();
+
+            if (!$employee || !$payslip) {
+                \Log::error('Net Salary Calculation: Employee or Payslip not found', ['employee_id' => $employeeId, 'month' => $month]);
+                return 0;
+            }
+
+            $totalDays = (int)date('t', strtotime($month . '-01'));
+            $startDate = new \DateTime($month . '-01');
+            $endDate = clone $startDate;
+            $endDate->modify('last day of this month');
+            $interval = new \DateInterval('P1D');
+            $period = new \DatePeriod($startDate, $interval, $endDate);
+
+            // Attendance Records
+            $presentDays = 0;
+            try {
+                $attendanceRecords = \DB::table('attendance_employees')
+                    ->where('employee_id', $employee->id)
+                    ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                    ->get();
+                $presentDays = count($attendanceRecords);
+            } catch (\Exception $e) {
+                \Log::warning('Error fetching attendance in calculation: ' . $e->getMessage());
+                $attendanceRecords = collect();
+            }
+
+            // Leaves
+            $leaves = collect();
+            try {
+                $leaves = \DB::table('leaves')
+                    ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
+                    ->where('leaves.employee_id', $employee->id)
+                    ->where('leaves.status', 'Approved')
+                    ->where(function($query) use ($startDate, $endDate) {
+                        $query->whereBetween('leaves.start_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                              ->orWhereBetween('leaves.end_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                    })
+                    ->select('leaves.*', 'leave_types.title as leave_type')
+                    ->get();
+            } catch (\Exception $e) {
+                \Log::warning('Error fetching leaves in calculation: ' . $e->getMessage());
+            }
+
+            // Days Payable calculation
+            $weeklyOff = 0;
+            foreach ($period as $day) {
+                if ($day->format('N') == 6 || $day->format('N') == 7) { $weeklyOff++; }
+            }
+
+            $totalAvailed = 0;
+            try {
+                $totalAvailed = \DB::table('leaves')
+                    ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
+                    ->where('leaves.employee_id', $employee->id)
+                    ->where('leaves.status', 'Approved')
+                    ->where('leaves.start_date', '<=', $endDate->format('Y-m-d'))
+                    ->where('leaves.end_date', '>=', $startDate->format('Y-m-d'))
+                    ->where('leave_types.title', 'NOT LIKE', '%LWP%')
+                    ->sum('leaves.total_leave_days');
+            } catch (\Exception $e) {
+                \Log::warning('Error calculating Total Leaves in calculation: ' . $e->getMessage());
+            }
+
+            $holidays = 0;
+            try {
+                $holidays = \DB::table('holidays')
+                    ->where('start_date', '<=', $endDate->format('Y-m-d'))
+                    ->where('end_date', '>=', $startDate->format('Y-m-d'))
+                    ->where('created_by', $payslip->created_by)
+                    ->count();
+            } catch (\Exception $e) {
+                \Log::warning('Error calculating Holidays in calculation: ' . $e->getMessage());
+            }
+
+            $lwpDays = 0;
+            try {
+                $lwpDays = \DB::table('leaves')
+                    ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
+                    ->where('leaves.employee_id', $employee->id)
+                    ->where('leaves.status', 'Approved')
+                    ->where('leave_types.title', 'LIKE', '%LWP%')
+                    ->where('leaves.start_date', '<=', $endDate->format('Y-m-d'))
+                    ->where('leaves.end_date', '>=', $startDate->format('Y-m-d'))
+                    ->sum('leaves.total_leave_days');
+            } catch (\Exception $e) {
+                \Log::warning('Error calculating LWP Days in calculation: ' . $e->getMessage());
+            }
+
+            $calculatedDaysPayable = (float)$presentDays + (float)$weeklyOff + (float)$totalAvailed + (float)$holidays - (float)$lwpDays;
+            $absentDaysNew = max(0, (float)$totalDays - $calculatedDaysPayable);
+            $perDaySalary = (float)$payslip->basic_salary / 30;
+            $deductionForAbsent = (float)$absentDaysNew * $perDaySalary;
+
+            // Salary Components
+            $grossSalary = (float)$payslip->basic_salary;
+            $basicComponent = $grossSalary * 0.40;
+            $hraComponent = $grossSalary * 0.16;
+            $medicalComponent = $grossSalary * 0.06;
+            $conveyanceComponent = $grossSalary * 0.04;
+            $educationAllowance = $grossSalary * 0.04;
+            $executive = $grossSalary * 0.30;
+
+            $ptDeduction = is_numeric($payslip->professional_tax ?? 200) ? (float)($payslip->professional_tax ?? 200) : 200;
+            $pfDeduction = $basicComponent * 0.12;
+            $esiDeduction = $basicComponent * 0.0075;
+
+            // Optional Deductions (MLWF, Other)
+            $mlwfDeduction = 0;
+            $otherDeduction = 0;
+            try {
+                $mlwfRecord = \DB::table('deductions')->where('employee_id', $employee->id)->where('deduction_type', 'MLWF')->where('month', $month)->first();
+                if ($mlwfRecord) $mlwfDeduction = (float)$mlwfRecord->amount;
+                
+                $otherRecord = \DB::table('deductions')->where('employee_id', $employee->id)->where('deduction_type', 'Other Deduction')->where('month', $month)->first();
+                if ($otherRecord) $otherDeduction = (float)$otherRecord->amount;
+            } catch (\Exception $e) {
+                \Log::warning('Error fetching deductions table (may not exist): ' . $e->getMessage());
+            }
+
+            // TDS
+            $tdsDeduction = 0;
+            try {
+                $tdsRecord = \DB::table('tds')->where('employee_id', $employee->id)->first();
+                if ($tdsRecord) {
+                    $tdsAllowances = \DB::table('tds_allowances')->where('employee_id', $employee->id)->sum('amount');
+                    $tdsDeductions = \DB::table('tds_deductions')->where('employee_id', $employee->id)->sum('amount');
+                    $tdsPayments = \DB::table('tds_payments')->where('employee_id', $employee->id)->where('is_paid', true)->get();
+                    
+                    if ($tdsRecord->tds_type == 0) {
+                        $totalTaxable = ($employee->set_salary * 12) + $tdsAllowances - (2500 + 50000 + $tdsDeductions);
+                        if ($totalTaxable <= 250000) $tax = 0;
+                        elseif ($totalTaxable <= 500000) $tax = ($totalTaxable - 250000) * 0.05;
+                        elseif ($totalTaxable <= 1000000) $tax = 12500 + (($totalTaxable - 500000) * 0.20);
+                        else $tax = 112500 + (($totalTaxable - 1000000) * 0.30);
+                    } else {
+                        $totalTaxable = ($employee->set_salary * 12) + $tdsAllowances - 75000 - $tdsDeductions;
+                        if ($totalTaxable > 300000 && $totalTaxable <= 600000) $tax = ($totalTaxable - 300000) * 0.05;
+                        elseif ($totalTaxable > 600000 && $totalTaxable <= 900000) $tax = 15000 + (($totalTaxable - 600000) * 0.10);
+                        elseif ($totalTaxable > 900000 && $totalTaxable <= 1200000) $tax = 45000 + (($totalTaxable - 900000) * 0.15);
+                        elseif ($totalTaxable > 1200000 && $totalTaxable <= 1500000) $tax = 90000 + (($totalTaxable - 1200000) * 0.20);
+                        elseif ($totalTaxable > 1500000) $tax = 150000 + (($totalTaxable - 1500000) * 0.30);
+                        else $tax = 0;
+                    }
+                    $totalTaxAmount = round($tax + round($tax * 0.04));
+                    $paidMonths = count($tdsPayments);
+                    $totalPaid = $tdsPayments->sum('amount');
+                    $remainingMonths = 12 - $paidMonths;
+                    if ($remainingMonths > 0) $tdsDeduction = round(($totalTaxAmount - $totalPaid) / $remainingMonths);
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Error calculating TDS: ' . $e->getMessage());
+            }
+
+            // Final Sums
+            $totalAllowances = 0;
+            try {
+                $totalAllowances = \DB::table('allowances')->where('employee_id', $employee->id)->where('month', $month)->sum('amount');
+            } catch (\Exception $e) {
+                \Log::warning('Error fetching allowances: ' . $e->getMessage());
+            }
+            
+            $loanDeduction = isset($payslip->loan) ? (float)$payslip->loan : 0;
+            
+            $grossSalaryWithExtra = $basicComponent + $hraComponent + $medicalComponent + $conveyanceComponent + $educationAllowance + $executive + $totalAllowances;
+            $totalDeductions = (float)$ptDeduction + (float)$loanDeduction + (float)$pfDeduction + (float)$esiDeduction + (float)$mlwfDeduction + (float)$otherDeduction + (float)$tdsDeduction + (float)$deductionForAbsent;
+            
+            $finalNetSalary = $grossSalaryWithExtra - $totalDeductions;
+            
+            \Log::info('Net Salary Calculated Successfully', [
+                'employee_id' => $employeeId,
+                'month' => $month,
+                'gross' => $grossSalaryWithExtra,
+                'deductions' => $totalDeductions,
+                'net' => $finalNetSalary
+            ]);
+
+            return $finalNetSalary;
+
+        } catch (\Exception $e) {
+            \Log::error('Net Salary Calculation Error (Major): ' . $e->getMessage(), [
+                'employee_id' => $employeeId,
+                'month' => $month,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return 0;
+        }
+    }
+    public static function calculateNetInvoiceSalary($employeeId, $month)
+    {
+        try {
+            $employee = Employee::find($employeeId);
+            $invoice = Invoice::where('employee_id', $employeeId)->where('salary_month', $month)->first();
+
+            if (!$employee || !$invoice) {
+                \Log::error('Net Invoice Salary Calculation: Employee or Invoice not found', ['employee_id' => $employeeId, 'month' => $month]);
+                return 0;
+            }
+
+            $totalDays = (int)date('t', strtotime($month . '-01'));
+            $startDate = new \DateTime($month . '-01');
+            $endDate = clone $startDate;
+            $endDate->modify('last day of this month');
+            $interval = new \DateInterval('P1D');
+            $period = new \DatePeriod($startDate, $interval, $endDate);
+
+            // Attendance Records
+            $presentDays = 0;
+            try {
+                $attendanceRecords = \DB::table('attendance_employees')
+                    ->where('employee_id', $employee->id)
+                    ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                    ->get();
+                $presentDays = count($attendanceRecords);
+            } catch (\Exception $e) {
+                \Log::warning('Error fetching attendance in calculation: ' . $e->getMessage());
+                $attendanceRecords = collect();
+            }
+
+            // Leaves
+            $leaves = collect();
+            try {
+                $leaves = \DB::table('leaves')
+                    ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
+                    ->where('leaves.employee_id', $employee->id)
+                    ->where('leaves.status', 'Approved')
+                    ->where(function($query) use ($startDate, $endDate) {
+                        $query->whereBetween('leaves.start_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                              ->orWhereBetween('leaves.end_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                    })
+                    ->select('leaves.*', 'leave_types.title as leave_type')
+                    ->get();
+            } catch (\Exception $e) {
+                \Log::warning('Error fetching leaves in calculation: ' . $e->getMessage());
+            }
+
+            // Days Payable calculation
+            $weeklyOff = 0;
+            foreach ($period as $day) {
+                if ($day->format('N') == 6 || $day->format('N') == 7) { $weeklyOff++; }
+            }
+
+            $totalAvailed = 0;
+            try {
+                $totalAvailed = \DB::table('leaves')
+                    ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
+                    ->where('leaves.employee_id', $employee->id)
+                    ->where('leaves.status', 'Approved')
+                    ->where('leaves.start_date', '<=', $endDate->format('Y-m-d'))
+                    ->where('leaves.end_date', '>=', $startDate->format('Y-m-d'))
+                    ->where('leave_types.title', 'NOT LIKE', '%LWP%')
+                    ->sum('leaves.total_leave_days');
+            } catch (\Exception $e) {
+                \Log::warning('Error calculating Total Leaves in calculation: ' . $e->getMessage());
+            }
+
+            $holidays = 0;
+            try {
+                $holidays = \DB::table('holidays')
+                    ->where('start_date', '<=', $endDate->format('Y-m-d'))
+                    ->where('end_date', '>=', $startDate->format('Y-m-d'))
+                    ->where('created_by', $invoice->created_by)
+                    ->count();
+            } catch (\Exception $e) {
+                \Log::warning('Error calculating Holidays in calculation: ' . $e->getMessage());
+            }
+
+            $lwpDays = 0;
+            try {
+                $lwpDays = \DB::table('leaves')
+                    ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
+                    ->where('leaves.employee_id', $employee->id)
+                    ->where('leaves.status', 'Approved')
+                    ->where('leave_types.title', 'LIKE', '%LWP%')
+                    ->where('leaves.start_date', '<=', $endDate->format('Y-m-d'))
+                    ->where('leaves.end_date', '>=', $startDate->format('Y-m-d'))
+                    ->sum('leaves.total_leave_days');
+            } catch (\Exception $e) {
+                \Log::warning('Error calculating LWP Days in calculation: ' . $e->getMessage());
+            }
+
+            $calculatedDaysPayable = (float)$presentDays + (float)$weeklyOff + (float)$totalAvailed + (float)$holidays - (float)$lwpDays;
+            $absentDaysNew = max(0, (float)$totalDays - $calculatedDaysPayable);
+            $perDaySalary = (float)$invoice->basic_salary / 30;
+            $deductionForAbsent = (float)$absentDaysNew * $perDaySalary;
+
+            // Salary Components
+            $grossSalary = (float)$invoice->basic_salary;
+            $basicComponent = $grossSalary * 0.40;
+            $hraComponent = $grossSalary * 0.16;
+            $medicalComponent = $grossSalary * 0.06;
+            $conveyanceComponent = $grossSalary * 0.04;
+            $educationAllowance = $grossSalary * 0.04;
+            $executive = $grossSalary * 0.30;
+
+            $ptDeduction = is_numeric($invoice->professional_tax ?? 200) ? (float)($invoice->professional_tax ?? 200) : 200;
+            $pfDeduction = $basicComponent * 0.12;
+            $esiDeduction = $basicComponent * 0.0075;
+
+            // Optional Deductions (MLWF, Other)
+            $mlwfDeduction = 0;
+            $otherDeduction = 0;
+            try {
+                $mlwfRecord = \DB::table('deductions')->where('employee_id', $employee->id)->where('deduction_type', 'MLWF')->where('month', $month)->first();
+                if ($mlwfRecord) $mlwfDeduction = (float)$mlwfRecord->amount;
+                
+                $otherRecord = \DB::table('deductions')->where('employee_id', $employee->id)->where('deduction_type', 'Other Deduction')->where('month', $month)->first();
+                if ($otherRecord) $otherDeduction = (float)$otherRecord->amount;
+            } catch (\Exception $e) {
+                \Log::warning('Error fetching deductions table (may not exist): ' . $e->getMessage());
+            }
+
+            // TDS
+            $tdsDeduction = 0;
+            try {
+                $tdsRecord = \DB::table('tds')->where('employee_id', $employee->id)->first();
+                if ($tdsRecord) {
+                    $tdsAllowances = \DB::table('tds_allowances')->where('employee_id', $employee->id)->sum('amount');
+                    $tdsDeductions = \DB::table('tds_deductions')->where('employee_id', $employee->id)->sum('amount');
+                    $tdsPayments = \DB::table('tds_payments')->where('employee_id', $employee->id)->where('is_paid', true)->get();
+                    
+                    if ($tdsRecord->tds_type == 0) {
+                        $totalTaxable = ($employee->set_salary * 12) + $tdsAllowances - (2500 + 50000 + $tdsDeductions);
+                        if ($totalTaxable <= 250000) $tax = 0;
+                        elseif ($totalTaxable <= 500000) $tax = ($totalTaxable - 250000) * 0.05;
+                        elseif ($totalTaxable <= 1000000) $tax = 12500 + (($totalTaxable - 500000) * 0.20);
+                        else $tax = 112500 + (($totalTaxable - 1000000) * 0.30);
+                    } else {
+                        $totalTaxable = ($employee->set_salary * 12) + $tdsAllowances - 75000 - $tdsDeductions;
+                        if ($totalTaxable > 300000 && $totalTaxable <= 600000) $tax = ($totalTaxable - 300000) * 0.05;
+                        elseif ($totalTaxable > 600000 && $totalTaxable <= 900000) $tax = 15000 + (($totalTaxable - 600000) * 0.10);
+                        elseif ($totalTaxable > 900000 && $totalTaxable <= 1200000) $tax = 45000 + (($totalTaxable - 900000) * 0.15);
+                        elseif ($totalTaxable > 1200000 && $totalTaxable <= 1500000) $tax = 90000 + (($totalTaxable - 1200000) * 0.20);
+                        elseif ($totalTaxable > 1500000) $tax = 150000 + (($totalTaxable - 1500000) * 0.30);
+                        else $tax = 0;
+                    }
+                    $totalTaxAmount = round($tax + round($tax * 0.04));
+                    $paidMonths = count($tdsPayments);
+                    $totalPaid = $tdsPayments->sum('amount');
+                    $remainingMonths = 12 - $paidMonths;
+                    if ($remainingMonths > 0) $tdsDeduction = round(($totalTaxAmount - $totalPaid) / $remainingMonths);
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Error calculating TDS: ' . $e->getMessage());
+            }
+
+            // Final Sums
+            $totalAllowances = 0;
+            try {
+                $totalAllowances = \DB::table('allowances')->where('employee_id', $employee->id)->where('month', $month)->sum('amount');
+            } catch (\Exception $e) {
+                \Log::warning('Error fetching allowances: ' . $e->getMessage());
+            }
+            
+            $loanDeduction = isset($invoice->loan) ? (float)$invoice->loan : 0;
+            
+            $grossSalaryWithExtra = $basicComponent + $hraComponent + $medicalComponent + $conveyanceComponent + $educationAllowance + $executive + $totalAllowances;
+            $totalDeductions = (float)$ptDeduction + (float)$loanDeduction + (float)$pfDeduction + (float)$esiDeduction + (float)$mlwfDeduction + (float)$otherDeduction + (float)$tdsDeduction + (float)$deductionForAbsent;
+            
+            $finalNetSalary = $grossSalaryWithExtra - $totalDeductions;
+            
+            \Log::info('Net Invoice Salary Calculated Successfully', [
+                'employee_id' => $employeeId,
+                'month' => $month,
+                'gross' => $grossSalaryWithExtra,
+                'deductions' => $totalDeductions,
+                'net' => $finalNetSalary
+            ]);
+
+            return $finalNetSalary;
+
+        } catch (\Exception $e) {
+            \Log::error('Net Invoice Salary Calculation Error (Major): ' . $e->getMessage(), [
+                'employee_id' => $employeeId,
+                'month' => $month,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return 0;
+        }
+    }
+
+    public static function employeeInvoiceDetail($employeeId, $month)
+    {
+        // allowance
+        $earning['allowance'] = Invoice::where('employee_id', $employeeId)->where('salary_month', $month)->get();
+        $employess = Employee::find($employeeId);
+        $totalAllowance = 0;
+
+        foreach ($earning['allowance'] as $earn) {
+            $totalAllowance += $earn->allowance ?? 0;
+        }
+
+        // commission
+        $earning['commission'] = Invoice::where('employee_id', $employeeId)->where('salary_month', $month)->get();
+        $employess = Employee::find($employeeId);
+        $totalCommission = 0;
+
+        foreach ($earning['commission'] as $earn) {
+            $totalCommission += $earn->commission ?? 0;
+        }
+
+        // otherpayment
+        $earning['otherPayment']      = Invoice::where('employee_id', $employeeId)->where('salary_month', $month)->get();
+        $employess = Employee::find($employeeId);
+        $totalotherpayment = 0;
+
+        foreach ($earning['otherPayment'] as $earn) {
+            $totalotherpayment += $earn->other_payment ?? 0;
+        }
+
+        //overtime
+        $earning['overTime'] = Invoice::where('employee_id', $employeeId)->where('salary_month', $month)->get();
+        $ot = 0;
+
+        foreach ($earning['overTime'] as $earn) {
+            $ot += $earn->overtime ?? 0;
+        }
+
+        // loan
+        $deduction['loan'] = Invoice::where('employee_id', $employeeId)->where('salary_month', $month)->get();
+        $employess = Employee::find($employeeId);
+        $totalloan = 0;
+
+        foreach ($deduction['loan'] as $loan) {
+            $totalloan += $loan->loan ?? 0;
+        }
+
+        // saturation_deduction
+        $deduction['deduction']      = Invoice::where('employee_id', $employeeId)->where('salary_month', $month)->get();
+        $employess = Employee::find($employeeId);
+        $totaldeduction = 0;
+
+        foreach ($deduction['deduction'] as $deductions) {
+            $totaldeduction += $deductions->saturation_deduction ?? 0;
+        }
+
+        $invoice['earning']        = $earning;
+        $invoice['totalEarning']   = $totalAllowance + $totalCommission + $totalotherpayment + $ot;
+        $invoice['deduction']      = $deduction;
+        $invoice['totalDeduction'] = $totalloan + $totaldeduction;
+
+        return $invoice;
+    }
 }
+
