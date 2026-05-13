@@ -125,11 +125,15 @@
                             <div class="col-xl-6">
                                 <div class="card">  
                                     <div class="card-header d-flex align-items-center">
-                                        <img src="{{ asset('https://connect360.in//storage/uploads/avatar/' . ($emp->user->avatar ?? 'default-avatar.png')) }}" 
+                                        @php
+                                            $profile = \App\Models\Utility::get_file('uploads/avatar/');
+                                        @endphp
+                                        <img src="{{ !empty($emp->user->avatar) ? $profile . $emp->user->avatar : $profile . 'avatar.png' }}" 
                                             alt="Profile Image" 
-                                            class="rounded-circle me-4" 
+                                            class="rounded-circle me-4 shadow-sm" 
                                             width="60" 
-                                            height="60">
+                                            height="60"
+                                            style="object-fit: cover;">
                                         <div>
                                             <h4 class="mb-0" style="color:black;">{{ $emp->name }}</h4>
                                             <small style="font-size: 12px; color:black;">{{ $emp->department->name ?? 'No Department' }} Team</small><small style="font-size:16px; color:black;"> &nbsp{{ $emp->designation->name ?? 'No Designation' }}&nbsp</small><br>
@@ -173,14 +177,22 @@
 
                                             @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)
                                                 <span class="text-primary"><i class="fas fa-fingerprint"></i> Not Punched In</span>
-                                            @elseif ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
-                                                <span class="text-success"><i class="fas fa-fingerprint"></i> Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }}</span>
-                                            @elseif ($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00'))
-                                                <span class="text-warning"><i class="fas fa-map-marker-alt"></i> Punched Out (Site Visit Pending)</span>
-                                            @elseif ($siteVisit && (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00'))
-                                                <span class="text-success"><i class="fas fa-map-marker-alt"></i> Site Visit Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in_2)->format('h:i A') }}</span>
                                             @else
-                                                <span class="text-danger"><i class="fas fa-sign-out-alt"></i> Punched Out at {{ \Carbon\Carbon::parse($employeeAttendance->clock_out_2 && $employeeAttendance->clock_out_2 != '00:00:00' ? $employeeAttendance->clock_out_2 : $employeeAttendance->clock_out)->format('h:i A') }}</span>
+                                                @if ($siteVisit)
+                                                    @if (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00')
+                                                        <span class="text-warning"><i class="fas fa-map-marker-alt"></i> Site Visit Pending (Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }})</span>
+                                                    @elseif (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00')
+                                                        <span class="text-success"><i class="fas fa-route"></i> Site Visit In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in_2)->format('h:i A') }}</span>
+                                                    @else
+                                                        <span class="text-danger"><i class="fas fa-check-circle"></i> Site Visit Completed</span>
+                                                    @endif
+                                                @else
+                                                    @if ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
+                                                        <span class="text-success"><i class="fas fa-fingerprint"></i> Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }}</span>
+                                                    @else
+                                                        <span class="text-danger"><i class="fas fa-sign-out-alt"></i> Punched Out at {{ \Carbon\Carbon::parse($employeeAttendance->clock_out)->format('h:i A') }}</span>
+                                                    @endif
+                                                @endif
                                             @endif
                                         </p>
 
@@ -190,7 +202,7 @@
                                             <input type="hidden" id="longitude" name="longitude">
                                             <input type="hidden" id="location" name="location">
                                             
-                                            @if (empty($employeeAttendance) || (!$employeeAttendance->clock_in))
+                                            @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)
                                                 <button type="submit" value="0" name="in" id="clock_in" class="btn btn-primary">{{ __('Punch In') }}</button>
                                             @elseif ($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00'))
                                                 <button type="submit" value="0" name="in" id="clock_in_2" class="btn btn-warning">{{ __('Site Visit In') }}</button>
@@ -448,7 +460,9 @@
             let progressCircle = document.getElementById("progressCircle");
             let progressTime = document.getElementById("progressTime");
             let clockInButton = document.getElementById("clock_in");
+            let clockIn2Button = document.getElementById("clock_in_2");
             let clockOutButton = document.getElementById("clock_out");
+            let clockOut2Button = document.getElementById("clock_out_2");
             let currentTimeElement = document.getElementById("currentDateTime");
             let confirmClockOutBtn = document.getElementById("confirmClockOutBtn");
             let attendanceStatus = document.getElementById("attendanceStatus");
@@ -456,7 +470,6 @@
             function isNewDay() {
                 const lastClockOutDate = localStorage.getItem("lastClockOutDate");
                 if (!lastClockOutDate) return false;
-                
                 const today = new Date().toLocaleDateString();
                 return lastClockOutDate !== today;
             }
@@ -503,7 +516,6 @@
                 }
                 
                 let elapsedSeconds;
-                
                 if (clockOutTime) {
                     elapsedSeconds = Math.floor((clockOutTime - clockInTime) / 1000);
                 } else {
@@ -519,316 +531,106 @@
                 let minutes = Math.floor((elapsedSeconds % 3600) / 60);
                 let seconds = elapsedSeconds % 60;
                 progressTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-                if (isPunchedOut) return;
             }
 
             function updateUI() {
-                // Only disable the clock out button if the user is actually punched out
-                // (has clock_out time in database and localStorage)
                 if (clockOutButton && isPunchedOut && clockOutTime) {
                     clockOutButton.disabled = true;
                     clockOutButton.classList.add("opacity-50", "cursor-not-allowed");
-                } else if (clockOutButton && !isPunchedOut) {
-                    // Enable the button if user is not punched out
-                    clockOutButton.disabled = false;
-                    clockOutButton.classList.remove("opacity-50", "cursor-not-allowed");
                 }
             }
 
             updateTimeDisplay();
             updateUI();
             updateProgress();
+            setInterval(updateTimeDisplay, 1000);
+            if (!isPunchedOut) setInterval(updateProgress, 1000);
 
-            // SIMPLE: Always enable the punch out button if it exists
-            if (clockOutButton) {
-                clockOutButton.disabled = false;
-                clockOutButton.classList.remove("opacity-50", "cursor-not-allowed");
-                console.log('Punch Out button enabled');
+            // ================= PROFESSIONAL GEOLOCATION SYSTEM =================
+            let preFetchedLocation = null;
+
+            function preFetchLocation() {
+                if (!navigator.geolocation) return;
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => { 
+                        preFetchedLocation = pos;
+                        if(document.getElementById('latitude')) document.getElementById('latitude').value = pos.coords.latitude;
+                        if(document.getElementById('longitude')) document.getElementById('longitude').value = pos.coords.longitude;
+                    },
+                    (err) => { console.log("Pre-fetch background check:", err.code); },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 } // Allow 5-min old location
+                );
             }
+            preFetchLocation();
 
-            // ONE-TIME PERMISSION CHECK ON PAGE LOAD
-            checkLocationPermissionOnLoad();
-
-            if (!isPunchedOut) {
-                setInterval(updateProgress, 1000);
-            }
-
-            if (clockInButton) {
-                clockInButton.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    console.log('Punch In button clicked!');
-                    handleLocationRequest('punch_in', clockInButton);
-                });
-            }
-
-            // NATIVE LOCATION PERMISSION SYSTEM
-            let locationPermissionGranted = false;
-            let locationPermissionChecked = false;
-
-            function handleLocationRequest(action, button) {
+            function handleAttendanceAction(action, button) {
                 const originalText = button.innerText;
                 button.disabled = true;
-                button.innerText = "Getting location...";
+                button.innerText = "Verifying Location...";
 
-                // Check if we already know the permission status
-                if (locationPermissionGranted) {
-                    // Permission already granted, get location directly
-                    getLocationAndSubmit(action, button);
+                // Strategy 1: Use pre-fetched location if fresh (< 2 mins)
+                if (preFetchedLocation && (new Date() - preFetchedLocation.timestamp < 120000)) {
+                    console.log("Using fresh pre-fetched location");
+                    submitWithLocation(preFetchedLocation, action);
                     return;
                 }
 
-                // Check permission status first
-                if (navigator.permissions) {
-                    navigator.permissions.query({ name: 'geolocation' }).then(result => {
-                        locationPermissionChecked = true;
-                        
-                        if (result.state === 'granted') {
-                            locationPermissionGranted = true;
-                            getLocationAndSubmit(action, button);
-                        } else if (result.state === 'prompt') {
-                            // Will trigger native browser permission dialog
-                            getLocationAndSubmit(action, button);
-                        } else if (result.state === 'denied') {
-                            // Permission denied, show simple error
-                            showSimpleLocationError(action, 'Location permission was denied. Please enable location access in your browser settings.');
-                            button.disabled = false;
-                            button.innerText = originalText;
-                        }
-                    }).catch(() => {
-                        // Permissions API not supported, try directly
-                        getLocationAndSubmit(action, button);
-                    });
-                } else {
-                    // Fallback: try directly (will show native permission if needed)
-                    getLocationAndSubmit(action, button);
-                }
-            }
-
-            function getLocationAndSubmit(action, button) {
-                if (!navigator.geolocation) {
-                    showSimpleLocationError(action, 'Your browser does not support location services. Please use a modern browser.');
-                    button.disabled = false;
-                    button.innerText = action === 'punch_in' ? 'Punch In' : 'Punch Out';
-                    return;
-                }
-
-                // Fast options for quick location
-                const fastOptions = {
-                    enableHighAccuracy: false,  // Faster but less accurate
-                    timeout: 3000,             // Reduced to 3s for speed
-                    maximumAge: 120000         // Allow cached location (2 minutes)
-                };
-
-                let locationTimeout;
-                let locationFound = false;
-
-                // Set a timeout to prevent hanging
-                locationTimeout = setTimeout(() => {
-                    if (!locationFound) {
-                        console.log('Fast location timeout, trying fallback...');
-                        tryFallbackLocation(action, button);
-                    }
-                }, 2500); // 2.5s fallback
-
+                // Strategy 2: High Accuracy Request
+                const options = { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 };
+                
                 navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        locationFound = true;
-                        clearTimeout(locationTimeout);
-                        
-                        console.log('Fast location captured:', position.coords.latitude, position.coords.longitude);
-                        
-                        // Mark permission as granted for future use
-                        locationPermissionGranted = true;
-                        locationPermissionChecked = true;
-                        
-                        button.innerText = "Submitting...";
-                        
-                        // Set coordinates immediately
-                        document.getElementById('latitude').value = position.coords.latitude;
-                        document.getElementById('longitude').value = position.coords.longitude;
-                        document.getElementById('location').value = "Location captured";
-                        
-                        // Submit immediately for speed
-                        submitAttendance(action);
-                        
-                        // Get address in background (non-blocking)
-                        getAddressInBackground(position.coords.latitude, position.coords.longitude);
+                    (pos) => { submitWithLocation(pos, action); },
+                    (err) => {
+                        console.log("High accuracy failed, trying network fallback...", err.code);
+                        // Strategy 3: Network-based fallback (much faster/reliable indoors)
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => { submitWithLocation(pos, action); },
+                            (err2) => {
+                                 button.disabled = false;
+                                 button.innerText = originalText;
+                                 let msg = "Location error: ";
+                                 if (err2.code === 1) {
+                                     // Developer Fallback for localhost testing
+                                     if(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                                         if(confirm("Browser blocked location on localhost (Insecure Origin). \n\nWould you like to use a 'Test Location' (Pune) to verify the Clock-In process works?")) {
+                                             submitWithLocation({coords: {latitude: 18.5204, longitude: 73.8567, accuracy: 0}}, action);
+                                             return;
+                                         }
+                                     }
+                                     msg += "Permission Denied. Please ensure you are using HTTPS and have allowed location in browser settings.";
+                                 } else if (err2.code === 3) {
+                                     msg += "Request timed out. Move to a window or check internet.";
+                                 } else {
+                                     msg += "Please ensure GPS is on and try again.";
+                                 }
+                                 alert(msg);
+                            },
+                            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                        );
                     },
-                    function(error) {
-                        locationFound = true;
-                        clearTimeout(locationTimeout);
-                        
-                        console.log('Fast location failed:', error.code);
-                        
-                        // Try fallback for certain errors
-                        if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
-                            tryFallbackLocation(action, button);
-                        } else {
-                            handleLocationError(action, button, error);
-                        }
-                    },
-                    fastOptions
+                    options
                 );
             }
 
-            function tryFallbackLocation(action, button) {
-                console.log('Trying fallback location method...');
-                
-                // Very fast options for fallback
-                const fallbackOptions = {
-                    enableHighAccuracy: false,
-                    timeout: 2000,
-                    maximumAge: 300000  // 5 minutes cached
-                };
-
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        console.log('Fallback location captured:', position.coords.latitude, position.coords.longitude);
-                        
-                        button.innerText = "Submitting...";
-                        
-                        // Set coordinates immediately
-                        document.getElementById('latitude').value = position.coords.latitude;
-                        document.getElementById('longitude').value = position.coords.longitude;
-                        document.getElementById('location').value = "Location captured";
-                        
-                        // Submit immediately
-                        submitAttendance(action);
-                        
-                        // Get address in background
-                        getAddressInBackground(position.coords.latitude, position.coords.longitude);
-                    },
-                    function(error) {
-                        console.log('Fallback location failed:', error.code);
-                        handleLocationError(action, button, error);
-                    },
-                    fallbackOptions
-                );
-            }
-
-            function handleLocationError(action, button, error) {
-                let errorMessage = '';
-                
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMessage = 'Location permission was denied. Please enable location access in your browser settings.';
-                        locationPermissionGranted = false;
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMessage = 'Location information unavailable. Please ensure GPS/location services are enabled.';
-                        break;
-                    case error.TIMEOUT:
-                        errorMessage = 'Location request timed out. Please check your connection and try again.';
-                        break;
-                    default:
-                        errorMessage = 'Unable to get location. Please try again.';
-                        break;
-                }
-                
-                showSimpleLocationError(action, errorMessage);
-                button.disabled = false;
-                button.innerText = action === 'punch_in' ? 'Punch In' : 'Punch Out';
-            }
-
-            function getAddressInBackground(lat, lon) {
-                // Get address in background without blocking
-                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // Update location field if still on page
-                        const locationField = document.getElementById('location');
-                        if (locationField && locationField.value === "Location captured") {
-                            locationField.value = data.display_name || "Location found";
-                        }
-                    })
-                    .catch(error => {
-                        console.log("Background geocoding skipped:", error.message);
-                    });
-            }
-
-            function showSimpleLocationError(action, message) {
-                // Simple alert instead of custom modal for native feel
-                alert(message);
-            }
-
-            function checkLocationPermissionOnLoad() {
-                // Check permission status on page load (silent)
-                if (navigator.permissions) {
-                    navigator.permissions.query({ name: 'geolocation' }).then(result => {
-                        locationPermissionChecked = true;
-                        
-                        if (result.state === 'granted') {
-                            locationPermissionGranted = true;
-                            console.log('Location permission already granted');
-                        } else if (result.state === 'prompt') {
-                            console.log('Location permission not yet requested');
-                            // Don't request on page load, wait for user action
-                        } else if (result.state === 'denied') {
-                            locationPermissionGranted = false;
-                            console.log('Location permission denied');
-                        }
-                    }).catch(() => {
-                        console.log('Permissions API not supported');
-                    });
-                } else {
-                    console.log('Permissions API not available');
-                }
-            }
-
-            function submitAttendance(action) {
-                // Update localStorage
-                let now = new Date();
+            function submitWithLocation(position, action) {
+                document.getElementById('latitude').value = position.coords.latitude;
+                document.getElementById('longitude').value = position.coords.longitude;
+                document.getElementById('location').value = "GPS Fixed (" + position.coords.accuracy.toFixed(0) + "m)";
                 
                 if (action === 'punch_in') {
-                    localStorage.setItem("clockInTime", now.toISOString());
-                    localStorage.removeItem("isPunchedOut");
-                    localStorage.removeItem("clockOutTime");
-                    localStorage.removeItem("lastClockOutDate");
-                    clockInTime = now;
-                    clockOutTime = null;
-                    isPunchedOut = false;
-                } else {
-                    localStorage.removeItem("clockInTime");
-                    localStorage.removeItem("clockOutTime");
-                    localStorage.removeItem("isPunchedOut");
-                    localStorage.setItem("lastClockOutDate", now.toLocaleDateString());
-                    clockOutTime = now;
-                    isPunchedOut = true;
+                    localStorage.setItem("clockInTime", new Date().toISOString());
+                } else if (action === 'punch_out') {
+                    localStorage.setItem("isPunchedOut", "true");
+                    localStorage.setItem("lastClockOutDate", new Date().toLocaleDateString());
                 }
-                
-                updateUI();
-                
-                // Submit the form
-                setTimeout(() => {
-                    document.getElementById('attendanceForm').submit();
-                }, 500);
+
+                document.getElementById('attendanceForm').submit();
             }
 
-            // PUNCH OUT HANDLER
-            if (confirmClockOutBtn) {
-                confirmClockOutBtn.addEventListener("click", function () {
-                    console.log('Confirm Clock Out button clicked!');
-                    handleLocationRequest('punch_out', confirmClockOutBtn);
-                });
-            }
-
-            // At the start of your script, add this check:
-            function isNewDay() {
-                const lastClockOutDate = localStorage.getItem("lastClockOutDate");
-                if (!lastClockOutDate) return false;
-                
-                const today = new Date().toLocaleDateString();
-                return lastClockOutDate !== today;
-            }
-
-            if (isNewDay()) {
-                localStorage.removeItem("clockInTime");
-                localStorage.removeItem("clockOutTime");
-                localStorage.removeItem("isPunchedOut");
-            }
-
-            setInterval(updateTimeDisplay, 1000);
+            // Event Listeners
+            if (clockInButton) clockInButton.addEventListener("click", (e) => { e.preventDefault(); handleAttendanceAction('punch_in', clockInButton); });
+            if (clockIn2Button) clockIn2Button.addEventListener("click", (e) => { e.preventDefault(); handleAttendanceAction('site_in', clockIn2Button); });
+            if (confirmClockOutBtn) confirmClockOutBtn.addEventListener("click", () => { handleAttendanceAction('punch_out', confirmClockOutBtn); });
         });
     </script>
 

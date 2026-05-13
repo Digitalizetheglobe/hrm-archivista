@@ -156,9 +156,9 @@ use App\Http\Controllers\SiteVisitController;
 */
 
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route::get('/', function () {
+//     return view('welcome');
+// });
 
 // web.php
 
@@ -1300,6 +1300,8 @@ Route::group(['middleware' => ['verified']], function () {
             'XSS',
         ]
     );
+
+    Route::get('attendanceemployee/sitevisit', [AttendanceEmployeeController::class, 'siteVisitIndex'])->name('attendanceemployee.sitevisit')->middleware(['auth', 'XSS']);
 
     Route::resource('attendanceemployee', AttendanceEmployeeController::class)->middleware(
         [

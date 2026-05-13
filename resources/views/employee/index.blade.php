@@ -19,17 +19,6 @@
             </a>
         @endcan
 
-                   <a href="{{ route('employee.index') }}" 
-        class="btn btn-sm btn-primary flex items-center space-x-2">
-            <i class="ti ti-users"></i>
-            <span>Active Employees</span>
-        </a>
-        <a href="{{ route('employee.index', ['show_left' => true]) }}" 
-        class="btn btn-sm btn-primary flex items-center space-x-2">
-            <i class="ti ti-user-off"></i>
-            <span>Left Employees</span>
-        </a>
-
         <a href="{{ route('employee.export') }}" 
         class="btn btn-sm btn-primary flex items-center space-x-2">
             <i class="ti ti-file-export"></i>
@@ -39,49 +28,66 @@
 
     @section('content')
         <div class="row">
+            <div class="col-sm-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center justify-content-between">
+                            <div class="col-xl-10">
+                                <div class="row">
+                                    <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
+                                        <div class="btn-box">
+                                            {{ Form::label('employee_type', __('Employee Type'), ['class' => 'form-label']) }}
+                                            <select id="employee_type_filter" class="form-control select">
+                                                <option value="">{{ __('All Types') }}</option>
+                                                <option value="Consultant" {{ request('employee_type') == 'Consultant' ? 'selected' : '' }}>{{ __('Consultant') }}</option>
+                                                <option value="Payroll" {{ request('employee_type') == 'Payroll' ? 'selected' : '' }}>{{ __('Payroll') }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12" id="confirmation_filter_container" style="display: none;">
+                                        <div class="btn-box">
+                                            {{ Form::label('confirm_employment', __('Confirmation Status'), ['class' => 'form-label']) }}
+                                            <select id="confirmation_filter" class="form-control select">
+                                                <option value="">{{ __('All Status') }}</option>
+                                                <option value="1" {{ request('confirm_employment') == '1' ? 'selected' : '' }}>{{ __('Confirmed') }}</option>
+                                                <option value="0" {{ request('confirm_employment') == '0' ? 'selected' : '' }}>{{ __('Not Confirmed') }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto mt-4">
+                                <a href="{{ route('employee.index') }}" class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="{{ __('Reset') }}">
+                                    <span class="btn-inner--icon"><i class="ti ti-trash text-white-off"></i></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="col-xl-12">
                 <div class="card">
-                    <div class="card-header card-body table-border-style">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            @if(isset($showLeft) && $showLeft)
-                                <h5>{{ __('Employees Who Have Left') }}</h5>
-                            @else
-                                <h5>{{ __('Active Employees') }}</h5>
-                            @endif
-                            
-                            <div class="d-flex gap-2">
-                                <!-- Status Filter -->
-                                <!-- <div class="btn-group" role="group">
-                                    <a href="{{ route('employee.index') }}" 
-                                       class="btn btn-sm {{ !request('show_left') ? 'btn-primary' : 'btn-outline-primary' }}">
-                                        {{ __('Active') }}
-                                    </a>
-                                    <a href="{{ route('employee.index', ['show_left' => true]) }}" 
-                                       class="btn btn-sm {{ request('show_left') ? 'btn-primary' : 'btn-outline-primary' }}">
-                                        {{ __('Left') }}
-                                    </a>
-                                </div> -->
-                                
-                                <!-- Employee Type Filter -->
-                                <select id="employee_type_filter" class="form-select form-select-sm" style="width: 150px;">
-                                    <option value="">{{ __('All Types') }}</option>
-                                    <option value="Contract" {{ request('employee_type') == 'Contract' ? 'selected' : '' }}>{{ __('Contract') }}</option>
-                                    <option value="Payroll" {{ request('employee_type') == 'Payroll' ? 'selected' : '' }}>{{ __('Payroll') }}</option>
-                                </select>
-                                
-                                <!-- Confirmation Filter (shown when Contract or Payroll is selected) -->
-                                <div id="confirmation_filter_container" style="display: none;">
-                                    <select id="confirmation_filter" class="form-select form-select-sm" style="width: 120px;">
-                                        <option value="">{{ __('All') }}</option>
-                                        <option value="1" {{ request('confirm_employment') == '1' ? 'selected' : '' }}>{{ __('Confirm') }}</option>
-                                        <option value="0" {{ request('confirm_employment') == '0' ? 'selected' : '' }}>{{ __('No Confirm') }}</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>                
-                        <div class="table-responsive">
-                            <table class="table" id="pc-dt-simple">
+                    <div class="card-header p-0 border-0">
+                        <ul class="nav nav-tabs" id="pills-tab" role="tablist" style="background: #f8f9fd; border-radius: 10px 10px 0 0;">
+                            <li class="nav-item" role="presentation" style="margin-bottom: -1px;">
+                                <a href="{{ route('employee.index') }}" 
+                                   class="nav-link {{ !request('show_left') ? 'active' : '' }}" 
+                                   style="{{ !request('show_left') ? 'background: white; border: none; border-radius: 10px 10px 0 0; color: #666; font-weight: bold; padding: 15px 25px;' : 'border: none; color: #888; padding: 15px 25px;' }}">
+                                    {{ __('Active Employees') }}
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation" style="margin-bottom: -1px;">
+                                <a href="{{ route('employee.index', ['show_left' => true]) }}" 
+                                   class="nav-link {{ request('show_left') ? 'active' : '' }}" 
+                                   style="{{ request('show_left') ? 'background: white; border: none; border-radius: 10px 10px 0 0; color: #f43f5e; font-weight: bold; padding: 15px 25px;' : 'border: none; color: #f43f5e; padding: 15px 25px;' }}">
+                                    {{ __('Inactive Employees') }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body table-border-style" style="padding:0px !important;">
+                        <table class="table" id="pc-dt-simple">
                                 <thead>
                                     <tr>
                                         <th>{{ __('Employee ID') }}</th>
@@ -119,7 +125,7 @@
                                             <td>{{ $employee->branch?->name ?? '-' }}</td>
                                             <td>
                                                 @if($employee->employee_type)
-                                                    <span class="badge bg-{{ $employee->employee_type == 'Contract' ? 'warning' : 'success' }}">
+                                                    <span class="badge bg-{{ $employee->employee_type == 'Consultant' ? 'warning' : 'success' }}">
                                                         {{ $employee->employee_type }}
                                                     </span>
                                                 @else
@@ -151,7 +157,7 @@
 
                                                                 <!-- Confirmation Button for Contract and Payroll Employees -->
                                                                 <div class="action-btn-confirm me-2">
-                                                                    @if($employee->employee_type == 'Contract' || $employee->employee_type == 'Payroll')
+                                                                    @if($employee->employee_type == 'Consultant' || $employee->employee_type == 'Payroll')
                                                                         @if(!$employee->confirm_of_employment)
                                                                             <div class="action-btn bg-success">
                                                                                 <button type="button" 
@@ -213,7 +219,6 @@
                             </table>
                         </div>
                     </div>
-                </div>
             </div>
 
         </div>
@@ -269,7 +274,7 @@
             // Show/hide confirmation filter based on employee type selection
             function toggleConfirmationFilter() {
                 var employeeType = $('#employee_type_filter').val();
-                if (employeeType === 'Contract' || employeeType === 'Payroll') {
+                if (employeeType === 'Consultant' || employeeType === 'Payroll') {
                     $('#confirmation_filter_container').show();
                 } else {
                     $('#confirmation_filter_container').hide();
@@ -293,8 +298,8 @@
                     currentUrl.searchParams.delete('employee_type');
                 }
                 
-                // Remove confirmation filter if not Contract or Payroll
-                if (employeeType !== 'Contract' && employeeType !== 'Payroll') {
+                // Remove confirmation filter if not Consultant or Payroll
+                if (employeeType !== 'Consultant' && employeeType !== 'Payroll') {
                     currentUrl.searchParams.delete('confirm_employment');
                 }
                 

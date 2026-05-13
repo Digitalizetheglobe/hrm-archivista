@@ -15,9 +15,9 @@ class SiteVisitController extends Controller
     {
         if (Auth::user()->type == 'employee' || Auth::user()->can('Manage Attendance')) {
             if (Auth::user()->type == 'employee') {
-                $siteVisits = SiteVisit::where('employee_id', Auth::user()->employee->id)->get();
+                $siteVisits = SiteVisit::where('employee_id', Auth::user()->employee->id)->orderBy('id', 'desc')->get();
             } else {
-                $siteVisits = SiteVisit::where('created_by', Auth::user()->creatorId())->get();
+                $siteVisits = SiteVisit::where('created_by', Auth::user()->creatorId())->orderBy('id', 'desc')->get();
             }
 
             return view('site_visit.index', compact('siteVisits'));

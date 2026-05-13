@@ -38,7 +38,7 @@
                    role="button" aria-haspopup="false" aria-expanded="false" style="background-color: white;">
                     <span class="theme-avtar" style="background-color: white;">
                         <img alt="#"
-                             src="<?php echo e(!empty($users->avatar) ? $profile . $users->avatar : $profile . '/avatar.png'); ?>"
+                             src="<?php echo e(!empty($users->avatar) ? $profile . $users->avatar : $profile . 'avatar.png'); ?>"
                              class="header-avtar" style="width: 100%; border-radius: 50%; background-color: white;">
                     </span>
                     <span class="hide-mob ms-2" style="background-color: white;"><?php echo e('Hi, ' . Auth::user()->name . '!'); ?>

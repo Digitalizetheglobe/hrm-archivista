@@ -133,6 +133,60 @@ class AttendanceEmployeeController extends Controller
         ];
     }
 
+    public function siteVisitIndex(Request $request)
+    {
+        if (\Auth::user()->can('Manage Attendance')) {
+            $branch = Branch::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
+            $branch->prepend('All', '');
+
+            $department = Department::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
+            $department->prepend('All', '');
+
+            if (\Auth::user()->type == 'employee') {
+                $emp = !empty(\Auth::user()->employee) ? \Auth::user()->employee->id : 0;
+                $attendanceEmployee = AttendanceEmployee::where('employee_id', $emp);
+                
+                if ($request->type == 'monthly' && !empty($request->month)) {
+                    $month = date('m', strtotime($request->month));
+                    $year  = date('Y', strtotime($request->month));
+                    $attendanceEmployee->whereMonth('date', $month)->whereYear('date', $year);
+                } elseif ($request->type == 'daily' && !empty($request->date)) {
+                    $attendanceEmployee->where('date', $request->date);
+                } else {
+                    $attendanceEmployee->whereMonth('date', date('m'))->whereYear('date', date('Y'));
+                }
+                
+                $attendanceEmployee = $attendanceEmployee->whereNotNull('clock_in_2')->where('clock_in_2', '!=', '00:00:00')->orderBy('id', 'desc')->get();
+            } else {
+                $employee = Employee::select('id')->where('created_by', \Auth::user()->creatorId());
+                if (!empty($request->branch)) {
+                    $employee->where('branch_id', $request->branch);
+                }
+                if (!empty($request->department)) {
+                    $employee->where('department_id', $request->department);
+                }
+                $employee = $employee->get()->pluck('id');
+
+                $attendanceEmployee = AttendanceEmployee::whereIn('employee_id', $employee);
+                if ($request->type == 'monthly' && !empty($request->month)) {
+                    $month = date('m', strtotime($request->month));
+                    $year  = date('Y', strtotime($request->month));
+                    $attendanceEmployee->whereMonth('date', $month)->whereYear('date', $year);
+                } elseif ($request->type == 'daily' && !empty($request->date)) {
+                    $attendanceEmployee->where('date', $request->date);
+                } else {
+                    $attendanceEmployee->whereMonth('date', date('m'))->whereYear('date', date('Y'));
+                }
+                
+                $attendanceEmployee = $attendanceEmployee->whereNotNull('clock_in_2')->where('clock_in_2', '!=', '00:00:00')->orderBy('id', 'desc')->get();
+            }
+
+            return view('attendance.site_visit', compact('attendanceEmployee', 'branch', 'department'));
+        } else {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+    }
+
     public function index(Request $request)
     {
         if (\Auth::user()->can('Manage Attendance')) {
@@ -184,8 +238,7 @@ class AttendanceEmployeeController extends Controller
                         ]
                     );
                 }
-
-                $attendanceEmployee = $attendanceEmployee->orderBy('date', 'desc')->get();
+                $attendanceEmployee = $attendanceEmployee->orderBy('id', 'desc')->get();
             } else {
                 $employee = Employee::select('id')->where('created_by', \Auth::user()->creatorId());
                 if (!empty($request->branch)) {
@@ -235,8 +288,7 @@ class AttendanceEmployeeController extends Controller
                         ]
                     );
                 }
-
-                $attendanceEmployee = $attendanceEmployee->orderBy('date', 'desc')->get();
+                $attendanceEmployee = $attendanceEmployee->orderBy('id', 'desc')->get();
             }
 
             return view('attendance.index', compact('attendanceEmployee', 'branch', 'department'));
@@ -1114,8 +1166,8 @@ class AttendanceEmployeeController extends Controller
     {
         try {
             $client = new \GuzzleHttp\Client([
-                'timeout' => 3,
-                'connect_timeout' => 3,
+                'timeout' => 2,
+                'connect_timeout' => 2,
                 'headers' => [
                     'User-Agent' => 'HRM-System/1.0 (attendance)',
                     'Accept' => 'application/json'

@@ -15,7 +15,7 @@
     RewriteRule ^ %1 [L,R=301]
 
     # Send Requests To Front Controller...
-    RewriteCond %{REQUEST_URI} !(\.css|\.js|\.png|\.jpg|\.jpeg|\.gif|robots\.txt|\.ico|\.woff|\.woff2|.ttf|\.svg)$ [NC]
+    RewriteCond %{REQUEST_URI} !(\.css|\.js|\.png|\.jpg|\.jpeg|\.gif|robots\.txt|\.ico|\.woff|\.woff2|.ttf|\.svg|\.mp4|\.webm|\.ogg)$ [NC]
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
@@ -23,5 +23,5 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(css|assets|landing|storage|installer|js)/(.*)$ public/$1/$2 [L,NC]
+    RewriteRule ^(css|assets|landing|landing_new|storage|installer|js)/(.*)$ public/$1/$2 [L,NC]
 </IfModule>

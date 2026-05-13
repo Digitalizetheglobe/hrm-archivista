@@ -141,6 +141,50 @@
                 display: none !important;
             }
         }
+
+        /* Fix for Datatable controls to prevent scrolling horizontally */
+        .dataTable-top {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 15px 10px !important;
+            position: sticky !important;
+            left: 0 !important;
+            width: 100% !important;
+            background: #fff !important;
+            z-index: 5 !important;
+        }
+
+        .dataTable-search {
+            margin-left: auto !important;
+        }
+
+        .dataTable-dropdown label {
+            font-size: 0 !important;
+        }
+        .dataTable-dropdown label select {
+            font-size: 14px !important;
+            margin-right: 5px !important;
+        }
+
+        .dataTable-info {
+            display: none !important;
+        }
+
+        .dataTable-bottom {
+            display: flex !important;
+            justify-content: flex-end !important;
+            padding: 15px 10px !important;
+        }
+
+        .dataTable-container {
+            overflow-x: auto !important;
+            width: 100% !important;
+        }
+
+        .table-responsive {
+            overflow-x: visible !important;
+        }
     </style>
 
     @stack('css-page')
@@ -372,7 +416,9 @@
 
     <script>
         document.querySelectorAll("#pc-dt-simple, .pc-dt-simple, .datatable, #tds-table, [id^='dataTable']").forEach(el => {
-            new simpleDatatables.DataTable(el);
+            new simpleDatatables.DataTable(el, {
+                pagerDelta: 1
+            });
         });
     </script>
 

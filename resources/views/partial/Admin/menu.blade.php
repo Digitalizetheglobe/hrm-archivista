@@ -119,7 +119,7 @@
             <!--dashboard-->
 
             <!-- user-->
-            @if (\Auth::user()->type == 'super admin')
+            <!-- @if (\Auth::user()->type == 'super admin')
                 <li class="dash-item text-white">
                     <a href="{{ route('user.index') }}" class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lgflex items-center space-x-2 ">
                         <span class="dash-micon shadow-none" style="background: none;"><i class="ti ti-user text-white text-[30px]"></i></span>
@@ -127,7 +127,7 @@
                     </a>
                 </li>
             @else
-                <!-- @if (Gate::check('Manage User') ||
+                @if (Gate::check('Manage User') ||
                         Gate::check('Manage Role') ||
                         Gate::check('Manage Employee Profile') ||
                         Gate::check('Manage Employee Last Login'))
@@ -146,14 +146,22 @@
                             </a>
 
                         <ul class="dash-submenu 
-                            {{ Request::route()->getName() == 'user.index' || Request::route()->getName() == 'users.create' || Request::route()->getName() == 'user.edit' || Request::route()->getName() == 'lastlogin'
+                            {{ Request::route()->getName() == 'user.index' || Request::route()->getName() == 'users.create' || Request::route()->getName() == 'user.edit' || Request::route()->getName() == 'roles.index' || Request::route()->getName() == 'lastlogin'
                                 ? 'active'
                                 : '' }}">
                             @can('Manage User')
-                                <li class="dash-item {{ Request::segment(1) == 'lastlogin' ? 'active' : '' }}">
+                                <li class="dash-item {{ Request::segment(1) == 'user' ? 'active' : '' }}">
                                     <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" 
                                     href="{{ route('user.index') }}">
                                     {{ __('User') }}
+                                    </a>
+                                </li>
+                            @endcan
+                            @can('Manage Role')
+                                <li class="dash-item {{ Request::segment(1) == 'roles' ? 'active' : '' }}">
+                                    <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" 
+                                    href="{{ route('roles.index') }}">
+                                    {{ __('Role') }}
                                     </a>
                                 </li>
                             @endcan
@@ -165,19 +173,10 @@
                                     </a>
                                 </li>
                             @endcan
-                            {{-- Uncomment if needed
-                            @can('Manage Employee Last Login')
-                                <li class="dash-item">
-                                    <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" 
-                                    href="{{ route('lastlogin') }}">
-                                    {{ __('Last Login') }}
-                                    </a>
-                                </li>
-                            @endcan --}}
                         </ul>
                     </li>
-                @endif -->
-            @endif
+                @endif
+            @endif -->
 
             <!-- user-->
 
@@ -241,6 +240,10 @@
                                     <li class="dash-item">
                                         <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
                                             href="{{ route('attendanceemployee.index') }}">{{ __('Marked Attendance') }}</a>
+                                    </li>
+                                    <li class="dash-item">
+                                        <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
+                                            href="{{ route('attendanceemployee.sitevisit') }}">{{ __('Site Visit Attendance') }}</a>
                                     </li>
                                     @can('Create Attendance')
                                         <li class="dash-item">

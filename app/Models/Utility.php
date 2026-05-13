@@ -1337,7 +1337,7 @@ class Utility extends Model
 
                     if ($settings['storage_setting'] == 'local') {
 
-                        $request->$key_name->move(storage_path($path), $name);
+                        $request->$key_name->move(storage_path('app/public/' . $path), $name);
 
                         $path = $path . $name;
                     } else if ($settings['storage_setting'] == 'wasabi') {

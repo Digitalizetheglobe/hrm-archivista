@@ -125,7 +125,7 @@
             <!--dashboard-->
 
             <!-- user-->
-            <?php if(\Auth::user()->type == 'super admin'): ?>
+            <!-- <?php if(\Auth::user()->type == 'super admin'): ?>
                 <li class="dash-item text-white">
                     <a href="<?php echo e(route('user.index')); ?>" class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lgflex items-center space-x-2 ">
                         <span class="dash-micon shadow-none" style="background: none;"><i class="ti ti-user text-white text-[30px]"></i></span>
@@ -133,7 +133,7 @@
                     </a>
                 </li>
             <?php else: ?>
-                <!-- <?php if(Gate::check('Manage User') ||
+                <?php if(Gate::check('Manage User') ||
                         Gate::check('Manage Role') ||
                         Gate::check('Manage Employee Profile') ||
                         Gate::check('Manage Employee Last Login')): ?>
@@ -152,14 +152,23 @@
                             </a>
 
                         <ul class="dash-submenu 
-                            <?php echo e(Request::route()->getName() == 'user.index' || Request::route()->getName() == 'users.create' || Request::route()->getName() == 'user.edit' || Request::route()->getName() == 'lastlogin'
+                            <?php echo e(Request::route()->getName() == 'user.index' || Request::route()->getName() == 'users.create' || Request::route()->getName() == 'user.edit' || Request::route()->getName() == 'roles.index' || Request::route()->getName() == 'lastlogin'
                                 ? 'active'
                                 : ''); ?>">
                             <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage User')): ?>
-                                <li class="dash-item <?php echo e(Request::segment(1) == 'lastlogin' ? 'active' : ''); ?>">
+                                <li class="dash-item <?php echo e(Request::segment(1) == 'user' ? 'active' : ''); ?>">
                                     <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" 
                                     href="<?php echo e(route('user.index')); ?>">
                                     <?php echo e(__('User')); ?>
+
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Role')): ?>
+                                <li class="dash-item <?php echo e(Request::segment(1) == 'roles' ? 'active' : ''); ?>">
+                                    <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" 
+                                    href="<?php echo e(route('roles.index')); ?>">
+                                    <?php echo e(__('Role')); ?>
 
                                     </a>
                                 </li>
@@ -173,11 +182,10 @@
                                     </a>
                                 </li>
                             <?php endif; ?>
-                            
                         </ul>
                     </li>
-                <?php endif; ?> -->
-            <?php endif; ?>
+                <?php endif; ?>
+            <?php endif; ?> -->
 
             <!-- user-->
 
@@ -241,6 +249,10 @@
                                     <li class="dash-item">
                                         <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
                                             href="<?php echo e(route('attendanceemployee.index')); ?>"><?php echo e(__('Marked Attendance')); ?></a>
+                                    </li>
+                                    <li class="dash-item">
+                                        <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
+                                            href="<?php echo e(route('attendanceemployee.sitevisit')); ?>"><?php echo e(__('Site Visit Attendance')); ?></a>
                                     </li>
                                     <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Create Attendance')): ?>
                                         <li class="dash-item">

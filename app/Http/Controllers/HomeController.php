@@ -428,7 +428,9 @@ class HomeController extends Controller
 
                 return view('dashboard.company', compact('hasTodaySiteVisits', 'siteAttendanceEmployees', 'todaytimesheet','todayEnquiryCount','notices','totalHolidays', 'arrEvents', 'announcements', 'employees', 'activeJob', 'inActiveJOb', 'meetings', 'countEmployee', 'countUser', 'countTicket', 'countOpenTicket', 'countCloseTicket', 'notClockIns', 'accountBalance', 'totalPayee', 'totalPayer', 'users', 'plan', 'storage_limit', 'quote','attendancePercentage', 'presentEmployeesWithClockIn', 'totalEmployees', 'totalDepartment', 'todayLeaves', 'todos','chartData', 'totalProjects'));
             }
-        } 
+        } else {
+            return view('landingpage::layouts.home');
+        }
     }
 
     public function clockOut(Request $request)

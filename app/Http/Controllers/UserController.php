@@ -276,7 +276,7 @@ class UserController extends Controller
 
             $dir        = 'uploads/avatar';
 
-            $image_path = $dir . $userDetail['avatar'];
+            $image_path = storage_path('app/public/' . $dir . '/' . $userDetail['avatar']);
             if (File::exists($image_path)) {
                 File::delete($image_path);
             }
