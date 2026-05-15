@@ -16,6 +16,9 @@ use App\Models\Utility;
 class Employee extends Model
 {
     protected $table = 'employees';
+    protected $casts = [
+        'confirm_of_employment' => 'date',
+    ];
     protected $fillable = [
         'user_id',
         'name',
@@ -88,12 +91,7 @@ class Employee extends Model
 
     public function getSalaryTypeName()
     {
-        $salaryTypeId = $this->attributes['salary_type'] ?? null;
-        if (!$salaryTypeId) {
-            return '-';
-        }
-        $salaryType = PayslipType::find($salaryTypeId);
-        return $salaryType ? $salaryType->name : '-';
+        return '-';
     }
 
     public function get_net_salary()

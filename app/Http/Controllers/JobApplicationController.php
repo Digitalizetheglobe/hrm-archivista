@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Models\JobCategory;
 use App\Models\GenerateOfferLetter;
-use App\Models\PayslipType;
 
 
 
@@ -343,11 +342,10 @@ class JobApplicationController extends Controller
         $status          = JobOnBoard::$status;
         $job_type        = JobOnBoard::$job_type;
         $salary_duration = JobOnBoard::$salary_duration;
-        $salary_type     = PayslipType::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
         $applications    = InterviewSchedule::select('interview_schedules.*', 'job_applications.name')->join('job_applications', 'interview_schedules.candidate', '=', 'job_applications.id')->where('interview_schedules.created_by', \Auth::user()->creatorId())->get()->pluck('name', 'candidate');
         $applications->prepend('-', '');
 
-        return view('jobApplication.onboardCreate', compact('id', 'status', 'applications', 'job_type', 'salary_type', 'salary_duration'));
+        return view('jobApplication.onboardCreate', compact('id', 'status', 'applications', 'job_type', 'salary_duration'));
     }
 
     public function jobOnBoard()
@@ -444,11 +442,10 @@ class JobApplicationController extends Controller
         $status     = JobOnBoard::$status;
         $job_type       = JobOnBoard::$job_type;
         $salary_duration = JobOnBoard::$salary_duration;
-        $salary_type      = PayslipType::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
 
 
 
-        return view('jobApplication.onboardEdit', compact('jobOnBoard', 'status', 'job_type', 'salary_type', 'salary_duration'));
+        return view('jobApplication.onboardEdit', compact('jobOnBoard', 'status', 'job_type', 'salary_duration'));
     }
 
     public function jobBoardDelete($id)
@@ -653,7 +650,7 @@ class JobApplicationController extends Controller
         $Onboard = JobOnBoard::find($id);
         $name = JobApplication::find($Onboard->application);
         $job_title = job::find($name->job);
-        $salary = PayslipType::find($Onboard->salary_type);
+        $salary_type_name = '-';
 
 
         $obj = [
@@ -665,7 +662,7 @@ class JobApplicationController extends Controller
             'workplace_location' => !empty($job->jobs->branches->name) ? $job->jobs->branches->name : '',
             'days_of_week' => !empty($Onboard->days_of_week) ? $Onboard->days_of_week : '',
             'salary' => !empty($Onboard->salary) ? $Onboard->salary : '',
-            'salary_type' => !empty($salary->name) ? $salary->name : '',
+            'salary_type' => $salary_type_name,
             'salary_duration' => !empty($Onboard->salary_duration) ? $Onboard->salary_duration : '',
             'offer_expiration_date' => !empty($Onboard->joining_date) ? $Onboard->joining_date : '',
 
@@ -683,7 +680,7 @@ class JobApplicationController extends Controller
         $Onboard = JobOnBoard::find($id);
         $name = JobApplication::find($Onboard->application);
         $job_title = job::find($name->job);
-        $salary = PayslipType::find($Onboard->salary_type);
+        $salary_type_name = '-';
 
         $obj = [
             'applicant_name' => $name->name,
@@ -694,7 +691,7 @@ class JobApplicationController extends Controller
             'workplace_location' => !empty($job->jobs->branches->name) ? $job->jobs->branches->name : '',
             'days_of_week' => !empty($Onboard->days_of_week) ? $Onboard->days_of_week : '',
             'salary' => !empty($Onboard->salary) ? $Onboard->salary : '',
-            'salary_type' => !empty($salary->name) ? $salary->name : '',
+            'salary_type' => $salary_type_name,
             'salary_duration' => !empty($Onboard->salary_duration) ? $Onboard->salary_duration : '',
             'offer_expiration_date' => !empty($Onboard->joining_date) ? $Onboard->joining_date : '',
 

@@ -24,6 +24,8 @@ use App\Imports\EmployeesImport;
 use App\Exports\EmployeesExport;
 use App\Models\Contract;
 use App\Models\ExperienceCertificate;
+use App\Models\GenerateOfferLetter;
+use App\Models\GenerateConfirmationLetter;
 use App\Models\LoginDetail;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\NOC;
@@ -285,9 +287,9 @@ class EmployeeController extends Controller
                     ]);
                 }
                 
-                // Update the confirmation status
+                // Update the confirmation status with current date
                 $employee->update([
-                    'confirm_of_employment' => true,
+                    'confirm_of_employment' => date('Y-m-d'),
                     'updated_at' => now()
                 ]);
                 
@@ -333,9 +335,9 @@ class EmployeeController extends Controller
                     ]);
                 }
                 
-                // Update confirmation status to false
+                // Update confirmation status to null
                 $employee->update([
-                    'confirm_of_employment' => false,
+                    'confirm_of_employment' => null,
                     'updated_at' => now()
                 ]);
                 
@@ -648,65 +650,112 @@ class EmployeeController extends Controller
         return response()->json($employees);
     }
 
-    public function joiningletterPdf($id)
+
+    public function employeeOfferletterPdf($id)
     {
         $users = \Auth::user();
+        $employees = Employee::where('id', $id)->where('created_by', $users->creatorId())->first();
+        if (empty($employees)) {
+            abort(404);
+        }
 
+        $employees->load(['department', 'designation', 'branch']);
         $currantLang = $users->currentLanguage();
-        $joiningletter = JoiningLetter::where('lang', $currantLang)->where('created_by', \Auth::user()->creatorId())->first();
-        $date = date('Y-m-d');
-        $employees = Employee::where('id', $id)->where('created_by', \Auth::user()->creatorId())->first();
+        $Offerletter = GenerateOfferLetter::where(['lang' => $currantLang, 'created_by' => $users->creatorId()])->first();
+        
+        if (empty($Offerletter)) {
+            $Offerletter = GenerateOfferLetter::where(['lang' => 'en', 'created_by' => $users->creatorId()])->first();
+        }
+
+        if (empty($Offerletter)) {
+            GenerateOfferLetter::defaultOfferLetterRegister($users->creatorId());
+            $Offerletter = GenerateOfferLetter::where(['lang' => $currantLang, 'created_by' => $users->creatorId()])->first();
+        }
+
+        if (empty($Offerletter)) {
+            return redirect()->back()->with('error', __('Offer letter template not found. Please set it up in Settings.'));
+        }
+
         $settings = \App\Models\Utility::settings();
-        $secs = strtotime($settings['company_start_time']) - strtotime("00:00");
-        $result = date("H:i", strtotime($settings['company_end_time']) - $secs);
+        $date = date('Y-m-d');
+
         $obj = [
-            'date' =>  \Auth::user()->dateFormat($date),
+            'applicant_name' => $employees->name,
+            'prefix' => ($employees->gender == 'Male') ? 'Mr' : (($employees->gender == 'Female') ? 'Ms' : ''),
+            'offer_date' => \Auth::user()->dateFormat(date('Y-m-d')),
             'app_name' => env('APP_NAME'),
-            'employee_name' => $employees->name,
-            'address' => !empty($employees->address) ? $employees->address : '',
-            'designation' => !empty($employees->designation->name) ? $employees->designation->name : '',
-            'start_date' => !empty($employees->company_doj) ? $employees->company_doj : '',
-            'branch' => !empty($employees->Branch->name) ? $employees->Branch->name : '',
-            'start_time' => !empty($settings['company_start_time']) ? $settings['company_start_time'] : '',
-            'end_time' => !empty($settings['company_end_time']) ? $settings['company_end_time'] : '',
-            'total_hours' => $result,
+            'job_title' => !empty($employees->designation->name) ? $employees->designation->name : '',
+            'department' => !empty($employees->department->name) ? $employees->department->name : '',
+            'job_type' => !empty($employees->employee_type) ? $employees->employee_type : '', 
+            'start_date' => !empty($employees->company_doj) ? \Auth::user()->dateFormat($employees->company_doj) : '',
+            'workplace_location' => !empty($employees->branch->name) ? $employees->branch->name : '',
+            'days_of_week' => '5 days',
+            'salary' => !empty($employees->salary) ? $employees->salary : '',
+            'salary_type' => $employees->getSalaryTypeName(),
+            'salary_duration' => 'month',
+            'next_pay_period' => '',
+            'offer_expiration_date' => !empty($employees->company_doj) ? \Auth::user()->dateFormat($employees->company_doj) : '',
         ];
 
-        $joiningletter->content = JoiningLetter::replaceVariable($joiningletter->content, $obj);
-        return view('employee.template.joiningletterpdf', compact('joiningletter', 'employees'));
+        $Offerletter->content = GenerateOfferLetter::replaceVariable($Offerletter->content, $obj);
+
+        return view('employee.template.offerletterpdf', compact('Offerletter', 'employees'));
     }
-    public function joiningletterDoc($id)
+
+    public function employeeConfirmationletterPdf($id)
     {
         $users = \Auth::user();
+        $employees = Employee::where('id', $id)->where('created_by', $users->creatorId())->first();
+        if (empty($employees)) {
+            abort(404);
+        }
 
+        $employees->load(['department', 'designation', 'branch']);
         $currantLang = $users->currentLanguage();
-        $joiningletter = JoiningLetter::where('lang', $currantLang)->where('created_by', \Auth::user()->creatorId())->first();
-        $date = date('Y-m-d');
-        $employees = Employee::where('id', $id)->where('created_by', \Auth::user()->creatorId())->first();
+        $Confirmationletter = GenerateConfirmationLetter::where(['lang' => $currantLang, 'created_by' => $users->creatorId()])->first();
+        
+        if (empty($Confirmationletter)) {
+            $Confirmationletter = GenerateConfirmationLetter::where(['lang' => 'en', 'created_by' => $users->creatorId()])->first();
+        }
+
+        if (empty($Confirmationletter)) {
+            GenerateConfirmationLetter::defaultConfirmationLetterRegister($users->creatorId());
+            $Confirmationletter = GenerateConfirmationLetter::where(['lang' => $currantLang, 'created_by' => $users->creatorId()])->first();
+        }
+
+        if (empty($Confirmationletter)) {
+            return redirect()->back()->with('error', __('Confirmation letter template not found. Please set it up in Settings.'));
+        }
+
         $settings = \App\Models\Utility::settings();
-        $secs = strtotime($settings['company_start_time']) - strtotime("00:00");
-        $result = date("H:i", strtotime($settings['company_end_time']) - $secs);
-
-
+        $date = date('Y-m-d');
 
         $obj = [
-            'date' =>  \Auth::user()->dateFormat($date),
-
+            'applicant_name' => $employees->name,
+            'prefix' => ($employees->gender == 'Male') ? 'Mr' : (($employees->gender == 'Female') ? 'Ms' : ''),
+            'offer_date' => \Auth::user()->dateFormat(date('Y-m-d')),
             'app_name' => env('APP_NAME'),
-            'employee_name' => $employees->name,
-            'address' => !empty($employees->address) ? $employees->address : '',
+            'job_title' => !empty($employees->designation->name) ? $employees->designation->name : '',
+            'department' => !empty($employees->department->name) ? $employees->department->name : '',
+            'job_type' => !empty($employees->employee_type) ? $employees->employee_type : '', 
+            'start_date' => !empty($employees->company_doj) ? \Auth::user()->dateFormat($employees->company_doj) : '',
+            'workplace_location' => !empty($employees->branch->name) ? $employees->branch->name : '',
+            'days_of_week' => '5 days',
+            'salary' => !empty($employees->salary) ? $employees->salary : '',
+            'salary_type' => $employees->getSalaryTypeName(),
+            'salary_duration' => 'month',
+            'next_pay_period' => '',
+            'offer_expiration_date' => !empty($employees->company_doj) ? \Auth::user()->dateFormat($employees->company_doj) : '',
+            'download_date' => \Auth::user()->dateFormat(date('Y-m-d')),
             'designation' => !empty($employees->designation->name) ? $employees->designation->name : '',
-            'start_date' => !empty($employees->company_doj) ? $employees->company_doj : '',
-            'branch' => !empty($employees->Branch->name) ? $employees->Branch->name : '',
-            'start_time' => !empty($settings['company_start_time']) ? $settings['company_start_time'] : '',
-            'end_time' => !empty($settings['company_end_time']) ? $settings['company_end_time'] : '',
-            'total_hours' => $result,
-            //         
-
+            'confirmation_date' => !empty($employees->confirm_of_employment) ? \Auth::user()->dateFormat($employees->confirm_of_employment) : \Auth::user()->dateFormat(date('Y-m-d')),
         ];
-        $joiningletter->content = JoiningLetter::replaceVariable($joiningletter->content, $obj);
-        return view('employee.template.joiningletterdocx', compact('joiningletter', 'employees'));
+
+        $Confirmationletter->content = GenerateConfirmationLetter::replaceVariable($Confirmationletter->content, $obj);
+
+        return view('employee.template.confirmationletterpdf', compact('Confirmationletter', 'employees'));
     }
+
 
     public function ExpCertificatePdf($id)
     {
@@ -714,117 +763,37 @@ class EmployeeController extends Controller
         if (!isset($currantLang)) {
             $currantLang = 'en';
         }
-        $termination = Termination::where('employee_id', $id)->where('created_by', \Auth::user()->creatorId())->first();
+        
         $experience_certificate = ExperienceCertificate::where('lang', $currantLang)->where('created_by', \Auth::user()->creatorId())->first();
-        $date = date('Y-m-d');
-        $employees = Employee::where('id', $id)->where('created_by', \Auth::user()->creatorId())->first();
-        $settings = \App\Models\Utility::settings();
-        $secs = strtotime($settings['company_start_time']) - strtotime("00:00");
-        $result = date("H:i", strtotime($settings['company_end_time']) - $secs);
-        $date1 = date_create($employees->company_doj);
-        $date2 = date_create($employees->termination_date);
-        $diff  = date_diff($date1, $date2);
-        $duration = $diff->format("%a days");
-
-        if (!empty($termination->termination_date)) {
-
-            $obj = [
-                'date' =>  \Auth::user()->dateFormat($date),
-                'app_name' => env('APP_NAME'),
-                'employee_name' => $employees->name,
-                'payroll' => !empty($employees->salaryType->name) ? $employees->salaryType->name : '',
-                'duration' => $duration,
-                'designation' => !empty($employees->designation->name) ? $employees->designation->name : '',
-
-            ];
-        } else {
-            return redirect()->back()->with('error', __('Termination date is required.'));
+        $employees = Employee::find($id);
+        
+        if (!$employees) {
+            return redirect()->back()->with('error', __('Employee not found.'));
         }
 
+        $date = date('Y-m-d');
+        $date1 = date_create($employees->company_doj);
+        $date2 = !empty($employees->company_dol) ? date_create($employees->company_dol) : date_create(date('Y-m-d'));
+        $diff  = date_diff($date1, $date2);
+        $duration = $diff->format("%y years %m months %d days");
+
+        $obj = [
+            'date' => \Auth::user()->dateFormat($date),
+            'app_name' => env('APP_NAME'),
+            'employee_name' => $employees->name,
+            'payroll' => !empty($employees->salaryType->name) ? $employees->salaryType->name : '',
+            'duration' => $duration,
+            'designation' => !empty($employees->designation->name) ? $employees->designation->name : '',
+            'download_date' => \Auth::user()->dateFormat(date('Y-m-d')),
+            'prefix_by_gender' => ($employees->gender == 'male' || $employees->gender == 'Male') ? 'Mr.' : 'Ms.',
+            'company_doj' => \Auth::user()->dateFormat($employees->company_doj),
+            'company_dol' => !empty($employees->company_dol) ? \Auth::user()->dateFormat($employees->company_dol) : \Auth::user()->dateFormat(date('Y-m-d')),
+        ];
 
         $experience_certificate->content = ExperienceCertificate::replaceVariable($experience_certificate->content, $obj);
         return view('employee.template.ExpCertificatepdf', compact('experience_certificate', 'employees'));
     }
-    public function ExpCertificateDoc($id)
-    {
-        $currantLang = \Cookie::get('LANGUAGE');
-        if (!isset($currantLang)) {
-            $currantLang = 'en';
-        }
-        $termination = Termination::where('employee_id', $id)->where('created_by', \Auth::user()->creatorId())->first();
-        $experience_certificate = ExperienceCertificate::where('lang', $currantLang)->where('created_by', \Auth::user()->creatorId())->first();
-        $date = date('Y-m-d');
-        $employees = Employee::where('id', $id)->where('created_by', \Auth::user()->creatorId())->first();;
-        $settings = \App\Models\Utility::settings();
-        $secs = strtotime($settings['company_start_time']) - strtotime("00:00");
-        $result = date("H:i", strtotime($settings['company_end_time']) - $secs);
-        $date1 = date_create($employees->company_doj);
-        $date2 = date_create($employees->termination_date);
-        $diff  = date_diff($date1, $date2);
-        $duration = $diff->format("%a days");
-        if (!empty($termination->termination_date)) {
-            $obj = [
-                'date' =>  \Auth::user()->dateFormat($date),
-                'app_name' => env('APP_NAME'),
-                'employee_name' => $employees->name,
-                'payroll' => !empty($employees->salaryType->name) ? $employees->salaryType->name : '',
-                'duration' => $duration,
-                'designation' => !empty($employees->designation->name) ? $employees->designation->name : '',
 
-            ];
-        } else {
-            return redirect()->back()->with('error', __('Termination date is required.'));
-        }
-
-        $experience_certificate->content = ExperienceCertificate::replaceVariable($experience_certificate->content, $obj);
-        return view('employee.template.ExpCertificatedocx', compact('experience_certificate', 'employees'));
-    }
-    public function NocPdf($id)
-    {
-        $users = \Auth::user();
-
-        $currantLang = $users->currentLanguage();
-        $noc_certificate = NOC::where('lang', $currantLang)->where('created_by', \Auth::user()->creatorId())->first();
-        $date = date('Y-m-d');
-        $employees = Employee::where('id', $id)->where('created_by', \Auth::user()->creatorId())->first();
-        $settings = \App\Models\Utility::settings();
-        $secs = strtotime($settings['company_start_time']) - strtotime("00:00");
-        $result = date("H:i", strtotime($settings['company_end_time']) - $secs);
-
-
-        $obj = [
-            'date' =>  \Auth::user()->dateFormat($date),
-            'employee_name' => $employees->name,
-            'designation' => !empty($employees->designation->name) ? $employees->designation->name : '',
-            'app_name' => env('APP_NAME'),
-        ];
-
-        $noc_certificate->content = NOC::replaceVariable($noc_certificate->content, $obj);
-        return view('employee.template.Nocpdf', compact('noc_certificate', 'employees'));
-    }
-    public function NocDoc($id)
-    {
-        $users = \Auth::user();
-
-        $currantLang = $users->currentLanguage();
-        $noc_certificate = NOC::where('lang', $currantLang)->where('created_by', \Auth::user()->creatorId())->first();
-        $date = date('Y-m-d');
-        $employees = Employee::where('id', $id)->where('created_by', \Auth::user()->creatorId())->first();
-        $settings = \App\Models\Utility::settings();
-        $secs = strtotime($settings['company_start_time']) - strtotime("00:00");
-        $result = date("H:i", strtotime($settings['company_end_time']) - $secs);
-
-
-        $obj = [
-            'date' =>  \Auth::user()->dateFormat($date),
-            'employee_name' => $employees->name,
-            'designation' => !empty($employees->designation->name) ? $employees->designation->name : '',
-            'app_name' => env('APP_NAME'),
-        ];
-
-        $noc_certificate->content = NOC::replaceVariable($noc_certificate->content, $obj);
-        return view('employee.template.Nocdocx', compact('noc_certificate', 'employees'));
-    }
 
     public function getdepartment(Request $request)
     {

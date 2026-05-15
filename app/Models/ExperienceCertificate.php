@@ -25,9 +25,10 @@ class ExperienceCertificate extends Model
             '{duration}',
             '{designation}',
             '{payroll}',
-            
-
-      
+            '{download_date}',
+            '{prefix_by_gender}',
+            '{company_doj}',
+            '{company_dol}',
         ];
         $arrValue    = [
             'app_name' => '-',
@@ -36,8 +37,10 @@ class ExperienceCertificate extends Model
             'duration' => '-',
             'designation' => '-',
             'payroll' => '-',
-            
-
+            'download_date' => '-',
+            'prefix_by_gender' => '-',
+            'company_doj' => '-',
+            'company_dol' => '-',
         ];
 
         foreach($obj as $key => $val)
@@ -735,24 +738,24 @@ class ExperienceCertificate extends Model
             <p>Unterschrift</p>
             
             <p>{app_name}</p>',
-            'en' => '<p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: center;" align="center"><span style="font-size: 18pt;"><strong>Experience Letter</strong></span></p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">&nbsp;</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">{app_name}</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">TO WHOM IT MAY CONCERN</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">{date}</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">{employee_name}</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">Tenure of Service {duration} in {app_name}.</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">{designation}</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">{payroll}</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">Roles and Responsibilities</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">&nbsp;</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">Brief description of the employee&rsquo;s course of employment and a positive statement from the manager or supervisor.</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">&nbsp;</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">Sincerely,</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">{employee_name}</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">{designation}</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">Signature</p>
-            <p lang="en-IN" style="margin-bottom: 0cm; direction: ltr; line-height: 2; text-align: left;" align="center">{app_name}</p>',
+            'en' => '<div style="text-align: right;">Date: {download_date}</div>
+
+<h3 style="text-align: center; font-weight: bold; margin-top: 30px;">EXPERIENCE CERTIFICATE</h3>
+
+<div style="margin-top: 50px; text-align: justify; line-height: 2;">
+    This is to certify that <strong>{prefix_by_gender} {employee_name}</strong> was working with <strong>Archivista Engineering Projects Pvt. Ltd.</strong> as <strong>{designation}</strong> from <strong>{company_doj}</strong> to <strong>{company_dol}</strong>. During his tenure of service we found him sincere, honest and hardworking person.
+</div>
+
+<div style="margin-top: 20px; text-align: justify;">
+    Wishing him all the best and the bright future.
+</div>
+
+<div style="margin-top: 50px;">
+    <div style="font-weight: bold;">For Archivista Engineering Projects Pvt. Ltd.</div>
+    <br><br><br>
+    <div style="font-weight: bold;">Sanjay Rode</div>
+    <div style="font-weight: bold;">Director</div>
+</div>',
             'es' => '<h3 style="text-align: center;">Carta de experiencia</h3>
             
             

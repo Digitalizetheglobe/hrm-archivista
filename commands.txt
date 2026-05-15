@@ -1,0 +1,108 @@
+# 🚀 Laravel Project Update Guide (VPS - Production)
+
+## 📌 Use Case
+
+हा guide तेव्हा वापरायचा जेव्हा:
+
+* project आधीच setup आहे ✔️
+* `.env` already configured आहे ✔️
+* फक्त **new code update (git pull)** करायचा आहे ✔️
+
+---
+
+# ✅ STEP 1 — Project Directory मध्ये जा
+
+```bash
+cd /home/hrma.archivistaindia.com/public_html
+```
+
+---
+
+# ✅ STEP 2 — Remove Local Cache Changes (Important)
+
+```bash
+git reset --hard
+```
+
+👉 हे cache files remove करेल (safe)
+
+---
+
+# ✅ STEP 3 — Latest Code Pull करा
+
+```bash
+git pull origin main
+```
+
+---
+
+# ✅ STEP 4 — Composer Install (PHP 8.2 वापरून)
+
+```bash
+/usr/local/lsws/lsphp82/bin/php /usr/bin/composer install --no-dev --optimize-autoloader
+```
+
+---
+
+# ✅ STEP 5 — Permissions Fix करा
+
+```bash
+chown -R nobody:nobody storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+```
+
+---
+
+# ✅ STEP 6 — Cache Clear करा
+
+```bash
+php artisan optimize:clear
+```
+
+---
+
+# ✅ STEP 7 — Database Migration (if needed)
+
+```bash
+php artisan migrate --force
+```
+
+👉 ⚠️ Production मध्ये `--force` वापर
+
+---
+
+# ✅ STEP 8 — Restart Server
+
+```bash
+systemctl restart lsws
+```
+
+---
+
+# 🎯 FINAL RESULT
+
+👉 Website updated successfully
+👉 No 500 errors
+👉 Latest code live 🚀
+
+---
+
+# ⚠️ Important Notes
+
+* `git reset --hard` → local changes delete करतो (safe for production)
+* `storage/` आणि `bootstrap/cache/` writable असायला हवेत
+* Composer नेहमी PHP 8.2 वर run कर
+
+---
+
+# 💡 Quick One-Line Update (Fast तरीका)
+
+```bash
+cd /home/hrma.archivistaindia.com/public_html && git reset --hard && git pull origin main && /usr/local/lsws/lsphp82/bin/php /usr/bin/composer install --no-dev --optimize-autoloader && php artisan optimize:clear && php artisan migrate --force && chown -R nobody:nobody storage bootstrap/cache && chmod -R 775 storage bootstrap/cache && systemctl restart lsws
+```
+
+---
+
+# ✅ DONE
+
+Production update complete 🎉

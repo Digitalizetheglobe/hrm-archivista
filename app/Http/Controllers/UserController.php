@@ -248,10 +248,20 @@ class UserController extends Controller
         return view('user.profile')->with('userDetail', $userDetail);
     }
 
-    public function editprofile(Request $request)
+    use Illuminate\Support\Facades\Log;
+
+public function editprofile(Request $request)
     {
         $userDetail = \Auth::user();
         $user       = User::findOrFail($userDetail['id']);
+
+        // Log current environment and storage settings
+        $settings = Utility::settings();
+        Log::info('EditProfile start', [
+            'user_id' => $userDetail['id'],
+            'storage_setting' => $settings['storage_setting'] ?? 'undefined',
+            'request_ip' => $request->ip(),
+        ]);
 
         $validator = \Validator::make(
             $request->all(),
@@ -263,11 +273,12 @@ class UserController extends Controller
         );
         if ($validator->fails()) {
             $messages = $validator->getMessageBag();
-
+            Log::error('EditProfile validation failed', ['errors' => $messages->all()]);
             return redirect()->back()->with('error', $messages->first());
         }
 
         if ($request->hasFile('profile')) {
+            Log::info('Avatar upload detected', ['original_name' => $request->file('profile')->getClientOriginalName()]);
             $filenameWithExt = $request->file('profile')->getClientOriginalName();
             $filename        = pathinfo($filenameWithExt, PATHINFO_FILENAME);
             $extension       = $request->file('profile')->getClientOriginalExtension();
@@ -279,23 +290,29 @@ class UserController extends Controller
             $image_path = storage_path('app/public/' . $dir . '/' . $userDetail['avatar']);
             if (File::exists($image_path)) {
                 File::delete($image_path);
+                Log::info('Deleted old avatar', ['path' => $image_path]);
             }
             $url = '';
             $path = Utility::upload_file($request, 'profile', $fileNameToStore, $dir, []);
+            Log::info('Utility::upload_file result', ['result' => $path]);
 
             if ($path['flag'] == 1) {
                 $url = $path['url'];
+                Log::info('Avatar uploaded successfully', ['url' => $url]);
             } else {
+                Log::error('Avatar upload failed in Utility', ['msg' => $path['msg']]);
                 return redirect()->route('profile', \Auth::user()->id)->with('error', __($path['msg']));
             }
         }
 
         if (!empty($request->profile)) {
             $user['avatar'] = $fileNameToStore;
+            Log::info('Set new avatar filename on user', ['filename' => $fileNameToStore]);
         }
         $user['name']  = $request['name'];
         $user['email'] = $request['email'];
         $user->save();
+        Log::info('User profile updated', ['user_id' => $user->id]);
 
         if (\Auth::user()->type == 'employee') {
             $employee        = Employee::where('user_id', $user->id)->first();

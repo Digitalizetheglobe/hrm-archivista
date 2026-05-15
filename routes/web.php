@@ -778,14 +778,6 @@ Route::group(['middleware' => ['verified']], function () {
     );
 
 
-    //payslip
-
-    Route::resource('paysliptype', PayslipTypeController::class)->middleware(
-        [
-            'auth',
-            'XSS',
-        ]
-    );
 
 
     Route::resource('allowance', AllowanceController::class)->middleware(
@@ -2088,20 +2080,17 @@ Route::group(['middleware' => ['verified']], function () {
     //joining Letter
     Route::post('setting/joiningletter/{lang?}', [SettingsController::class, 'joiningletterupdate'])->name('joiningletter.update');
     Route::get('setting/joiningletter/', [SettingsController::class, 'index'])->name('get.joiningletter.language');
-    Route::get('employee/pdf/{id}', [EmployeeController::class, 'joiningletterPdf'])->name('joiningletter.download.pdf');
-    Route::get('employee/doc/{id}', [EmployeeController::class, 'joiningletterDoc'])->name('joininglatter.download.doc');
+    Route::get('employee/offer-letter-pdf/{id}', [EmployeeController::class, 'employeeOfferletterPdf'])->name('employee.offerletter.download.pdf');
+    Route::get('employee/confirmation-letter-pdf/{id}', [EmployeeController::class, 'employeeConfirmationletterPdf'])->name('employee.confirmationletter.download.pdf');
 
     //Experience Certificate
     Route::post('setting/exp/{lang?}', [SettingsController::class, 'experienceCertificateupdate'])->name('experiencecertificate.update');
     Route::get('setting/exp', [SettingsController::class, 'index'])->name('get.experiencecertificate.language');
     Route::get('employee/exppdf/{id}', [EmployeeController::class, 'ExpCertificatePdf'])->name('exp.download.pdf');
-    Route::get('employee/expdoc/{id}', [EmployeeController::class, 'ExpCertificateDoc'])->name('exp.download.doc');
 
     //NOC
     Route::post('setting/noc/{lang?}', [SettingsController::class, 'NOCupdate'])->name('noc.update');
     Route::get('setting/noc', [SettingsController::class, 'index'])->name('get.noc.language');
-    Route::get('employee/nocpdf/{id}', [EmployeeController::class, 'NocPdf'])->name('noc.download.pdf');
-    Route::get('employee/nocdoc/{id}', [EmployeeController::class, 'NocDoc'])->name('noc.download.doc');
 
     //appricalStar
     Route::post('/appraisals', [AppraisalController::class, 'empByStar'])->name('empByStar')->middleware(['auth', 'XSS']);

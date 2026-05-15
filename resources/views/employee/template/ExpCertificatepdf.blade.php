@@ -11,9 +11,9 @@
         <div class="col-lg-10">
             <div class="container">
                 <div>
-                    <div class="card mt-5" id="printTable" style="margin-left: 180px;margin-right: -57px;">
+                    <div class="card mt-5" id="printTable" style="margin: 0 auto;">
 
-                        <div class="card-body" id="boxes">
+                        <div class="card-body" id="boxes" style="padding: 50px;">
                             <div class="row invoice-title mt-2">
                                 <div class="col-xs-12 col-sm-12 col-nd-6 col-lg-6 col-12 ">
                                     {{-- <img  src="{{$img}}" style="max-width: 150px;"/> --}}

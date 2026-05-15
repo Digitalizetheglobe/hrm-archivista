@@ -12,10 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('current_session_id')->nullable()->after('remember_token');
-            $table->timestamp('last_login_at')->nullable()->after('current_session_id');
-            $table->string('last_login_ip')->nullable()->after('last_login_at');
-            $table->text('last_login_device')->nullable()->after('last_login_ip');
+            if (!Schema::hasColumn('users', 'current_session_id')) {
+                $table->string('current_session_id')->nullable()->after('remember_token');
+            }
+            if (!Schema::hasColumn('users', 'last_login_at')) {
+                $table->timestamp('last_login_at')->nullable()->after('current_session_id');
+            }
+            if (!Schema::hasColumn('users', 'last_login_ip')) {
+                $table->string('last_login_ip')->nullable()->after('last_login_at');
+            }
+            if (!Schema::hasColumn('users', 'last_login_device')) {
+                $table->text('last_login_device')->nullable()->after('last_login_ip');
+            }
         });
     }
 

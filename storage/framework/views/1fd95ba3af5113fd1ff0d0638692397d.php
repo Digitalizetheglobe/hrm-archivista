@@ -10,11 +10,40 @@
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('action-button'); ?>
-    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit employee')): ?>
-        <a href="<?php echo e(route('employee.edit', Crypt::encrypt($employee->id))); ?>" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="<?php echo e(__('Edit')); ?>">
-            <i class="ti ti-pencil"></i>
+    <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+        <a href="<?php echo e(route('employee.offerletter.download.pdf', $employee->id)); ?>"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-sm  bg-primary text-white"
+            data-bs-toggle="tooltip"
+            title="<?php echo e(__('Download Offer Letter PDF')); ?>">
+            <i class="ti ti-download "></i> <?php echo e(__('Offer Letter')); ?>
+
         </a>
-    <?php endif; ?>
+        <a href="<?php echo e(route('employee.confirmationletter.download.pdf', $employee->id)); ?>"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-sm bg-primary text-white"
+            data-bs-toggle="tooltip"
+            title="<?php echo e(__('Download Confirmation Letter PDF')); ?>">
+            <i class="ti ti-download"></i> <?php echo e(__('Confirmation Letter')); ?>
+
+        </a>
+        <a href="<?php echo e(route('exp.download.pdf', $employee->id)); ?>"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-sm bg-primary text-white"
+            data-bs-toggle="tooltip"
+            title="<?php echo e(__('Download Experience Letter PDF')); ?>">
+            <i class="ti ti-download"></i> <?php echo e(__('Experience Letter')); ?>
+
+        </a>
+        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit employee')): ?>
+            <a href="<?php echo e(route('employee.edit', Crypt::encrypt($employee->id))); ?>" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="<?php echo e(__('Edit')); ?>">
+                <i class="ti ti-pencil"></i>
+            </a>
+        <?php endif; ?>
+    </div>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -30,7 +59,7 @@
                     <div class="col-md-6">
                         <div class="card mb-4">
                             <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0"><i class="ti ti-user me-2"></i><?php echo e(__('Personal Details')); ?></h6>
+                                <h6 class="mb-0 text-white"><i class="ti ti-user me-2"></i><?php echo e(__('Personal Details')); ?></h6>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -68,7 +97,7 @@
                                             <?php endif; ?>
                                             <tr>
                                                 <th><?php echo e(__('Address')); ?></th>
-                                                <td><?php echo e($employee->address); ?></td>
+                                                <td style="white-space: normal; word-break: break-word;"><?php echo e($employee->address); ?></td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -78,7 +107,6 @@
                         
 
                         
-                        <!-- Education & Skills Details -->
                         
                     </div>
 
@@ -86,7 +114,7 @@
                     <div class="col-md-6">
                         <div class="card mb-4">
                             <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0"><i class="ti ti-building me-2"></i><?php echo e(__('Company Details')); ?></h6>
+                                <h6 class="mb-0 text-white"><i class="ti ti-building me-2"></i><?php echo e(__('Company Details')); ?></h6>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -142,10 +170,12 @@
                     </div>
                 </div>
 
-                <div class="row">
-                <div class="card md-12">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0"><i class="ti ti-school me-2"></i><?php echo e(__('Education & Skills')); ?></h6>
+                <!-- Education & Skills Details -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0 text-white"><i class="ti ti-school me-2"></i><?php echo e(__('Education & Skills')); ?></h6>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -177,7 +207,8 @@
                                     </table>
                                 </div>
                             </div>
-                        </div>
+                    </div>
+                    </div>
                 </div>
 
                 
@@ -187,7 +218,7 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0"><i class="ti ti-file-download me-2"></i><?php echo e(__('Payroll Details')); ?></h6>
+                                <h6 class="mb-0 text-white"><i class="ti ti-file-download me-2"></i><?php echo e(__('Payroll Details')); ?></h6>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">

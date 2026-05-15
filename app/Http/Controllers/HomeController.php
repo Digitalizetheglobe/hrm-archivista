@@ -286,6 +286,8 @@ class HomeController extends Controller
                     ->where('status', 'Approved')
                     ->get();
 
+                $totalSiteVisitsCount = $todaySiteVisits->count();
+
                 $siteAttendanceEmployees = $todaySiteVisits->map(function ($visit) use ($currentDate) {
                     $attendance = AttendanceEmployee::where('employee_id', $visit->employee_id)
                         ->where('date', $currentDate)
@@ -307,6 +309,9 @@ class HomeController extends Controller
                     }
                     return null;
                 })->filter();
+
+                $siteVisitPresentCount = $siteAttendanceEmployees->count();
+                $siteVisitAttendancePercentage = $totalSiteVisitsCount > 0 ? ($siteVisitPresentCount / $totalSiteVisitsCount) * 100 : 0;
 
                 $accountBalance = AccountList::where('created_by', '=', \Auth::user()->creatorId())->sum('initial_balance');
                 $activeJob   = Job::where('status', 'active')->where('created_by', '=', \Auth::user()->creatorId())->count();
@@ -426,7 +431,7 @@ class HomeController extends Controller
 
 
 
-                return view('dashboard.company', compact('hasTodaySiteVisits', 'siteAttendanceEmployees', 'todaytimesheet','todayEnquiryCount','notices','totalHolidays', 'arrEvents', 'announcements', 'employees', 'activeJob', 'inActiveJOb', 'meetings', 'countEmployee', 'countUser', 'countTicket', 'countOpenTicket', 'countCloseTicket', 'notClockIns', 'accountBalance', 'totalPayee', 'totalPayer', 'users', 'plan', 'storage_limit', 'quote','attendancePercentage', 'presentEmployeesWithClockIn', 'totalEmployees', 'totalDepartment', 'todayLeaves', 'todos','chartData', 'totalProjects'));
+                return view('dashboard.company', compact('siteVisitPresentCount', 'totalSiteVisitsCount', 'siteVisitAttendancePercentage', 'hasTodaySiteVisits', 'siteAttendanceEmployees', 'todaytimesheet', 'todayEnquiryCount', 'notices', 'totalHolidays', 'arrEvents', 'announcements', 'employees', 'activeJob', 'inActiveJOb', 'meetings', 'countEmployee', 'countUser', 'countTicket', 'countOpenTicket', 'countCloseTicket', 'notClockIns', 'accountBalance', 'totalPayee', 'totalPayer', 'users', 'plan', 'storage_limit', 'quote', 'attendancePercentage', 'presentEmployeesWithClockIn', 'totalEmployees', 'totalDepartment', 'todayLeaves', 'todos', 'chartData', 'totalProjects'));
             }
         } else {
             return view('landingpage::layouts.home');

@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('employees', function (Blueprint $table) {
-            $table->decimal('per_day_rate', 10, 2)->nullable()->after('employee_type');
+            if (!Schema::hasColumn('employees', 'per_day_rate')) {
+                $table->decimal('per_day_rate', 10, 2)->nullable()->after('employee_type');
+            }
         });
     }
 

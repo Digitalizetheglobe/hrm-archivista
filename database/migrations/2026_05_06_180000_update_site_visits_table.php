@@ -14,21 +14,27 @@ return new class extends Migration
     public function up()
     {
         Schema::table('site_visits', function (Blueprint $table) {
-            $table->date('start_date')->after('employee_id')->nullable();
-            $table->date('end_date')->after('start_date')->nullable();
+            if (!Schema::hasColumn('site_visits', 'start_date')) {
+                $table->date('start_date')->after('employee_id')->nullable();
+            }
+            if (!Schema::hasColumn('site_visits', 'end_date')) {
+                $table->date('end_date')->after('start_date')->nullable();
+            }
         });
 
         // Copy data if needed, but the user said "Remove the old date column"
         // and "currently there is only a single date column"
         // Let's copy existing date to start_date and end_date first
-        DB::table('site_visits')->update([
-            'start_date' => DB::raw('date'),
-            'end_date' => DB::raw('date'),
-        ]);
+        if (Schema::hasColumn('site_visits', 'date')) {
+            DB::table('site_visits')->update([
+                'start_date' => DB::raw('date'),
+                'end_date' => DB::raw('date'),
+            ]);
 
-        Schema::table('site_visits', function (Blueprint $table) {
-            $table->dropColumn('date');
-        });
+            Schema::table('site_visits', function (Blueprint $table) {
+                $table->dropColumn('date');
+            });
+        }
     }
 
     /**

@@ -20,8 +20,11 @@ class GenerateOfferLetter extends Model
     {
         $arrVariable = [
             '{applicant_name}',
+            '{prefix}',
+            '{offer_date}',
             '{app_name}',
             '{job_title}',
+            '{department}',
             '{job_type}',
             '{start_date}',
             '{workplace_location}',
@@ -31,23 +34,23 @@ class GenerateOfferLetter extends Model
             '{salary_duration}',
             '{next_pay_period}',
             '{offer_expiration_date}',
-
-      
         ];
-        $arrValue    = [
+        $arrValue = [
             'applicant_name' => '-',
+            'prefix' => '-',
+            'offer_date' => '-',
             'app_name' => '-',
             'job_title' => '-',
+            'department' => '-',
             'job_type' => '-',
             'start_date' => '-',
             'workplace_location' => '-',
             'days_of_week' => '-',
-            'salary'=>'-',
+            'salary' => '-',
             'salary_type' => '-',
             'salary_duration' => '-',
             'next_pay_period' => '-',
             'offer_expiration_date' => '-',
-
         ];
 
         foreach($obj as $key => $val)
@@ -69,7 +72,7 @@ class GenerateOfferLetter extends Model
               
                     'ar' => '<p style="text-align: center;"><span style="font-size: 18pt;"><strong>رسالة عرض</strong></span></p>
                     
-                    <p>عزيزي {applicationant_name} ،</p>
+                    <p>عزيزي {applicant_name} ،</p>
                     
                     <p>{app_name} متحمس لاصطحابك على متن الطائرة بصفتك {job_title}.</p>
                     
@@ -145,26 +148,58 @@ class GenerateOfferLetter extends Model
                     
                     <p>{app_name}</p>',
 
-                    'en' => '<p style="text-align: center;"><strong>Offer Letter</strong></p>
-                    
-                    <p>Dear {applicant_name},</p>
-                    
-                    <p>{app_name} is excited to bring you on board as {job_title}.</p>
-                    
-                    <p>Were just a few formalities away from getting down to work. Please take the time to review our formal offer. It includes important details about your compensation, benefits, and the terms and conditions of your anticipated employment with {app_name}.</p>
-                    
-                    <p>{app_name} is offering a {job_type}. position for you as {job_title}, reporting to [immediate manager/supervisor] starting on {start_date} at{workplace_location}. Expected hours of work are{days_of_week}.</p>
-                    
-                    <p>In this position, {app_name} is offering to start you at a pay rate of {salary} per {salary_type}. You will be paid on a{salary_duration} basis.&nbsp;</p>
-                    
-                    <p>As part of your compensation, were also offering [if applicable, youll describe your bonus, profit sharing, commission structure, stock options, and compensation committee rules here].</p>
-                    
-                    <p>As an employee of {app_name} , you will be eligible for briefly name benefits, such as health insurance, stock plan, dental insurance, etc.</p>
-                    
-                    <p>Please indicate your agreement with these terms and accept this offer by signing and dating this agreement on or before {offer_expiration_date}.</p>
-                    
-                    <p>Sincerely,</p>
-                    <p>{app_name}</p>',
+                    'en' => '<div style="text-align: right;">Date: {offer_date}</div>
+
+<div style="text-align: center; font-weight: bold; font-size: 1.2em; text-decoration: underline; margin-top: 20px;">
+    Offer Letter .
+</div>
+
+<div style="font-weight: bold; text-decoration: underline; margin-top: 30px;">
+    Sub: Offer Letter
+</div>
+
+<div style="margin-top: 20px;">
+    Dear {prefix}. {applicant_name},
+</div>
+
+<div style="margin-top: 20px; text-align: justify;">
+    With reference to your application and subsequent interview held in our office, we are pleased to offer you the job for the post of “<strong>{job_title}</strong>” in our company.
+</div>
+
+<div style="margin-top: 20px; text-align: justify;">
+    We are pleased to confirm the offer of employment for the above position on terms and conditions mutually discussed and agreed. The detailed appointment letter will be given to you at the time of joining. You have to join on or before <strong>{start_date}</strong> otherwise this offer will stand withdrawn automatically.
+</div>
+
+<div style="margin-top: 20px; text-align: justify;">
+    You are requested to bring attested copies along with the original certificates/ testimonials at the time of joining the following:
+</div>
+
+<ol style="margin-top: 10px;">
+    <li>Educational certificates.</li>
+    <li>Experience certificates, Copy of resignation / acceptance letter and relieving letter from previous employer.</li>
+    <li>Salary Slip / latest salary structure from ex-employer.</li>
+    <li>Three pass port Size photographs.</li>
+    <li>Pass port (If available.)</li>
+    <li>Medical fitness certificate.</li>
+    <li>Copy of PAN Card.</li>
+</ol>
+
+<div style="margin-top: 20px;">
+    Please return the enclosed copy duly signed as a token of your acceptance of the letter.
+</div>
+
+<div style="margin-top: 40px; display: flex; justify-content: space-between;">
+    <div style="width: 50%;">
+        <div style="font-weight: bold;">For Archivista Engg Projects Pvt. Ltd.</div>
+        <div style="margin-top: 50px; font-weight: bold;">Sanjay Rode</div>
+        <div style="font-weight: bold;">Director</div>
+    </div>
+    <div style="width: 40%; text-align: right;">
+        <div style="border-bottom: 1px solid #000; height: 50px;"></div>
+        <div>Received & Accepted</div>
+        <div>(Signature & Date)</div>
+    </div>
+</div>',
 
                     'es' => '<p style="text-align: center;"><span style="font-size: 18pt;"><strong>Carta de oferta</strong></span></p>
                     
@@ -542,7 +577,7 @@ class GenerateOfferLetter extends Model
                     'ar' => '<p style="text-align: center;"><span style="font-size: 18pt;"><strong>رسالة عرض</strong></span></p>
                     
                     
-                    <p>عزيزي {applicationant_name} ،</p>
+                    <p>عزيزي {applicant_name} ،</p>
                     
                     
                     <p>{app_name} متحمس لاصطحابك على متن الطائرة بصفتك {job_title}.</p>
@@ -624,26 +659,58 @@ class GenerateOfferLetter extends Model
                     <p>Aufrichtig,</p>
                     
                     <p>{app_name}</p>',
-                    'en' => '<p style="text-align: center;"><strong>Offer Letter</strong></p>
-                    
-                    <p>Dear {applicant_name},</p>
-                    
-                    <p>{app_name} is excited to bring you on board as {job_title}.</p>
-                    
-                    <p>Were just a few formalities away from getting down to work. Please take the time to review our formal offer. It includes important details about your compensation, benefits, and the terms and conditions of your anticipated employment with {app_name}.</p>
-                    
-                    <p>{app_name} is offering a {job_type}. position for you as {job_title}, reporting to [immediate manager/supervisor] starting on {start_date} at{workplace_location}. Expected hours of work are{days_of_week}.</p>
-                    
-                    <p>In this position, {app_name} is offering to start you at a pay rate of {salary} per {salary_type}. You will be paid on a{salary_duration} basis.&nbsp;</p>
-                    
-                    <p>As part of your compensation, were also offering [if applicable, youll describe your bonus, profit sharing, commission structure, stock options, and compensation committee rules here].</p>
-                    
-                    <p>As an employee of {app_name} , you will be eligible for briefly name benefits, such as health insurance, stock plan, dental insurance, etc.</p>
-                    
-                    <p>Please indicate your agreement with these terms and accept this offer by signing and dating this agreement on or before {offer_expiration_date}.</p>
-                    
-                    <p>Sincerely,</p>
-                    <p>{app_name}</p>',
+                    'en' => '<div style="text-align: right;">Date: {offer_date}</div>
+
+<div style="text-align: center; font-weight: bold; font-size: 1.2em; text-decoration: underline; margin-top: 20px;">
+    Offer Letter .
+</div>
+
+<div style="font-weight: bold; text-decoration: underline; margin-top: 30px;">
+    Sub: Offer Letter
+</div>
+
+<div style="margin-top: 20px;">
+    Dear {prefix}. {applicant_name},
+</div>
+
+<div style="margin-top: 20px; text-align: justify;">
+    With reference to your application and subsequent interview held in our office, we are pleased to offer you the job for the post of “<strong>{job_title}</strong>” in our company.
+</div>
+
+<div style="margin-top: 20px; text-align: justify;">
+    We are pleased to confirm the offer of employment for the above position on terms and conditions mutually discussed and agreed. The detailed appointment letter will be given to you at the time of joining. You have to join on or before <strong>{start_date}</strong> otherwise this offer will stand withdrawn automatically.
+</div>
+
+<div style="margin-top: 20px; text-align: justify;">
+    You are requested to bring attested copies along with the original certificates/ testimonials at the time of joining the following:
+</div>
+
+<ol style="margin-top: 10px;">
+    <li>Educational certificates.</li>
+    <li>Experience certificates, Copy of resignation / acceptance letter and relieving letter from previous employer.</li>
+    <li>Salary Slip / latest salary structure from ex-employer.</li>
+    <li>Three pass port Size photographs.</li>
+    <li>Pass port (If available.)</li>
+    <li>Medical fitness certificate.</li>
+    <li>Copy of PAN Card.</li>
+</ol>
+
+<div style="margin-top: 20px;">
+    Please return the enclosed copy duly signed as a token of your acceptance of the letter.
+</div>
+
+<div style="margin-top: 40px; display: flex; justify-content: space-between;">
+    <div style="width: 50%;">
+        <div style="font-weight: bold;">For Archivista Engg Projects Pvt. Ltd.</div>
+        <div style="margin-top: 50px; font-weight: bold;">Sanjay Rode</div>
+        <div style="font-weight: bold;">Director</div>
+    </div>
+    <div style="width: 40%; text-align: right;">
+        <div style="border-bottom: 1px solid #000; height: 50px;"></div>
+        <div>Received & Accepted</div>
+        <div>(Signature & Date)</div>
+    </div>
+</div>',
                     'es' => '<p style="text-align: center;"><span style="font-size: 18pt;"><strong>Carta de oferta</strong></span></p>
                     
                     
