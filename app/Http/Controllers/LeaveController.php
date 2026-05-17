@@ -179,6 +179,7 @@ class LeaveController extends Controller
                     'leave_type_id' => 'required',
                     'start_date' => 'required',
                     'end_date' => 'required',
+                    'leave_duration' => 'required',
                     'leave_reason' => 'required',
                     'remark' => 'required',
                 ]
@@ -201,10 +202,14 @@ class LeaveController extends Controller
                 }
             }
 
-            $startDate = new \DateTime($request->start_date);
-            $endDate = new \DateTime($request->end_date);
-            $endDate->add(new \DateInterval('P1D'));
-            // $total_leave_days = !empty($startDate->diff($endDate)) ? $startDate->diff($endDate)->days : 0;
+            // Calculate total leave days
+            if ($request->leave_duration == 'half_day') {
+                $total_leave_days = 0.5;
+                $request->merge(['end_date' => $request->start_date]); // Force same day for half-day
+            } else {
+                $total_leave_days = $this->calculateBusinessDays($request->start_date, $request->end_date);
+            }
+
             $date = Utility::AnnualLeaveCycle();
 
             if (\Auth::user()->type == 'employee') {
@@ -218,8 +223,6 @@ class LeaveController extends Controller
 
                 $leaves_pending  = LocalLeave::where('employee_id', '=', $request->employee_id)->where('leave_type_id', $leave_type->id)->where('status', 'Pending')->whereBetween('created_at', [$date['start_date'],$date['end_date']])->sum('total_leave_days');
             }
-
-            $total_leave_days = $this->calculateBusinessDays($request->start_date, $request->end_date);
 
             // Skip leave balance check for unlimited leave types
             if (!$leave_type->is_unlimited) {
@@ -305,16 +308,14 @@ class LeaveController extends Controller
             }
 
             $leave    = new LocalLeave();
-            if (\Auth::user()->type == "employee") {
-                $leave->employee_id = $request->employee_id;
-            } else {
-                $leave->employee_id = $request->employee_id;
-            }
+            $leave->employee_id      = $request->employee_id;
             $leave->leave_type_id    = $request->leave_type_id;
             $leave->applied_on       = date('Y-m-d');
             $leave->start_date       = $request->start_date;
-            $leave->end_date         = $request->end_date;
+            $leave->end_date         = ($request->leave_duration == 'half_day') ? $request->start_date : $request->end_date;
             $leave->total_leave_days = $total_leave_days;
+            $leave->leave_duration   = $request->leave_duration;
+            $leave->half_day_type    = ($request->leave_duration == 'half_day') ? $request->half_day_type : null;
             $leave->leave_reason     = $request->leave_reason;
             $leave->remark           = $request->remark;
             $leave->status           = 'Pending';
@@ -409,6 +410,7 @@ class LeaveController extends Controller
                         'leave_type_id' => 'required',
                         'start_date' => 'required',
                         'end_date' => 'required',
+                        'leave_duration' => 'required',
                         'leave_reason' => 'required',
                         'remark' => 'required',
                     ]
@@ -431,15 +433,13 @@ class LeaveController extends Controller
                     }
                 }
                 
-                // For admin users, get the employee from the request
-                if (Auth::user()->type != 'employee') {
-                    $employee = Employee::find($request->employee_id);
+                // Calculate total leave days
+                if ($request->leave_duration == 'half_day') {
+                    $total_leave_days = 0.5;
+                } else {
+                    $total_leave_days = $this->calculateBusinessDays($request->start_date, $request->end_date);
                 }
 
-                $startDate = new \DateTime($request->start_date);
-                $endDate = new \DateTime($request->end_date);
-                $endDate->add(new \DateInterval('P1D'));
-                // $total_leave_days = !empty($startDate->diff($endDate)) ? $startDate->diff($endDate)->days : 0;
                 $date = Utility::AnnualLeaveCycle();
 
                 if (\Auth::user()->type == 'employee') {
@@ -454,8 +454,6 @@ class LeaveController extends Controller
                     $leaves_pending  = LocalLeave::whereNotIn('id', [$leave->id])->where('employee_id', '=', $request->employee_id)->where('leave_type_id', $leave_type->id)->where('status', 'Pending')->whereBetween('created_at', [$date['start_date'],$date['end_date']])->sum('total_leave_days');
                 }
 
-                $total_leave_days = $this->calculateBusinessDays($request->start_date, $request->end_date);
-
                 // Get allocated days based on employee type
                 $allocatedDays = $this->getAllocatedDaysForEmployee($employee, $leave_type);
                 
@@ -469,18 +467,15 @@ class LeaveController extends Controller
                 }
 
                 if ($allocatedDays >= $total_leave_days) {
-                    if (\Auth::user()->type == 'employee') {
-                        $leave->employee_id = $employee->id;
-                    } else {
-                        $leave->employee_id      = $request->employee_id;
-                    }
+                    $leave->employee_id      = $request->employee_id;
                     $leave->leave_type_id    = $request->leave_type_id;
                     $leave->start_date       = $request->start_date;
-                    $leave->end_date         = $request->end_date;
+                    $leave->end_date         = ($request->leave_duration == 'half_day') ? $request->start_date : $request->end_date;
                     $leave->total_leave_days = $total_leave_days;
+                    $leave->leave_duration   = $request->leave_duration;
+                    $leave->half_day_type    = ($request->leave_duration == 'half_day') ? $request->half_day_type : null;
                     $leave->leave_reason     = $request->leave_reason;
                     $leave->remark           = $request->remark;
-                    // $leave->status           = $request->status;
 
                     $leave->save();
 
@@ -773,7 +768,8 @@ class LeaveController extends Controller
     }
 
     /**
-     * Calculate business days between two dates, excluding weekends (Saturday and Sunday)
+     * Calculate leave days between two dates (inclusive of both start and end date).
+     * Counts all calendar days including weekends, since employees can take leave on any day.
      *
      * @param string $startDate
      * @param string $endDate
@@ -782,21 +778,17 @@ class LeaveController extends Controller
     private function calculateBusinessDays($startDate, $endDate)
     {
         $start = new \DateTime($startDate);
-        $end = new \DateTime($endDate);
-        $end->add(new \DateInterval('P1D')); // Include end date in calculation
-        
-        $businessDays = 0;
-        $interval = new \DateInterval('P1D');
-        $period = new \DatePeriod($start, $interval, $end);
-        
-        foreach ($period as $day) {
-            // Exclude Saturday (6) and Sunday (7)
-            if ($day->format('N') != 6 && $day->format('N') != 7) {
-                $businessDays++;
-            }
+        $end   = new \DateTime($endDate);
+
+        // If same day, always return 1
+        if ($start->format('Y-m-d') === $end->format('Y-m-d')) {
+            return 1;
         }
-        
-        return $businessDays;
+
+        $end->add(new \DateInterval('P1D')); // Include end date
+        $diff = $start->diff($end);
+
+        return max(1, (int) $diff->days);
     }
 
     /**

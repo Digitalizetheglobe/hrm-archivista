@@ -25,6 +25,12 @@
             class="btn btn-sm btn-primary">
             <i class="ti ti-file-import"></i>
         </a>
+        
+        
+        <a href="<?php echo e(route('projects.export')); ?>" data-bs-toggle="tooltip" title="Export"
+            class="btn btn-sm btn-primary">
+            <i class="ti ti-file-export"></i>
+        </a>
     <?php endif; ?>
 <?php $__env->stopSection(); ?>
 

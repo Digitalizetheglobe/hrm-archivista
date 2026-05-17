@@ -22,16 +22,21 @@ class ValidateSession
             $user = Auth::user();
             $currentSessionId = $request->session()->getId();
             
-            // Check if current session matches the user's tracked session
-            if ($user->current_session_id && $user->current_session_id !== $currentSessionId) {
-                // Session mismatch - logout the user
+            // Check if current session still exists in database for this user
+            $sessionExists = DB::table('sessions')
+                ->where('id', $currentSessionId)
+                ->where('user_id', $user->id)
+                ->exists();
+            
+            if (!$sessionExists) {
+                // Session was invalidated (e.g. by too many concurrent logins)
                 Auth::guard('web')->logout();
                 
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
                 
                 // Redirect to login with message
-                return redirect()->route('login')->with('error', 'You have been logged out because you logged in from another device.');
+                return redirect()->route('login')->with('error', 'You have been logged out because your session was invalidated by a new login.');
             }
         }
         

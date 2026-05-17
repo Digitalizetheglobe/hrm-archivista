@@ -276,14 +276,6 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request)
     {
-        $user = Auth::user();
-        
-        if ($user) {
-            // Clear session tracking
-            $user->current_session_id = null;
-            $user->save();
-        }
-
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
@@ -298,10 +290,20 @@ class AuthenticatedSessionController extends Controller
      */
     private function invalidatePreviousSessions($user)
     {
-        if ($user->current_session_id) {
-            // Delete the previous session from database
+        // Get all sessions for this user from the database, ordered by last activity
+        $sessions = DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->orderBy('last_activity', 'desc')
+            ->pluck('id');
+
+        // If we have 2 or more sessions, we need to delete the oldest ones
+        // to make room for the new login, so that we always have max 2.
+        if ($sessions->count() >= 2) {
+            // Keep the most recent 1 session, delete the rest
+            $sessionsToDelete = $sessions->slice(1);
+            
             DB::table('sessions')
-                ->where('id', $user->current_session_id)
+                ->whereIn('id', $sessionsToDelete)
                 ->delete();
         }
     }
@@ -313,8 +315,7 @@ class AuthenticatedSessionController extends Controller
     {
         $sessionId = $request->session()->getId();
         
-        // Update user with current session info
-        $user->current_session_id = $sessionId;
+        // Update user with last login info
         $user->last_login_at = now();
         $user->last_login_ip = $request->ip();
         

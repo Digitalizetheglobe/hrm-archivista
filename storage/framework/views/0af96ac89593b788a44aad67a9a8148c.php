@@ -409,7 +409,7 @@
                             <div class="col-xl-6">
                                 <div class="card">
                                     <div class="card-header card-body table-border-style d-flex justify-content-between align-items-center">
-                                        <h5 style="font-size:20px; color:black; margin: 0;"><?php echo e(__('Attendance Overview')); ?></h5>
+                                        <h5 style="font-size:20px; color:black; margin: 0;"><?php echo e(__('Site Visit Overview')); ?></h5>
                                     </div>
                                     <div class="card-body" style="height: 300px; padding: 10px;">
                                         <div class="card shadow-none mt-3">
@@ -421,11 +421,11 @@
                                             <ul style="list-style: none; padding: 0; display: flex; align-items: center; gap:50px;">
                                                 <li style="display: flex; align-items: center; margin-bottom: 5px;">
                                                     <span style="width: 15px; height: 15px; background-color:#6dacaa; display: inline-block; margin-right: 10px; border-radius: 50%;"></span>
-                                                    Present
+                                                    Visited (<?php echo e($siteVisitPresentCount); ?>)
                                                 </li>
                                                 <li style="display: flex; align-items: center; margin-bottom: 5px;">
                                                     <span style="width: 15px; height: 15px; background-color: #eef5ff; display: inline-block; margin-right: 10px; border-radius: 50%;"></span>
-                                                    Absent
+                                                    Pending (<?php echo e($totalSiteVisitsCount - $siteVisitPresentCount); ?>)
                                                 </li>
                                             </ul>
                                         </div>
@@ -439,12 +439,12 @@
                                         <h5 style="font-size:20px; color:black; margin: 0;"><?php echo e(__('Not Clock In employees')); ?></h5>
                                     </div>
                                     <div class="card-body" style="height: 300px; overflow: auto; padding: 10px; padding-top:25px;">
-                                        <div class="table-responsive" style="max-width:452px;">
+                                        <div class="table-responsive" style="max-width:435px;">
                                             <table class="table table-bordered text-center">
                                                 <thead>
                                                     <tr>
-                                                        <th><?php echo e(__('Employee Name')); ?></th>
-                                                        <th><?php echo e(__('Status')); ?></th>
+                                                        <th style="width:50%; padding-left: 20px;"><?php echo e(__('Employee Name')); ?></th>
+                                                        <th style="width:50%; text-align: center;"><?php echo e(__('Status')); ?></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -466,6 +466,8 @@
                                 </div>
                             </div>
                         </div>
+
+
 
                         <div class="row">
                             <div class="col-md-12">
@@ -721,12 +723,12 @@
     <?php if(\Auth::user()->type == 'company'): ?>
         <script>
             (function() {
-                var totalEmployees = <?php echo e($totalEmployees); ?>;
-                var presentEmployees = <?php echo e(count($presentEmployeesWithClockIn)); ?>;
-                var attendancePercentage = <?php echo e(round($attendancePercentage, 2)); ?>;
+                var totalSiteVisits = <?php echo e($totalSiteVisitsCount); ?>;
+                var siteVisitsPresent = <?php echo e($siteVisitPresentCount); ?>;
+                var siteVisitPercentage = <?php echo e(round($siteVisitAttendancePercentage, 2)); ?>;
                 
                 var options = {
-                    series: [attendancePercentage],
+                    series: [siteVisitPercentage],
                     chart: {
                         height: 380,
                         type: 'radialBar',
@@ -767,7 +769,7 @@
                         enabled: true,
                         y: {
                             formatter: function(val) {
-                                return `Out of ${totalEmployees} employees, ${presentEmployees} are present.`;
+                                return `Out of ${totalSiteVisits} scheduled visits, ${siteVisitsPresent} employees have punched in at site.`;
                             }
                         }
                     }

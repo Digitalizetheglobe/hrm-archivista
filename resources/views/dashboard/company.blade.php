@@ -427,9 +427,6 @@
                                                 </li>
                                             </ul>
                                         </div>
-                                        <div class="text-center mt-2">
-                                            <p class="mb-0 text-muted" style="font-size: 14px;">Total Scheduled Visits: <strong>{{ $totalSiteVisitsCount }}</strong></p>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -440,12 +437,12 @@
                                         <h5 style="font-size:20px; color:black; margin: 0;">{{ __('Not Clock In employees') }}</h5>
                                     </div>
                                     <div class="card-body" style="height: 300px; overflow: auto; padding: 10px; padding-top:25px;">
-                                        <div class="table-responsive" style="max-width:452px;">
+                                        <div class="table-responsive" style="max-width:435px;">
                                             <table class="table table-bordered text-center">
                                                 <thead>
                                                     <tr>
-                                                        <th>{{ __('Employee Name') }}</th>
-                                                        <th>{{ __('Status') }}</th>
+                                                        <th style="width:50%; padding-left: 20px;">{{ __('Employee Name') }}</th>
+                                                        <th style="width:50%; text-align: center;">{{ __('Status') }}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -468,65 +465,7 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="card">
-                                    <div class="card-header card-body table-border-style d-flex justify-content-between align-items-center">
-                                        <h5 style="font-size:20px; color:black; margin: 0;">{{ __('Today Site Visit Details') }}</h5>
-                                    </div>
-                                    <div class="card-body" style="max-height: 400px; overflow: auto; padding: 10px; padding-top:25px;">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered text-center">
-                                                <thead>
-                                                    <tr>
-                                                        <th>{{ __('Employee') }}</th>
-                                                        <th>{{ __('Clock In') }}</th>
-                                                        <th>{{ __('Location') }}</th>
-                                                        <th>{{ __('Status') }}</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @if($hasTodaySiteVisits)
-                                                        @foreach ($siteAttendanceEmployees as $attendance)
-                                                            <tr>
-                                                                <td>{{ $attendance['employee']->name }}</td>
-                                                                <td>{{ $attendance['clock_in'] }}</td>
-                                                                <td>{{ $attendance['clock_in_location'] }}</td>
-                                                                <td><span class="badge bg-success">Visited</span></td>
-                                                            </tr>
-                                                        @endforeach
-                                                        
-                                                        {{-- Also show those who are scheduled but haven't clocked in --}}
-                                                        @php
-                                                            $presentIds = $siteAttendanceEmployees->pluck('employee.id')->toArray();
-                                                            $currentDate = date('Y-m-d');
-                                                            $pendingVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
-                                                                ->where('end_date', '>=', $currentDate)
-                                                                ->where('status', 'Approved')
-                                                                ->whereNotIn('employee_id', $presentIds)
-                                                                ->get();
-                                                        @endphp
-                                                        
-                                                        @foreach ($pendingVisits as $visit)
-                                                            <tr>
-                                                                <td>{{ $visit->employee->name }}</td>
-                                                                <td>--:--</td>
-                                                                <td>--:--</td>
-                                                                <td><span class="badge bg-warning text-dark">Pending</span></td>
-                                                            </tr>
-                                                        @endforeach
-                                                    @else
-                                                        <tr>
-                                                            <td colspan="4">{{ __('No site visits scheduled for today.') }}</td>
-                                                        </tr>
-                                                    @endif
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
 
                         <div class="row">
                             <div class="col-md-12">

@@ -8,14 +8,6 @@
                 <div class="float-end"><i class="ti ti-chevron-right"></i></div>
             </a>
         <?php endif; ?>
-
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Branch')): ?>
-            <a href="<?php echo e(route('site.index')); ?>"
-                class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('site*') ? 'active' : ''); ?>"><?php echo e(__('Client Group')); ?>
-
-                <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-            </a>
-        <?php endif; ?>
         
         <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Department')): ?>
             <a href="<?php echo e(route('department.index')); ?>"
@@ -49,70 +41,6 @@
         </a>
         <?php endif; ?>
 
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Payslip Type')): ?>
-        <a href="<?php echo e(route('paysliptype.index')); ?>"
-            class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('paysliptype*') ? 'active' : ''); ?>"><?php echo e(__('Payslip Type')); ?>
-
-            <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-        </a>
-        <?php endif; ?>
-
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Allowance Option')): ?>
-        <a href="<?php echo e(route('allowanceoption.index')); ?>"
-            class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('allowanceoption*') ? 'active' : ''); ?>"><?php echo e(__('Allowance Option')); ?>
-
-            <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-        </a>
-        <?php endif; ?>
-
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Loan Option')): ?>
-        <a href="<?php echo e(route('loanoption.index')); ?>"
-            class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('loanoption*') ? 'active' : ''); ?>"><?php echo e(__('Loan Option')); ?>
-
-            <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-        </a>
-        <?php endif; ?>
-
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Deduction Option')): ?>
-        <a href="<?php echo e(route('deductionoption.index')); ?>"
-            class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('deductionoption*') ? 'active' : ''); ?>"><?php echo e(__('Deduction Option')); ?>
-
-            <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-        </a>
-        <?php endif; ?>
-
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Goal Type')): ?>
-        <a href="<?php echo e(route('goaltype.index')); ?>"
-            class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('goaltype*') ? 'active' : ''); ?>"><?php echo e(__('Goal Type')); ?>
-
-            <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-        </a>
-        <?php endif; ?>
-
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Training Type')): ?>
-        <a href="<?php echo e(route('trainingtype.index')); ?>"
-            class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('trainingtype*') ? 'active' : ''); ?>"><?php echo e(__('Training Type')); ?>
-
-            <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-        </a>
-        <?php endif; ?>
-
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Award Type')): ?>
-        <a href="<?php echo e(route('awardtype.index')); ?>"
-            class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('awardtype*') ? 'active' : ''); ?>"><?php echo e(__('Award Type')); ?>
-
-            <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-        </a>
-        <?php endif; ?>
-
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Termination Type')): ?>
-        <a href="<?php echo e(route('terminationtype.index')); ?>"
-            class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('terminationtype*') ? 'active' : ''); ?>"><?php echo e(__('Termination Type')); ?>
-
-            <div class="float-end"><i class="ti ti-chevron-right"></i></div>
-        </a>
-        <?php endif; ?>
-
         <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Job Category')): ?>
         <a href="<?php echo e(route('job-category.index')); ?>"
             class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('job-category*') ? 'active' : ''); ?>"><?php echo e(__('Job Category')); ?>
@@ -129,7 +57,7 @@
         </a>
         <?php endif; ?>
 
-        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Performance Type')): ?>
+        <!-- <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Manage Performance Type')): ?>
         <a href="<?php echo e(route('performanceType.index')); ?>"
             class="list-group-item list-group-item-action border-0 <?php echo e(request()->is('performanceType*') ? 'active' : ''); ?>"><?php echo e(__('Performance Type')); ?>
 
@@ -175,7 +103,7 @@
 
             <div class="float-end"><i class="ti ti-chevron-right"></i></div>
         </a>
-        <?php endif; ?>
+        <?php endif; ?> -->
 
     </div>
 </div>

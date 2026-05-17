@@ -24,6 +24,15 @@
                     <td>{{ \Auth::user()->dateFormat($leave->end_date) }}</td>
                 </tr>
                 <tr>
+                    <th>{{ __('Leave Duration') }}</th>
+                    <td>
+                        {{ $leave->leave_duration == 'half_day' ? __('Half Day') : __('Full Day') }}
+                        @if($leave->leave_duration == 'half_day')
+                            ({{ $leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half') }})
+                        @endif
+                    </td>
+                </tr>
+                <tr>
                     <th>{{ __('Leave Reason') }}</th>
                     <td>{{ !empty($leave->leave_reason) ? $leave->leave_reason : '' }}</td>
                 </tr>

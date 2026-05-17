@@ -1,8 +1,8 @@
-@php
+<?php
     $setting = App\Models\Utility::settings();
     $plan = Utility::getChatGPTSettings();
     $compOffBalance = $compOffBalance ?? 0;
-@endphp
+?>
 
 <style>
 /* ===== Premium Leave Form Styles (Branded Orange) ===== */
@@ -68,31 +68,45 @@
 }
 </style>
 
-{{ Form::open(['url' => 'leave', 'method' => 'post']) }}
+<?php echo e(Form::open(['url' => 'leave', 'method' => 'post'])); ?>
+
 <div class="modal-body" style="padding: 20px 24px;">
 
+    
+    <?php if($plan->enable_chatgpt == 'on'): ?>
+        <div class="text-end mb-3">
+            <a href="#" class="btn btn-sm btn-primary" data-size="medium" data-ajax-popup-over="true"
+                data-url="<?php echo e(route('generate', ['leave'])); ?>" data-bs-toggle="tooltip" data-bs-placement="top"
+                title="<?php echo e(__('Generate')); ?>" data-title="<?php echo e(__('Generate Content With AI')); ?>">
+                <i class="fas fa-robot me-1"></i><?php echo e(__('Generate With AI')); ?>
 
-    {{-- Employee Selector (Admin only) --}}
-    @if (\Auth::user()->type != 'employee')
+            </a>
+        </div>
+    <?php endif; ?>
+
+    
+    <?php if(\Auth::user()->type != 'employee'): ?>
         <div class="lf-section">
             <div class="lf-section-title"><i class="fas fa-user-tie"></i> Employee</div>
             <div class="lf-input-icon-wrap">
                 <i class="fas fa-user lf-icon"></i>
-                {{ Form::select('employee_id', $employees, null, ['class' => 'form-control lf-form-control select2', 'id' => 'employee_id', 'placeholder' => __('Select Employee')]) }}
+                <?php echo e(Form::select('employee_id', $employees, null, ['class' => 'form-control lf-form-control select2', 'id' => 'employee_id', 'placeholder' => __('Select Employee')])); ?>
+
             </div>
         </div>
-    @else
-        {!! Form::hidden('employee_id', !empty($employees) ? $employees->id : 0, ['id' => 'employee_id']) !!}
-    @endif
+    <?php else: ?>
+        <?php echo Form::hidden('employee_id', !empty($employees) ? $employees->id : 0, ['id' => 'employee_id']); ?>
 
-    {{-- Comp-Off Balance --}}
-    @if($compOffBalance > 0)
+    <?php endif; ?>
+
+    
+    <?php if($compOffBalance > 0): ?>
         <div class="mb-3">
-            <span class="lf-balance-badge"><i class="fas fa-exchange-alt"></i> Comp-Off Balance: {{ $compOffBalance }}</span>
+            <span class="lf-balance-badge"><i class="fas fa-exchange-alt"></i> Comp-Off Balance: <?php echo e($compOffBalance); ?></span>
         </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- Leave Type --}}
+    
     <div class="lf-section">
         <div class="lf-section-title"><i class="fas fa-calendar-alt"></i> Leave Details</div>
         <div class="mb-3">
@@ -100,28 +114,29 @@
             <div class="lf-input-icon-wrap">
                 <i class="fas fa-list lf-icon"></i>
                 <select name="leave_type_id" id="leave_type_id" class="form-control lf-form-control" style="padding-left:34px;">
-                    <option value="">{{ __('Select Leave Type') }}</option>
-                    @foreach ($leavetypes as $leave)
-                        @if ($leave->title === 'Comp-Off' && $compOffLeaves === 0) @continue @endif
-                        @if($leave->title == 'LWP' || $leave->title == 'WFH')
-                            <option value="{{ $leave->id }}" data-unlimited="true">{{ $leave->title }} (Unlimited)</option>
-                        @else
-                            <option value="{{ $leave->id }}" data-unlimited="false" data-period="{{ $leave->type }}" data-carry-forward="{{ $leave->carry_forward_enabled ? 'true' : 'false' }}">
-                                {{ $leave->title }}
-                                @if($leave->type == 'monthly') ({{ $leave->days }} {{ __('Days/Month') }})
-                                @else ({{ $leave->days }} {{ __('Days/Year') }}) @endif
+                    <option value=""><?php echo e(__('Select Leave Type')); ?></option>
+                    <?php $__currentLoopData = $leavetypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php if($leave->title === 'Comp-Off' && $compOffLeaves === 0): ?> <?php continue; ?> <?php endif; ?>
+                        <?php if($leave->title == 'LWP' || $leave->title == 'WFH'): ?>
+                            <option value="<?php echo e($leave->id); ?>" data-unlimited="true"><?php echo e($leave->title); ?> (Unlimited)</option>
+                        <?php else: ?>
+                            <option value="<?php echo e($leave->id); ?>" data-unlimited="false" data-period="<?php echo e($leave->type); ?>" data-carry-forward="<?php echo e($leave->carry_forward_enabled ? 'true' : 'false'); ?>">
+                                <?php echo e($leave->title); ?>
+
+                                <?php if($leave->type == 'monthly'): ?> (<?php echo e($leave->days); ?> <?php echo e(__('Days/Month')); ?>)
+                                <?php else: ?> <?php endif; ?>
                             </option>
-                        @endif
-                    @endforeach
-                    @if($compOffBalance > 0)
-                        <option value="comp_off">{{ __('Comp-Off Leave') }} ({{ $compOffBalance }} available)</option>
-                    @endif
+                        <?php endif; ?>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    <?php if($compOffBalance > 0): ?>
+                        <option value="comp_off"><?php echo e(__('Comp-Off Leave')); ?> (<?php echo e($compOffBalance); ?> available)</option>
+                    <?php endif; ?>
                 </select>
             </div>
             <div id="leave_balance_info" class="mt-2" style="font-size:0.78rem;color:#667eea;font-weight:600;"></div>
         </div>
 
-        {{-- Leave Duration Pills --}}
+        
         <div class="mb-3">
             <div class="lf-section-label">Leave Duration</div>
             <div class="lf-pill-group">
@@ -132,7 +147,7 @@
             </div>
         </div>
 
-        {{-- Half Day Option (hidden by default) --}}
+        
         <div id="half_day_type_container" style="display:none;" class="mb-3">
             <div class="lf-section-label">Half Day Session</div>
             <div class="lf-pill-group orange">
@@ -143,70 +158,78 @@
             </div>
         </div>
 
-        {{-- Dates --}}
+        
         <div class="row g-3">
             <div class="col-md-6" id="start_date_container">
                 <div class="lf-section-label">Start Date</div>
                 <div class="lf-input-icon-wrap">
                     <i class="fas fa-calendar-day lf-icon"></i>
-                    {{ Form::text('start_date', null, ['class' => 'form-control lf-form-control d_week current_date', 'autocomplete' => 'off', 'id' => 'start_date', 'placeholder' => 'YYYY-MM-DD']) }}
+                    <?php echo e(Form::text('start_date', null, ['class' => 'form-control lf-form-control d_week current_date', 'autocomplete' => 'off', 'id' => 'start_date', 'placeholder' => 'YYYY-MM-DD'])); ?>
+
                 </div>
             </div>
             <div class="col-md-6" id="end_date_container">
                 <div class="lf-section-label">End Date</div>
                 <div class="lf-input-icon-wrap">
                     <i class="fas fa-calendar-check lf-icon"></i>
-                    {{ Form::text('end_date', null, ['class' => 'form-control lf-form-control d_week current_date', 'autocomplete' => 'off', 'id' => 'end_date', 'placeholder' => 'YYYY-MM-DD']) }}
+                    <?php echo e(Form::text('end_date', null, ['class' => 'form-control lf-form-control d_week current_date', 'autocomplete' => 'off', 'id' => 'end_date', 'placeholder' => 'YYYY-MM-DD'])); ?>
+
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Leave Reason & Remark --}}
+    
     <div class="lf-section">
         <div class="lf-section-title"><i class="fas fa-pen-nib"></i> Reason & Remarks</div>
         <div class="mb-3">
             <div class="lf-section-label">Leave Reason <span class="text-danger">*</span></div>
-            {{ Form::textarea('leave_reason', null, ['class' => 'form-control lf-form-control', 'required' => 'required', 'placeholder' => __('Describe your leave reason...'), 'rows' => '3']) }}
+            <?php echo e(Form::textarea('leave_reason', null, ['class' => 'form-control lf-form-control', 'required' => 'required', 'placeholder' => __('Describe your leave reason...'), 'rows' => '3'])); ?>
+
         </div>
         <div class="mb-2">
             <div class="d-flex align-items-center justify-content-between mb-1">
                 <div class="lf-section-label mb-0">Remark <span class="text-danger">*</span></div>
-                @if ($plan->enable_chatgpt == 'on')
+                <?php if($plan->enable_chatgpt == 'on'): ?>
                     <a href="#" data-size="md" class="btn btn-outline-primary btn-sm px-2 py-1" data-ajax-popup-over="true"
-                        id="grammarCheck" data-url="{{ route('grammar', ['grammar']) }}" data-bs-placement="top"
-                        data-title="{{ __('Grammar check with AI') }}" style="font-size:0.72rem;">
-                        <i class="ti ti-rotate me-1"></i>{{ __('Grammar check') }}
+                        id="grammarCheck" data-url="<?php echo e(route('grammar', ['grammar'])); ?>" data-bs-placement="top"
+                        data-title="<?php echo e(__('Grammar check with AI')); ?>" style="font-size:0.72rem;">
+                        <i class="ti ti-rotate me-1"></i><?php echo e(__('Grammar check')); ?>
+
                     </a>
-                @endif
+                <?php endif; ?>
             </div>
-            {{ Form::textarea('remark', null, ['class' => 'form-control lf-form-control grammer_textarea', 'required' => 'required', 'placeholder' => __('Additional remarks...'), 'rows' => '2']) }}
+            <?php echo e(Form::textarea('remark', null, ['class' => 'form-control lf-form-control grammer_textarea', 'required' => 'required', 'placeholder' => __('Additional remarks...'), 'rows' => '2'])); ?>
+
         </div>
     </div>
 
-    {{-- Google Calendar Sync --}}
-    @if (isset($setting['is_enabled']) && $setting['is_enabled'] == 'on')
+    
+    <?php if(isset($setting['is_enabled']) && $setting['is_enabled'] == 'on'): ?>
         <div class="lf-section" style="padding: 12px 18px;">
             <div class="d-flex align-items-center justify-content-between">
                 <div style="font-size:0.82rem; font-weight:600; color:#4a5568;">
                     <i class="fas fa-calendar-alt me-2" style="color:#667eea;"></i>
-                    {{ __('Sync with Google Calendar?') }}
+                    <?php echo e(__('Sync with Google Calendar?')); ?>
+
                 </div>
                 <div class="form-switch">
                     <input type="checkbox" class="form-check-input" name="synchronize_type" id="switch-shadow" value="google_calendar">
                 </div>
             </div>
         </div>
-    @endif
+    <?php endif; ?>
 </div>
 
 <div class="modal-footer" style="border-top: 1.5px solid #f0f2f5; padding: 14px 24px; gap: 10px;">
-    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="border-radius:8px; font-weight:600;">{{ __('Cancel') }}</button>
+    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="border-radius:8px; font-weight:600;"><?php echo e(__('Cancel')); ?></button>
     <button type="submit" class="btn btn-primary px-5" style="border-radius:8px; font-weight:600; background:linear-gradient(135deg,#f6821f,#e67e22); border:none;">
-        <i class="fas fa-paper-plane me-2"></i>{{ __('Submit Leave') }}
+        <i class="fas fa-paper-plane me-2"></i><?php echo e(__('Submit Leave')); ?>
+
     </button>
 </div>
-{{ Form::close() }}
+<?php echo e(Form::close()); ?>
+
 
 
 <script>
@@ -421,3 +444,4 @@
         }
     }, 100);
 </script>
+<?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/leave/create.blade.php ENDPATH**/ ?>

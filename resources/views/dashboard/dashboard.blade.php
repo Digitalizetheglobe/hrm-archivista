@@ -307,6 +307,95 @@
                         </div>
                     </div>
 
+                    <!-- Today Site Visit Details Section -->
+                    <div class="col-xl-12 mt-4">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header card-body table-border-style d-flex justify-content-between align-items-center">
+                                        <h5 style="font-size:20px; color:black; margin: 0;">{{ __('Today Site Visit Details') }}</h5>
+                                    </div>
+                                    <div class="card-body" style="max-height: 400px; overflow: auto; padding: 10px; padding-top:25px;">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered text-center">
+                                                <thead>
+                                                    <tr>
+                                                        <th>{{ __('Employee') }}</th>
+                                                        <th>{{ __('Location') }}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @php
+                                                        $currentDate = date('Y-m-d');
+                                                        $todaySiteVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
+                                                            ->where('end_date', '>=', $currentDate)
+                                                            ->where('status', 'Approved')
+                                                            ->get();
+
+                                                        $siteAttendanceEmployees = collect();
+                                                        if ($todaySiteVisits->count() > 0) {
+                                                            $siteAttendanceEmployees = $todaySiteVisits->map(function ($visit) use ($currentDate) {
+                                                                $attendance = \App\Models\AttendanceEmployee::where('employee_id', $visit->employee_id)
+                                                                    ->where('date', $currentDate)
+                                                                    ->first();
+
+                                                                if ($attendance && !empty($attendance->clock_in) && $attendance->clock_in != '00:00:00') {
+                                                                    return [
+                                                                        'employee' => $visit->employee,
+                                                                    ];
+                                                                }
+                                                                return null;
+                                                            })->filter();
+                                                        }
+                                                        
+                                                        $hasTodaySiteVisits = $todaySiteVisits->count() > 0;
+                                                    @endphp
+
+                                                    @if($hasTodaySiteVisits)
+                                                        @foreach ($siteAttendanceEmployees as $attendance)
+                                                            @php
+                                                                $siteLocation = \App\Models\SiteVisit::where('employee_id', $attendance['employee']->id)
+                                                                    ->where('start_date', '<=', date('Y-m-d'))
+                                                                    ->where('end_date', '>=', date('Y-m-d'))
+                                                                    ->where('status', 'Approved')
+                                                                    ->value('location');
+                                                            @endphp
+                                                            <tr>
+                                                                <td>{{ $attendance['employee']->name ?? 'Unknown' }}</td>
+                                                                <td>{{ $siteLocation ?? '--:--' }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                        
+                                                        {{-- Also show those who are scheduled but haven't clocked in --}}
+                                                        @php
+                                                            $presentIds = $siteAttendanceEmployees->pluck('employee.id')->toArray();
+                                                            $pendingVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
+                                                                ->where('end_date', '>=', $currentDate)
+                                                                ->where('status', 'Approved')
+                                                                ->whereNotIn('employee_id', $presentIds)
+                                                                ->get();
+                                                        @endphp
+                                                        
+                                                        @foreach ($pendingVisits as $visit)
+                                                            <tr>
+                                                                <td>{{ $visit->employee->name ?? 'Unknown' }}</td>
+                                                                <td>{{ $visit->location ?? '--:--' }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    @else
+                                                        <tr>
+                                                            <td colspan="2">{{ __('No site visits scheduled for today.') }}</td>
+                                                        </tr>
+                                                    @endif
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

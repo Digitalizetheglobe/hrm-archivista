@@ -32,417 +32,143 @@
 
 @section('content')
     <style>
-        .border-left-primary {
-            border-left: 0.25rem solid #4e73df !important;
-        }
-        .border-left-success {
-            border-left: 0.25rem solid #1cc88a !important;
-        }
-        .border-left-info {
-            border-left: 0.25rem solid #36b9cc !important;
-        }
-        .border-left-warning {
-            border-left: 0.25rem solid #f6c23e !important;
-        }
-        .border-left-secondary {
-            border-left: 0.25rem solid #858796 !important;
-        }
-        .shadow {
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
-        }
-        .card-body {
-            flex: 1 1 auto;
-            min-height: 1px;
-            padding: 1.25rem;
-        }
-        .text-xs {
-            font-size: 0.7rem;
-        }
-        .font-weight-bold {
-            font-weight: 700 !important;
-        }
-        .text-uppercase {
-            text-transform: uppercase !important;
-        }
-        .mb-1 {
-            margin-bottom: 0.25rem !important;
-        }
-        .h5 {
-            font-size: 1.25rem;
-        }
-        .mb-0 {
-            margin-bottom: 0 !important;
-        }
-        .text-gray-800 {
-            color: #5a5c69 !important;
-        }
-        .text-muted {
-            color: #858796 !important;
-        }
-        .mr-2 {
-            margin-right: 0.5rem !important;
-        }
-        .col-auto {
-            flex: 0 0 auto;
-            width: auto;
-            max-width: 100%;
-        }
-        .fa-2x {
-            font-size: 2rem;
-        }
-        .text-gray-300 {
-            color: #dddfeb !important;
-        }
-        .mt-2 {
-            margin-top: 0.5rem !important;
-        }
-        .progress {
-            display: flex;
-            height: 1rem;
+        /* === Premium Total Leaves Card === */
+        .leave-summary-card {
+            background: linear-gradient(135deg, #f6821f 0%, #e67e22 100%);
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(246,130,31,0.3);
             overflow: hidden;
-            font-size: 0.75rem;
-            background-color: #e9ecef;
-            border-radius: 0.35rem;
+            position: relative;
         }
-        .progress-bar {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            color: #fff;
-            text-align: center;
-            white-space: nowrap;
-            background-color: #4e73df;
-            transition: width 0.6s ease;
+        .leave-summary-card::before {
+            content:''; position:absolute; top:-50px; right:-50px;
+            width:200px; height:200px;
+            background:rgba(255,255,255,0.07); border-radius:50%;
         }
-        .bg-primary {
-            background-color: #4e73df !important;
+        .leave-summary-card::after {
+            content:''; position:absolute; bottom:-80px; left:-30px;
+            width:250px; height:250px;
+            background:rgba(255,255,255,0.05); border-radius:50%;
         }
-        .bg-info {
-            background-color: #36b9cc !important;
+        .leave-total-badge { font-size:3.5rem; font-weight:800; color:#fff; line-height:1; }
+        .leave-total-label { font-size:0.85rem; color:rgba(255,255,255,0.75); text-transform:uppercase; letter-spacing:1.5px; font-weight:600; }
+        .leave-month-tag { background:rgba(255,255,255,0.18); color:#fff; border-radius:20px; padding:3px 14px; font-size:0.78rem; font-weight:600; display:inline-block; margin-top:8px; }
+        .leave-breakdown-item {
+            background:#fff; border-radius:12px; padding:16px 18px;
+            display:flex; align-items:flex-start; gap:14px;
+            box-shadow:0 2px 12px rgba(0,0,0,0.07);
+            transition:transform 0.2s ease, box-shadow 0.2s ease;
+            height:100%;
         }
-        .small {
-            font-size: 80%;
-            font-weight: 400;
-        }
+        .leave-breakdown-item:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.12); }
+        .leave-breakdown-icon { width:44px; height:44px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0; margin-top:2px; }
+        .leave-breakdown-title { font-size:0.75rem; color:#6c757d; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:4px; }
+        .leave-breakdown-days { font-size:1.6rem; font-weight:800; color:#2d3748; line-height:1; }
+        .leave-breakdown-days span { font-size:0.72rem; font-weight:500; color:#a0aec0; }
+        .leave-progress-mini { height:5px; border-radius:3px; background:#e9ecef; margin-top:8px; overflow:hidden; }
+        .leave-progress-mini-bar { height:100%; border-radius:3px; transition:width 0.8s ease; }
+        .icon-p0 { background:rgba(78,115,223,0.12); color:#4e73df; }
+        .icon-p1 { background:rgba(28,200,138,0.12); color:#1cc88a; }
+        .icon-p2 { background:rgba(54,185,204,0.12); color:#36b9cc; }
+        .icon-p3 { background:rgba(246,194,62,0.12); color:#f6c23e; }
+        .icon-p4 { background:rgba(231,74,59,0.12); color:#e74a3b; }
+        .bar-p0 { background:#4e73df; } .bar-p1 { background:#1cc88a; }
+        .bar-p2 { background:#36b9cc; } .bar-p3 { background:#f6c23e; } .bar-p4 { background:#e74a3b; }
     </style>
     
-    {{-- Leave Balance Dashboard --}}
+    {{-- ===== PREMIUM TOTAL LEAVES CARD ===== --}}
     @if (\Auth::user()->type == 'employee' && !empty($leaveBalances))
+        @php
+            $totalLeavesThisMonth = $leaveBalances['total_leaves_this_month'] ?? 0;
+            $leaveBreakdown = [];
+            foreach ($leaveBalances as $key => $balance) {
+                if ($key === 'total_leaves_this_month' || !is_array($balance)) continue;
+                $leaveBreakdown[] = [
+                    'name'            => ucwords($key),
+                    'used_this_month' => $balance['used_this_month'] ?? 0,
+                    'total_used'      => $balance['total_used'] ?? 0,
+                    'total_allocated' => $balance['days_per_period'] ?? 0,
+                    'is_unlimited'    => $balance['is_unlimited'] ?? false,
+                ];
+            }
+            if (empty($leaveBreakdown) && isset($leaveTypes)) {
+                foreach ($leaveTypes as $lt) {
+                    $ltKey = strtolower(trim($lt->title));
+                    $bal = $leaveBalances[$ltKey] ?? null;
+                    $leaveBreakdown[] = [
+                        'name'            => $lt->title,
+                        'used_this_month' => $bal['used_this_month'] ?? 0,
+                        'total_used'      => $bal['total_used'] ?? 0,
+                        'total_allocated' => $bal['days_per_period'] ?? 0,
+                        'is_unlimited'    => $lt->is_unlimited ?? false,
+                    ];
+                }
+            }
+        @endphp
+
         <div class="row mb-4 mt-2">
-            {{-- Special handling for Payroll employees - show specific cards only --}}
-            @if(\Auth::user()->type == 'employee' && isset($employee) && $employee->employee_type === 'Payroll')
-                {{-- Paid Leave Card --}}
-                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-                    <div class="card border-left-primary shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                        {{ __('Paid Leave') }}
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        @php
-                                            $paidLeaveBalance = null;
-                                            $paidKeys = ['paid leave', 'paid', 'paidleave'];
-                                            foreach ($paidKeys as $key) {
-                                                if (isset($leaveBalances[$key])) {
-                                                    $paidLeaveBalance = $leaveBalances[$key];
-                                                    break;
-                                                }
-                                            }
-                                        @endphp
-                                        
-                                        @if($paidLeaveBalance)
-                                            {{ $paidLeaveBalance['available'] }} 
-                                            <span class="text-xs text-muted">
-                                                {{ __('Days') }}
-                                                @if($paidLeaveBalance['carried_forward'] > 0)
-                                                    <br>
-                                                    <small class="text-success">+{{ $paidLeaveBalance['carried_forward'] }} {{ __('Carried Forward') }}</small>
-                                                @endif
-                                            </span>
-                                        @else
-                                            0 {{ __('Days') }}
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                            @if($paidLeaveBalance)
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 4px;">
-                                        <?php 
-                                        $percentage = $paidLeaveBalance['days_per_period'] > 0 ? 
-                                            (($paidLeaveBalance['days_per_period'] - $paidLeaveBalance['available']) / $paidLeaveBalance['days_per_period']) * 100 : 0;
-                                        ?>
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ min(100, $percentage) }}%"></div>
-                                    </div>
-                                    <small class="text-muted">
-                                        {{ __('Used') }}: {{ $paidLeaveBalance['total_used'] }} / {{ $paidLeaveBalance['days_per_period'] }}
-                                    </small>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
+            <div class="col-12">
+                <div class="row align-items-stretch g-3">
 
-                {{-- Casual Leave Card --}}
-                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-                    <div class="card border-left-success shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                        {{ __('Casual Leave') }}
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        @php
-                                            $casualLeaveBalance = null;
-                                            $casualKeys = ['casual leaves', 'casual leave', 'casual', 'casualleaves'];
-                                            foreach ($casualKeys as $key) {
-                                                if (isset($leaveBalances[$key])) {
-                                                    $casualLeaveBalance = $leaveBalances[$key];
-                                                    break;
-                                                }
-                                            }
-                                        @endphp
-                                        
-                                        @if($casualLeaveBalance)
-                                            {{ $casualLeaveBalance['total_allocated'] }} 
-                                            <span class="text-xs text-muted">{{ __('Days') }}</span>
-                                        @else
-                                            0 {{ __('Days') }}
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
-                                </div>
+                    {{-- LEFT: Big Total Summary --}}
+                    <div class="col-lg-4 col-md-12">
+                        <div class="leave-summary-card h-100 p-4 d-flex flex-column justify-content-between" style="min-height:200px;">
+                            <div style="position:relative;z-index:1;">
+                                <div class="leave-total-label">Total Leaves Taken</div>
+                                <div class="leave-total-badge mt-2">{{ $totalLeavesThisMonth }}</div>
+                                <div style="color:rgba(255,255,255,0.8);font-size:0.9rem;margin-top:4px;">Days this month</div>
+                                <div class="leave-month-tag"><i class="fas fa-calendar-alt me-1"></i> {{ date('F Y') }}</div>
                             </div>
-                            @if($casualLeaveBalance)
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 4px;">
-                                        <?php 
-                                        $percentage = $casualLeaveBalance['days_per_period'] > 0 ? 
-                                            (($casualLeaveBalance['days_per_period'] - $casualLeaveBalance['available']) / $casualLeaveBalance['days_per_period']) * 100 : 0;
-                                        ?>
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ min(100, $percentage) }}%"></div>
-                                    </div>
-                                    <small class="text-muted">
-                                        {{ __('Used') }}: {{ $casualLeaveBalance['total_used'] }} / {{ $casualLeaveBalance['days_per_period'] }}
-                                    </small>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Remaining Casual Leave Card --}}
-                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-                    <div class="card border-left-info shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                        {{ __('Remaining Casual Leave') }}
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        @if($casualLeaveBalance)
-                                            {{ $casualLeaveBalance['available'] }} 
-                                            <span class="text-xs text-muted">{{ __('Days') }}</span>
-                                        @else
-                                            0 {{ __('Days') }}
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-hourglass-half fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                            @if($casualLeaveBalance)
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 4px;">
-                                        <?php 
-                                        $percentage = $casualLeaveBalance['days_per_period'] > 0 ? 
-                                            (($casualLeaveBalance['days_per_period'] - $casualLeaveBalance['available']) / $casualLeaveBalance['days_per_period']) * 100 : 0;
-                                        ?>
-                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ min(100, $percentage) }}%"></div>
-                                    </div>
-                                    <small class="text-muted">
-                                        {{ __('Used') }}: {{ $casualLeaveBalance['total_used'] }} / {{ $casualLeaveBalance['days_per_period'] }}
-                                    </small>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Total Leaves This Month Card --}}
-                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-                    <div class="card border-left-warning shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                        {{ __('Total Leaves (This Month)') }}
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ $leaveBalances['total_leaves_this_month'] ?? 0 }} 
-                                        <span class="text-xs text-muted">{{ __('Days') }}</span>
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2">
-                                <small class="text-muted">
-                                    {{ __('Month') }}: {{ date('F Y') }}
-                                </small>
+                            <div style="position:relative;z-index:1;margin-top:20px;">
+                                <div style="color:rgba(255,255,255,0.55);font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;">All Leave Types Combined</div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-            @else
-                {{-- Dynamic Leave Type Cards for all other employee types - Only show eligible leave types --}}
-                @if(isset($leaveTypes) && $leaveTypes->count() > 0)
-                    @foreach($leaveTypes as $index => $leaveType)
-                        @php
-                            // Find balance for this leave type
-                            $leaveBalance = null;
-                            $leaveTypeName = strtolower(trim($leaveType->title));
-                            
-                            // Try to find balance by exact title first
-                            if (isset($leaveBalances[$leaveTypeName])) {
-                                $leaveBalance = $leaveBalances[$leaveTypeName];
-                            } else {
-                                // Try variations
-                                $possibleKeys = [
-                                    $leaveTypeName,
-                                    str_replace(' ', '', $leaveTypeName),
-                                    str_replace(' ', '_', $leaveTypeName),
-                                    ucfirst($leaveTypeName),
-                                    ucwords($leaveTypeName)
-                                ];
-                                
-                                foreach ($possibleKeys as $key) {
-                                    if (isset($leaveBalances[$key])) {
-                                        $leaveBalance = $leaveBalances[$key];
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            // Determine card color based on index
-                            $borderColors = ['primary', 'success', 'info', 'warning', 'danger'];
-                            $borderColor = $borderColors[$index % count($borderColors)];
-                            $icons = ['fa-calendar-check', 'fa-calendar-day', 'fa-calendar-alt', 'fa-calendar-week', 'fa-calendar'];
-                            $icon = $icons[$index % count($icons)];
-                        @endphp
-                        
-                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-                            <div class="card border-left-{{ $borderColor }} shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-{{ $borderColor }} text-uppercase mb-1">
-                                                {{ $leaveType->title }}
+                    {{-- RIGHT: Breakdown per Leave Type --}}
+                    <div class="col-lg-8 col-md-12">
+                        <div class="row g-3 h-100">
+                            @if(!empty($leaveBreakdown))
+                                @foreach($leaveBreakdown as $idx => $item)
+                                    @php $p = $idx % 5; @endphp
+                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                        <div class="leave-breakdown-item">
+                                            <div class="leave-breakdown-icon icon-p{{ $p }}">
+                                                <i class="fas fa-calendar-check"></i>
                                             </div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                                @if($leaveBalance)
-                                                    @if($leaveType->is_unlimited)
-                                                        {{-- For unlimited leave types, show total used days --}}
-                                                        {{ $leaveBalance['total_used'] }} 
-                                                        <span class="text-xs text-muted">{{ __('Days Used') }}</span>
-                                                    @else
-                                                        {{-- For limited leave types, show available days --}}
-                                                        {{ $leaveBalance['available'] }} 
-                                                        <span class="text-xs text-muted">
-                                                            {{ __('Days') }}
-                                                            @if($leaveBalance['carried_forward'] > 0)
-                                                                <br>
-                                                                <small class="text-success">+{{ $leaveBalance['carried_forward'] }} {{ __('Carried Forward') }}</small>
-                                                            @endif
-                                                        </span>
-                                                    @endif
+                                            <div class="flex-grow-1">
+                                                <div class="leave-breakdown-title">{{ $item['name'] }}</div>
+                                                <div class="leave-breakdown-days">{{ $item['used_this_month'] }} <span>days this month</span></div>
+                                                @if(!$item['is_unlimited'] && $item['total_allocated'] > 0)
+                                                    <div class="leave-progress-mini">
+                                                        <div class="leave-progress-mini-bar bar-p{{ $p }}" style="width:{{ min(100, $item['total_allocated'] > 0 ? ($item['total_used']/$item['total_allocated'])*100 : 0) }}%"></div>
+                                                    </div>
+                                                    <div style="font-size:0.7rem;color:#a0aec0;margin-top:4px;">Total used: {{ $item['total_used'] }} / {{ $item['total_allocated'] }}</div>
                                                 @else
-                                                    @if($leaveType->is_unlimited)
-                                                        0 {{ __('Days Used') }}
-                                                    @else
-                                                        0 {{ __('Days') }}
-                                                    @endif
+                                                    <div style="font-size:0.7rem;color:#a0aec0;margin-top:4px;">Total used: {{ $item['total_used'] }} days</div>
                                                 @endif
                                             </div>
                                         </div>
-                                        <div class="col-auto">
-                                            <i class="fas {{ $icon }} fa-2x text-gray-300"></i>
-                                        </div>
                                     </div>
-                                    @if($leaveBalance)
-                                        <div class="mt-2">
-                                            @if($leaveType->is_unlimited)
-                                                {{-- For unlimited leave types, show usage info without progress bar --}}
-                                                <small class="text-muted">
-                                                    {{ __('Total Used') }}: {{ $leaveBalance['total_used'] }} {{ __('Days') }}
-                                                    @if($leaveBalance['used_this_month'] > 0)
-                                                        <br>{{ __('This Month') }}: {{ $leaveBalance['used_this_month'] }} {{ __('Days') }}
-                                                    @endif
-                                                </small>
-                                            @else
-                                                {{-- For limited leave types, show progress bar --}}
-                                                <div class="progress" style="height: 4px;">
-                                                    <?php 
-                                                    $percentage = $leaveBalance['days_per_period'] > 0 ? 
-                                                        (($leaveBalance['days_per_period'] - $leaveBalance['available']) / $leaveBalance['days_per_period']) * 100 : 0;
-                                                    ?>
-                                                    <div class="progress-bar bg-{{ $borderColor }}" role="progressbar" style="width: {{ min(100, $percentage) }}%"></div>
-                                                </div>
-                                                <small class="text-muted">
-                                                    {{ __('Used') }}: {{ $leaveBalance['total_used'] }} / {{ $leaveBalance['days_per_period'] }}
-                                                </small>
-                                            @endif
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                    
-                    {{-- Total Leaves This Month Box --}}
-                    <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-                        <div class="card border-left-warning shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                            {{ __('Total Leaves (This Month)') }}
-                                        </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                            {{ $leaveBalances['total_leaves_this_month'] ?? 0 }} 
-                                            <span class="text-xs text-muted">{{ __('Days') }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                                @endforeach
+                            @else
+                                <div class="col-12 d-flex align-items-center justify-content-center">
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-check-circle text-success" style="font-size:2.5rem;"></i>
+                                        <p class="text-muted mt-2 mb-0">No leaves taken this month!</p>
+                                        <small class="text-muted">All your leave records will appear here.</small>
                                     </div>
                                 </div>
-                                <div class="mt-2">
-                                    <small class="text-muted">
-                                        {{ __('Month') }}: {{ date('F Y') }}
-                                    </small>
-                                </div>
-                            </div>
+                            @endif
                         </div>
                     </div>
-                @endif
-            @endif
+
+                </div>
+            </div>
         </div>
     @endif
-
-    <div class="row">
+    <div class="row mt-4">
 
         <div class="col-xl-12">
             <div class="card">
@@ -478,7 +204,15 @@
                                         <td>{{ \Auth::user()->dateFormat($leave->start_date) }}</td>
                                         <td>{{ \Auth::user()->dateFormat($leave->end_date) }}</td>
 
-                                        <td>{{ $leave->total_leave_days }}</td>
+                                        <td>
+                                            {{ $leave->total_leave_days }}
+                                            @if($leave->leave_duration == 'half_day')
+                                                <br>
+                                                <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
+                                                    {{ $leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half') }}
+                                                </span>
+                                            @endif
+                                        </td>
                                         <td>{{ $leave->leave_reason }}</td>
                                         <td>
                                             @if ($leave->status == 'Pending')
