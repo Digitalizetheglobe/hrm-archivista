@@ -23,6 +23,7 @@
 
 
 
+
 {{-- <nav class="dash-sidebar light-sidebar {{ isset($cust_theme_bg) && $cust_theme_bg == 'on' ? 'transprent-bg' : '' }}"> --}}
 
 <div class="navbar-wrapper">

@@ -52,6 +52,7 @@ chmod -R 775 storage bootstrap/cache
 ```
 
 ---
+writw proepr
 
 # ✅ STEP 6 — Cache Clear करा
 

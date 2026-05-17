@@ -1106,6 +1106,8 @@ try {
 }
 @endphp
 
+<!-- Code -->
+
 <div class="modal-body">
     <div class="text-md-end mb-2">
         <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" data-bs-placement="bottom"
