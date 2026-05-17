@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
 use Illuminate\Validation\Rule;
 use Lab404\Impersonate\Impersonate;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -247,8 +248,6 @@ class UserController extends Controller
 
         return view('user.profile')->with('userDetail', $userDetail);
     }
-
-    use Illuminate\Support\Facades\Log;
 
 public function editprofile(Request $request)
     {

@@ -107,3 +107,19 @@ cd /home/hrma.archivistaindia.com/public_html && git reset --hard && git pull or
 # ✅ DONE
 
 Production update complete 🎉
+
+
+
+
+cd /home/hrma.archivistaindia.com/public_html
+
+mkdir -p storage/logs
+mkdir -p bootstrap/cache
+
+chown -R nobody:nobody storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+
+
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear

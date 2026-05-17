@@ -22,6 +22,12 @@ class ValidateSession
             $user = Auth::user();
             $currentSessionId = $request->session()->getId();
             
+            // Skip check if the user just logged in via Remember Me
+            // because the new session hasn't been written to the database yet.
+            if (Auth::viaRemember()) {
+                return $next($request);
+            }
+            
             // Check if current session still exists in database for this user
             $sessionExists = DB::table('sessions')
                 ->where('id', $currentSessionId)
