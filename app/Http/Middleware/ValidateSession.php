@@ -24,7 +24,8 @@ class ValidateSession
             
             // Skip check if the user just logged in via Remember Me
             // because the new session hasn't been written to the database yet.
-            if (Auth::viaRemember()) {
+            // Also skip if the session driver is not database.
+            if (Auth::viaRemember() || config('session.driver') !== 'database') {
                 return $next($request);
             }
             
