@@ -176,12 +176,15 @@ class HomeController extends Controller
                     return strtotime($a['date']) - strtotime($b['date']);
                 });
                 
-
-                
-            
+                $todayLeaveEmployees = \App\Models\Leave::with(['employees', 'leaveType'])
+                    ->where('created_by', '=', \Auth::user()->creatorId())
+                    ->where('status', '=', 'Approved')
+                    ->whereDate('start_date', '<=', $date)
+                    ->whereDate('end_date', '>=', $date)
+                    ->get();
             
                 // Pass employee details to the dashboard
-                return view('dashboard.dashboard', compact('notices', 'arrEvents', 'announcements', 'employees', 'meetings', 'employeeAttendance', 'officeTime', 'quote', 'emp', 'clockInTime',  'todos', 'monthlyEvents'));
+                return view('dashboard.dashboard', compact('notices', 'arrEvents', 'announcements', 'employees', 'meetings', 'employeeAttendance', 'officeTime', 'quote', 'emp', 'clockInTime',  'todos', 'monthlyEvents', 'todayLeaveEmployees'));
             }
             else if ($user->type == 'super admin') {
                 $user                       = \Auth::user();
@@ -426,12 +429,15 @@ class HomeController extends Controller
 
                 $todayEnquiryCount = TimeSheet::whereDate('created_at', Carbon::today())->count();
 
+                $todayLeaveEmployees = \App\Models\Leave::with(['employees', 'leaveType'])
+                    ->where('created_by', '=', \Auth::user()->creatorId())
+                    ->where('status', '=', 'Approved')
+                    ->whereDate('start_date', '<=', $currentDate)
+                    ->whereDate('end_date', '>=', $currentDate)
+                    ->get();
 
-                
 
-
-
-                return view('dashboard.company', compact('siteVisitPresentCount', 'totalSiteVisitsCount', 'siteVisitAttendancePercentage', 'hasTodaySiteVisits', 'siteAttendanceEmployees', 'todaytimesheet', 'todayEnquiryCount', 'notices', 'totalHolidays', 'arrEvents', 'announcements', 'employees', 'activeJob', 'inActiveJOb', 'meetings', 'countEmployee', 'countUser', 'countTicket', 'countOpenTicket', 'countCloseTicket', 'notClockIns', 'accountBalance', 'totalPayee', 'totalPayer', 'users', 'plan', 'storage_limit', 'quote', 'attendancePercentage', 'presentEmployeesWithClockIn', 'totalEmployees', 'totalDepartment', 'todayLeaves', 'todos', 'chartData', 'totalProjects'));
+                return view('dashboard.company', compact('siteVisitPresentCount', 'totalSiteVisitsCount', 'siteVisitAttendancePercentage', 'hasTodaySiteVisits', 'siteAttendanceEmployees', 'todaytimesheet', 'todayEnquiryCount', 'notices', 'totalHolidays', 'arrEvents', 'announcements', 'employees', 'activeJob', 'inActiveJOb', 'meetings', 'countEmployee', 'countUser', 'countTicket', 'countOpenTicket', 'countCloseTicket', 'notClockIns', 'accountBalance', 'totalPayee', 'totalPayer', 'users', 'plan', 'storage_limit', 'quote', 'attendancePercentage', 'presentEmployeesWithClockIn', 'totalEmployees', 'totalDepartment', 'todayLeaves', 'todos', 'chartData', 'totalProjects', 'todayLeaveEmployees'));
             }
         } else {
             return view('landingpage::layouts.home');
