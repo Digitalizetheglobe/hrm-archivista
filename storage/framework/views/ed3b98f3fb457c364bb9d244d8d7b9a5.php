@@ -302,6 +302,10 @@
                                 <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('leave.index')); ?>"><?php echo e(__('Manage Leave')); ?></a>
                             </li>
 
+                            <li class="dash-item <?php echo e(Request::segment(1) == 'compoff' ? ' active' : ''); ?>">
+                                <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('compoff.index')); ?>"><?php echo e(__('Comp-Off')); ?></a>
+                            </li>
+
                         <?php endif; ?>
 
                         <?php if(\Auth::user()->type == 'company'): ?>

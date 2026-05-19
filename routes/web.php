@@ -132,6 +132,7 @@ use App\Http\Controllers\VendorController;
 use App\Http\Controllers\LetterTemplateController;
 use App\Http\Controllers\TDSController;
 use App\Http\Controllers\SiteVisitController;
+use App\Http\Controllers\NotificationController;
 
 
 
@@ -488,6 +489,8 @@ Route::group(['middleware' => ['verified']], function () {
         ],
         function () {
 
+            Route::post('notifications/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
+            Route::post('notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
             Route::get('/orders', [StripePaymentController::class, 'index'])->name('order.index');
             Route::get('/refund/{id}/{user_id}', [StripePaymentController::class, 'refund'])->name('order.refund');
             Route::get('/stripe/{code}', [StripePaymentController::class, 'stripe'])->name('stripe');
@@ -2193,4 +2196,9 @@ Route::middleware(['auth'])->group(function() {
         ->name('joballocation.getApprovers');
 
     Route::get('/employees/by-departments', [JobAllocationController::class, 'getEmployeesByDepartments'])->name('employees.by_departments');
+
+    // Comp-Off Routes
+    Route::resource('compoff', 'App\Http\Controllers\CompOffController');
+    Route::get('/get-departments-by-branch', [\App\Http\Controllers\CompOffController::class, 'getDepartmentsByBranch'])->name('compoff.get_departments');
+    Route::get('/get-employees-by-departments', [\App\Http\Controllers\CompOffController::class, 'getEmployeesByDepartments'])->name('compoff.get_employees');
 });

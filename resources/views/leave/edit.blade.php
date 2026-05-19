@@ -84,7 +84,14 @@
                 <select name="leave_type_id" id="leave_type_id" class="form-control lf-form-control">
                     @foreach ($leavetypes as $type)
                         <option value="{{ $type->id }}" @if($leave->leave_type_id == $type->id) selected @endif>
-                            {{ $type->title }} ({{ $type->days }} days)
+                            {{ $type->title }}
+                            @if(strtolower(trim($type->title)) === 'comp-off')
+                                ({{ \App\Http\Controllers\LeaveController::getCompOffBalance($leave->employee_id) }} {{ __('Days Available') }})
+                            @elseif($type->title == 'LWP' || $type->title == 'WFH')
+                                (Unlimited)
+                            @else
+                                ({{ $type->days }} days)
+                            @endif
                         </option>
                     @endforeach
                 </select>
@@ -139,19 +146,7 @@
             <div class="lf-section-label">Leave Reason <span class="text-danger">*</span></div>
             {{ Form::textarea('leave_reason', null, ['class' => 'form-control lf-form-control', 'required' => 'required', 'placeholder' => __('Describe your leave reason...'), 'rows' => '3']) }}
         </div>
-        <div class="mb-2">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-                <div class="lf-section-label mb-0">Remark <span class="text-danger">*</span></div>
-                @if ($plan->enable_chatgpt == 'on')
-                    <a href="#" data-size="md" class="btn btn-outline-primary btn-sm px-2 py-1" data-ajax-popup-over="true"
-                        id="grammarCheck" data-url="{{ route('grammar', ['grammar']) }}" data-bs-placement="top"
-                        data-title="{{ __('Grammar check with AI') }}" style="font-size:0.72rem;">
-                        <i class="ti ti-rotate me-1"></i>{{ __('Grammar check') }}
-                    </a>
-                @endif
-            </div>
-            {{ Form::textarea('remark', null, ['class' => 'form-control lf-form-control grammer_textarea', 'required' => 'required', 'placeholder' => __('Additional remarks...'), 'rows' => '2']) }}
-        </div>
+
     </div>
 
     {{-- Status (Company Role Only) --}}

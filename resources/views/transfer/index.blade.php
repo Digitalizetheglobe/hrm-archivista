@@ -48,7 +48,7 @@
                                 @foreach ($transfers as $transfer)
                                     <tr>
                                         @role('company')
-                                            <td>{{ !empty($transfer->employee_id) ? $transfer->employee->name : '' }}</td>
+                                            <td>{{ !empty($transfer->employee) ? $transfer->employee->name : '' }}</td>
                                         @endrole
                                         <td>{{ !empty($transfer->branch()) ? $transfer->branch()->name : '' }}</td>
                                         <td>{{ !empty($transfer->department()) ? $transfer->department()->name : '' }}</td>

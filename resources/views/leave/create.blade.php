@@ -102,20 +102,18 @@
                 <select name="leave_type_id" id="leave_type_id" class="form-control lf-form-control" style="padding-left:34px;">
                     <option value="">{{ __('Select Leave Type') }}</option>
                     @foreach ($leavetypes as $leave)
-                        @if ($leave->title === 'Comp-Off' && $compOffLeaves === 0) @continue @endif
                         @if($leave->title == 'LWP' || $leave->title == 'WFH')
                             <option value="{{ $leave->id }}" data-unlimited="true">{{ $leave->title }} (Unlimited)</option>
                         @else
                             <option value="{{ $leave->id }}" data-unlimited="false" data-period="{{ $leave->type }}" data-carry-forward="{{ $leave->carry_forward_enabled ? 'true' : 'false' }}">
                                 {{ $leave->title }}
-                                @if($leave->type == 'monthly') ({{ $leave->days }} {{ __('Days/Month') }})
+                                @if(strtolower(trim($leave->title)) === 'comp-off')
+                                    ({{ \App\Http\Controllers\LeaveController::getCompOffBalance(($employees instanceof \App\Models\Employee) ? $employees->id : 0) }} {{ __('Days Available') }})
+                                @elseif($leave->type == 'monthly') ({{ $leave->days }} {{ __('Days/Month') }})
                                 @else ({{ $leave->days }} {{ __('Days/Year') }}) @endif
                             </option>
                         @endif
                     @endforeach
-                    @if($compOffBalance > 0)
-                        <option value="comp_off">{{ __('Comp-Off Leave') }} ({{ $compOffBalance }} available)</option>
-                    @endif
                 </select>
             </div>
             <div id="leave_balance_info" class="mt-2" style="font-size:0.78rem;color:#667eea;font-weight:600;"></div>
@@ -168,19 +166,6 @@
         <div class="mb-3">
             <div class="lf-section-label">Leave Reason <span class="text-danger">*</span></div>
             {{ Form::textarea('leave_reason', null, ['class' => 'form-control lf-form-control', 'required' => 'required', 'placeholder' => __('Describe your leave reason...'), 'rows' => '3']) }}
-        </div>
-        <div class="mb-2">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-                <div class="lf-section-label mb-0">Remark <span class="text-danger">*</span></div>
-                @if ($plan->enable_chatgpt == 'on')
-                    <a href="#" data-size="md" class="btn btn-outline-primary btn-sm px-2 py-1" data-ajax-popup-over="true"
-                        id="grammarCheck" data-url="{{ route('grammar', ['grammar']) }}" data-bs-placement="top"
-                        data-title="{{ __('Grammar check with AI') }}" style="font-size:0.72rem;">
-                        <i class="ti ti-rotate me-1"></i>{{ __('Grammar check') }}
-                    </a>
-                @endif
-            </div>
-            {{ Form::textarea('remark', null, ['class' => 'form-control lf-form-control grammer_textarea', 'required' => 'required', 'placeholder' => __('Additional remarks...'), 'rows' => '2']) }}
         </div>
     </div>
 
@@ -277,14 +262,14 @@
                 // Fetch leave balance for the selected employee and leave type
                 $.get('/leave/get-leave-balance/' + employeeId + '/' + selectedValue, function(data) {
                     var balanceText = 'Available: ' + data.available_days + ' days';
-                    if (data.employee_type === 'Contract' && data.confirm_of_employment) {
-                        balanceText += ' (Confirmed Contract Employee)';
-                    } else if (data.employee_type === 'Contract') {
-                        balanceText += ' (Unconfirmed Contract Employee)';
+                    if ((data.employee_type === 'Contract' || data.employee_type === 'Consultant') && data.confirm_of_employment) {
+                        balanceText += ' (Confirmed ' + data.employee_type + ' Employee)';
+                    } else if (data.employee_type === 'Contract' || data.employee_type === 'Consultant') {
+                        balanceText += ' (Unconfirmed ' + data.employee_type + ' Employee)';
                     }
                     $('#leave_balance_info').text(balanceText);
                 }).fail(function() {
-                    $('#leave_balance_info').text('Unable to fetch balance information');
+                    $('#leave_balance_info').text('Fetch balance information');
                 });
             } else {
                 $('#leave_balance_info').text('');
@@ -390,7 +375,9 @@
                     $option.attr('data-carry-forward', leave.carry_forward_enabled ? 'true' : 'false');
                     
                     var text = leave.title;
-                    if (leave.type == 'monthly') {
+                    if (leave.title.toLowerCase().trim() === 'comp-off') {
+                        text += ' (' + leave.days + ' Days Available)';
+                    } else if (leave.type == 'monthly') {
                         text += ' (' + leave.days + ' Days/Month)';
                     } else {
                         text += ' (' + leave.days + ' Days/Year)';

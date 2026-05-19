@@ -1031,6 +1031,11 @@
                                 <div class="row">
                                     <!-- <div class=""> -->
                                     @foreach ($EmailTemplates as $EmailTemplate)
+                                        @php
+                                            $templateRelation = $EmailTemplate->template;
+                                            $is_active = $templateRelation ? $templateRelation->is_active : 1;
+                                            $template_id = $templateRelation ? $templateRelation->id : $EmailTemplate->id;
+                                        @endphp
                                         <div class="col-lg-4 col-md-6 col-sm-6 form-group">
                                             <div class="list-group">
                                                 <div class="list-group-item form-switch form-switch-right">
@@ -1038,13 +1043,13 @@
                                                         style="margin-left:5%;">{{ $EmailTemplate->name }}</label>
 
                                                     <input class="form-check-input" name='{{ $EmailTemplate->id }}'
-                                                        id="email_tempalte_{{ $EmailTemplate->template->id }}"
+                                                        id="email_tempalte_{{ $template_id }}"
                                                         type="checkbox"
-                                                        @if ($EmailTemplate->template->is_active == 1) checked="checked" @endif
-                                                        type="checkbox" value="1"
-                                                        data-url="{{ route('company.email.setting', [$EmailTemplate->template->id]) }}" />
+                                                        @if ($is_active == 1) checked="checked" @endif
+                                                        value="1"
+                                                        data-url="{{ route('company.email.setting', [$template_id]) }}" />
                                                     <label class="form-check-label"
-                                                        for="email_tempalte_{{ $EmailTemplate->template->id }}"></label>
+                                                        for="email_tempalte_{{ $template_id }}"></label>
                                                 </div>
                                             </div>
                                         </div>

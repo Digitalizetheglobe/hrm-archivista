@@ -914,6 +914,14 @@ class SettingsController extends Controller
                     'mail.password' => $request->mail_password,
                     'mail.from.address' => $request->mail_from_address,
                     'mail.from.name' => $request->mail_from_name,
+
+                    'mail.default' => $request->mail_driver ? $request->mail_driver : 'smtp',
+                    'mail.mailers.smtp.transport' => $request->mail_driver ? $request->mail_driver : 'smtp',
+                    'mail.mailers.smtp.host' => $request->mail_host,
+                    'mail.mailers.smtp.port' => $request->mail_port,
+                    'mail.mailers.smtp.encryption' => $request->mail_encryption,
+                    'mail.mailers.smtp.username' => $request->mail_username,
+                    'mail.mailers.smtp.password' => $request->mail_password,
                 ]
             );
             Mail::to($request->email)->send(new TestMail());

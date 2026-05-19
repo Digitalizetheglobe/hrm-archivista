@@ -36,6 +36,65 @@ class LeaveController extends Controller
         $this->leaveAllocationService = $leaveAllocationService;
     }
 
+    public static function getCompOffEarned($employeeId)
+    {
+        $employee = Employee::find($employeeId);
+        if (!$employee) {
+            return 0;
+        }
+        $compOffs = \DB::table('comp_offs')->where('created_by', $employee->created_by)->get();
+        $earnedDays = 0;
+        foreach ($compOffs as $compOff) {
+            $employeeIds = json_decode($compOff->employee_ids, true) ?? [];
+            if (in_array($employeeId, $employeeIds)) {
+                $dates = json_decode($compOff->dates, true) ?? [];
+                $earnedDays += count($dates);
+            }
+        }
+        return $earnedDays;
+    }
+
+    public static function getCompOffBalance($employeeId)
+    {
+        $employee = Employee::find($employeeId);
+        if (!$employee) {
+            return 0;
+        }
+
+        $earnedDays = self::getCompOffEarned($employeeId);
+
+        $compOffLeaveType = LeaveType::where('title', 'Comp-Off')
+            ->where('created_by', $employee->created_by)
+            ->first();
+            
+        if (!$compOffLeaveType) {
+            return $earnedDays;
+        }
+
+        $usedDays = LocalLeave::where('employee_id', $employeeId)
+            ->where('leave_type_id', $compOffLeaveType->id)
+            ->whereIn('status', ['Approved', 'Pending'])
+            ->sum('total_leave_days');
+
+        return max(0, $earnedDays - $usedDays);
+    }
+
+    public static function getOrCreateCompOffLeaveType($creatorId)
+    {
+        return LeaveType::firstOrCreate(
+            [
+                'title' => 'Comp-Off',
+                'created_by' => $creatorId,
+            ],
+            [
+                'days' => 0,
+                'type' => 'yearly',
+                'is_unlimited' => false,
+                'carry_forward_enabled' => false,
+            ]
+        );
+    }
+
     /**
      * Get employee type identifier for leave type eligibility checking
      */
@@ -43,7 +102,7 @@ class LeaveController extends Controller
     {
         if ($employee->employee_type === 'Payroll') {
             return $employee->confirm_of_employment ? 'payroll_confirm' : 'payroll_not_confirm';
-        } elseif ($employee->employee_type === 'Contract') {
+        } elseif ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant') {
             return $employee->confirm_of_employment ? 'contract_confirm' : 'contract_not_confirm';
         }
         
@@ -65,7 +124,7 @@ class LeaveController extends Controller
             if (\Auth::user()->type == 'employee') {
                 $user     = \Auth::user();
                 $employee = Employee::where('user_id', '=', $user->id)->first();
-                $leaves = LocalLeave::where('employee_id', '=', $employee->id)->get();
+                $leaves = LocalLeave::where('employee_id', '=', $employee->id)->orderBy('id', 'desc')->get();
                 
                 // Calculate leave balance data for dashboard using the new service
                 $leaveBalances = $this->leaveAllocationService->getCurrentLeaveBalances($employee->id);
@@ -107,7 +166,7 @@ class LeaveController extends Controller
                 });
                 
             } else {
-                $leaves = LocalLeave::where('created_by', '=', \Auth::user()->creatorId())->with(['employees', 'leaveType'])->get();
+                $leaves = LocalLeave::where('created_by', '=', \Auth::user()->creatorId())->with(['employees', 'leaveType'])->orderBy('id', 'desc')->get();
                 $leaveBalances = []; // For admin, we'll show per employee in the table
                 $leaveTypes = collect(); // Empty for admin
                 $employee = null; // Initialize employee for admin view
@@ -122,9 +181,18 @@ class LeaveController extends Controller
     public function create()
     {
         if (\Auth::user()->can('Create Leave')) {
+            // Ensure Comp-Off leave type exists
+            self::getOrCreateCompOffLeaveType(\Auth::user()->creatorId());
+
             if (Auth::user()->type == 'employee') {
                 $employees = Employee::where('user_id', '=', \Auth::user()->id)->first();
-               
+                if ($employees && !empty($employees->company_doj)) {
+                    $doj = \Carbon\Carbon::parse($employees->company_doj);
+                    $oneMonthAfterJoining = $doj->copy()->addMonth();
+                    if (\Carbon\Carbon::now()->lt($oneMonthAfterJoining)) {
+                        return response()->json(['error' => __('You cannot apply for leave during your first month of joining (allowed from ' . $oneMonthAfterJoining->format('Y-m-d') . ').')], 400);
+                    }
+                }
             } else {
                 $employees = Employee::where('created_by', '=', \Auth::user()->creatorId())->get()->pluck('name', 'id');
             }
@@ -146,6 +214,15 @@ class LeaveController extends Controller
                         
                         // Check if employee's type identifier is in the eligible list
                         return in_array($employeeTypeIdentifier, $leaveType->eligible_employee_types);
+                    });
+
+                    // Dynamic Comp-Off Balance checking
+                    $compOffBalance = self::getCompOffBalance($employee->id);
+                    $leavetypes = $leavetypes->filter(function($leaveType) use ($compOffBalance) {
+                        if (strtolower(trim($leaveType->title)) === 'comp-off') {
+                            return $compOffBalance > 0;
+                        }
+                        return true;
                     });
                 }
             }
@@ -181,7 +258,6 @@ class LeaveController extends Controller
                     'end_date' => 'required',
                     'leave_duration' => 'required',
                     'leave_reason' => 'required',
-                    'remark' => 'required',
                 ]
             );
             if ($validator->fails()) {
@@ -194,11 +270,27 @@ class LeaveController extends Controller
             $employee = Employee::find($request->employee_id);
             $leave_type = LeaveType::find($request->leave_type_id);
 
+            // Check if employee is in their first month after joining
+            if (\Auth::user()->type == 'employee' && $employee && !empty($employee->company_doj)) {
+                $doj = \Carbon\Carbon::parse($employee->company_doj);
+                $oneMonthAfterJoining = $doj->copy()->addMonth();
+                $now = \Carbon\Carbon::now();
+                $leaveStartDate = \Carbon\Carbon::parse($request->start_date);
+
+                if ($now->lt($oneMonthAfterJoining)) {
+                    return redirect()->back()->with('error', __('You cannot apply for leave during your first month of joining (allowed from ' . $oneMonthAfterJoining->format('Y-m-d') . ').'));
+                }
+
+                if ($leaveStartDate->lt($oneMonthAfterJoining)) {
+                    return redirect()->back()->with('error', __('You cannot take leave during your first month of joining (allowed from ' . $oneMonthAfterJoining->format('Y-m-d') . ').'));
+                }
+            }
+
             // Validate contract employee leave type restrictions
-            if ($employee && $employee->employee_type === 'Contract') {
+            if ($employee && ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant')) {
                 $leaveTypeName = strtolower(trim($leave_type->title));
                 if (!$leave_type->is_unlimited && $leaveTypeName !== 'casual leave') {
-                    return redirect()->back()->with('error', __('Contract employees can only apply for Casual Leave and Unlimited Leaves.'));
+                    return redirect()->back()->with('error', __('Contract/Consultant employees can only apply for Casual Leave and Unlimited Leaves.'));
                 }
             }
 
@@ -226,83 +318,93 @@ class LeaveController extends Controller
 
             // Skip leave balance check for unlimited leave types
             if (!$leave_type->is_unlimited) {
-                // Get allocated days based on employee type
-                $allocatedDays = $this->getAllocatedDaysForEmployee($employee, $leave_type);
-                
-                // Calculate available days based on leave type period
-                if ($leave_type->type == 'monthly') {
-                    // For monthly leave types, calculate days for current month with carry-forward
-                    $currentMonth = date('Y-m');
-                    $currentYear = date('Y');
-                    $currentMonthNum = date('m');
-                    $monthStart = $currentYear . '-' . $currentMonthNum . '-01';
-                    $monthEnd = $currentYear . '-' . $currentMonthNum . '-' . date('t', strtotime($currentYear . '-' . $currentMonthNum . '-01'));
-                    
-                    // Get or create current month carry forward balance
-                    $carryForwardBalance = CarryForwardBalance::getOrCreateBalance($request->employee_id, $leave_type->id, $currentMonth);
-                    
-                    // Calculate carry forward from previous month (only if enabled)
-                    $carriedForwardDays = 0;
-                    if ($leave_type->carry_forward_enabled) {
-                        $previousMonth = date('Y-m', strtotime($currentYear . '-' . $currentMonthNum . '-01 -1 month'));
-                        $carriedForwardDays = CarryForwardBalance::calculateCarryForward($request->employee_id, $leave_type->id, $previousMonth);
-                        
-                        // Update current month balance with carried forward days
-                        $carryForwardBalance->carried_forward_days = $carriedForwardDays;
-                        $carryForwardBalance->save();
+                if (strtolower(trim($leave_type->title)) === 'comp-off') {
+                    $available = self::getCompOffBalance($request->employee_id);
+                    if ($total_leave_days > $available) {
+                        return redirect()->back()->with('error', __('You are not eligible for leave. Available Comp-Off balance: ' . $available . ' days.'));
                     }
-                    
-                    // Calculate used days this month
-                    $leaves_used_monthly = LocalLeave::where('employee_id', '=', $request->employee_id)
-                        ->where('leave_type_id', $leave_type->id)
-                        ->where('status', 'Approved')
-                        ->whereBetween('created_at', [$monthStart, $monthEnd])
-                        ->sum('total_leave_days');
-                    
-                    $leaves_pending_monthly = LocalLeave::where('employee_id', '=', $request->employee_id)
-                        ->where('leave_type_id', $leave_type->id)
-                        ->where('status', 'Pending')
-                        ->whereBetween('created_at', [$monthStart, $monthEnd])
-                        ->sum('total_leave_days');
-                    
-                    // Update carry forward balance record
-                    $carryForwardBalance->allocated_days = $allocatedDays;
-                    $carryForwardBalance->used_days = $leaves_used_monthly + $leaves_pending_monthly;
-                    $carryForwardBalance->remaining_days = ($allocatedDays + $carriedForwardDays) - $carryForwardBalance->used_days;
-                    $carryForwardBalance->save();
-                    
-                    // Total available days = allocated + carried forward - used
-                    $totalAvailable = ($allocatedDays + $carriedForwardDays) - $leaves_used_monthly;
-                    
-                    if ($total_leave_days > $totalAvailable) {
-                        $carryInfo = $leave_type->carry_forward_enabled ? " (including {$carriedForwardDays} carried forward)" : "";
-                        return redirect()->back()->with('error', __('You are not eligible for leave. Available: ' . $totalAvailable . ' days for this month' . $carryInfo . '.'));
-                    }
-                    
-                    if (!empty($leaves_pending_monthly) && $leaves_pending_monthly + $total_leave_days > $totalAvailable) {
-                        return redirect()->back()->with('error', __('Multiple leave entry is pending. Available: ' . ($totalAvailable - $leaves_pending_monthly) . ' days for this month.'));
-                    }
-                    
-                    if ($totalAvailable >= $total_leave_days) {
-                        // Proceed with leave creation
-                    } else {
-                        return redirect()->back()->with('error', __('Insufficient leave balance. Available: ' . $totalAvailable . ' days for this month.'));
+                    if (!empty($leaves_pending) && $leaves_pending + $total_leave_days > $available) {
+                        return redirect()->back()->with('error', __('Multiple leave entry is pending. Available Comp-Off balance: ' . ($available - $leaves_pending) . ' days.'));
                     }
                 } else {
-                    // For yearly leave types
-                    $return = $allocatedDays - $leaves_used;
-                    if ($total_leave_days > $return) {
-                        return redirect()->back()->with('error', __('You are not eligible for leave.'));
-                    }
-
-                    if (!empty($leaves_pending) && $leaves_pending + $total_leave_days > $return) {
-                        return redirect()->back()->with('error', __('Multiple leave entry is pending.'));
-                    }
-
-                    if ($allocatedDays >= $total_leave_days) {
-                        // Proceed with leave creation
+                    // Get allocated days based on employee type
+                    $allocatedDays = $this->getAllocatedDaysForEmployee($employee, $leave_type);
+                    
+                    // Calculate available days based on leave type period
+                    if ($leave_type->type == 'monthly') {
+                        // For monthly leave types, calculate days for current month with carry-forward
+                        $currentMonth = date('Y-m');
+                        $currentYear = date('Y');
+                        $currentMonthNum = date('m');
+                        $monthStart = $currentYear . '-' . $currentMonthNum . '-01';
+                        $monthEnd = $currentYear . '-' . $currentMonthNum . '-' . date('t', strtotime($currentYear . '-' . $currentMonthNum . '-01'));
+                        
+                        // Get or create current month carry forward balance
+                        $carryForwardBalance = CarryForwardBalance::getOrCreateBalance($request->employee_id, $leave_type->id, $currentMonth);
+                        
+                        // Calculate carry forward from previous month (only if enabled)
+                        $carriedForwardDays = 0;
+                        if ($leave_type->carry_forward_enabled) {
+                            $previousMonth = date('Y-m', strtotime($currentYear . '-' . $currentMonthNum . '-01 -1 month'));
+                            $carriedForwardDays = CarryForwardBalance::calculateCarryForward($request->employee_id, $leave_type->id, $previousMonth);
+                            
+                            // Update current month balance with carried forward days
+                            $carryForwardBalance->carried_forward_days = $carriedForwardDays;
+                            $carryForwardBalance->save();
+                        }
+                        
+                        // Calculate used days this month
+                        $leaves_used_monthly = LocalLeave::where('employee_id', '=', $request->employee_id)
+                            ->where('leave_type_id', $leave_type->id)
+                            ->where('status', 'Approved')
+                            ->whereBetween('created_at', [$monthStart, $monthEnd])
+                            ->sum('total_leave_days');
+                        
+                        $leaves_pending_monthly = LocalLeave::where('employee_id', '=', $request->employee_id)
+                            ->where('leave_type_id', $leave_type->id)
+                            ->where('status', 'Pending')
+                            ->whereBetween('created_at', [$monthStart, $monthEnd])
+                            ->sum('total_leave_days');
+                        
+                        // Update carry forward balance record
+                        $carryForwardBalance->allocated_days = $allocatedDays;
+                        $carryForwardBalance->used_days = $leaves_used_monthly + $leaves_pending_monthly;
+                        $carryForwardBalance->remaining_days = ($allocatedDays + $carriedForwardDays) - $carryForwardBalance->used_days;
+                        $carryForwardBalance->save();
+                        
+                        // Total available days = allocated + carried forward - used
+                        $totalAvailable = ($allocatedDays + $carriedForwardDays) - $leaves_used_monthly;
+                        
+                        if ($total_leave_days > $totalAvailable) {
+                            $carryInfo = $leave_type->carry_forward_enabled ? " (including {$carriedForwardDays} carried forward)" : "";
+                            return redirect()->back()->with('error', __('You are not eligible for leave. Available: ' . $totalAvailable . ' days for this month' . $carryInfo . '.'));
+                        }
+                        
+                        if (!empty($leaves_pending_monthly) && $leaves_pending_monthly + $total_leave_days > $totalAvailable) {
+                            return redirect()->back()->with('error', __('Multiple leave entry is pending. Available: ' . ($totalAvailable - $leaves_pending_monthly) . ' days for this month.'));
+                        }
+                        
+                        if ($totalAvailable >= $total_leave_days) {
+                            // Proceed with leave creation
+                        } else {
+                            return redirect()->back()->with('error', __('Insufficient leave balance. Available: ' . $totalAvailable . ' days for this month.'));
+                        }
                     } else {
-                        return redirect()->back()->with('error', __('Insufficient leave balance.'));
+                        // For yearly leave types
+                        $return = $allocatedDays - $leaves_used;
+                        if ($total_leave_days > $return) {
+                            return redirect()->back()->with('error', __('You are not eligible for leave.'));
+                        }
+
+                        if (!empty($leaves_pending) && $leaves_pending + $total_leave_days > $return) {
+                            return redirect()->back()->with('error', __('Multiple leave entry is pending.'));
+                        }
+
+                        if ($allocatedDays >= $total_leave_days) {
+                            // Proceed with leave creation
+                        } else {
+                            return redirect()->back()->with('error', __('Insufficient leave balance.'));
+                        }
                     }
                 }
             }
@@ -317,10 +419,34 @@ class LeaveController extends Controller
             $leave->leave_duration   = $request->leave_duration;
             $leave->half_day_type    = ($request->leave_duration == 'half_day') ? $request->half_day_type : null;
             $leave->leave_reason     = $request->leave_reason;
-            $leave->remark           = $request->remark;
             $leave->status           = 'Pending';
             $leave->created_by       = \Auth::user()->creatorId();
             $leave->save();
+
+             // Send notification to company user
+             $companyUser = \App\Models\User::find(\Auth::user()->creatorId());
+             if ($companyUser) {
+                 $leave->load(['employees', 'leaveType']);
+                 $companyUser->notify(new \App\Notifications\LeaveNotification($leave, 'created'));
+                 
+                 // Send email template notification if enabled
+                 $setings = Utility::settings();
+                 if (isset($setings['new_leave_request']) && $setings['new_leave_request'] == 1) {
+                     $duration = $request->start_date;
+                     if ($request->leave_duration != 'half_day') {
+                         $duration .= ' to ' . $request->end_date;
+                     } else {
+                         $duration .= ' (' . __('Half Day') . ')';
+                     }
+                     $uArr = [
+                         'employee_name' => $employee->name,
+                         'leave_type' => $leave_type->title,
+                         'leave_start_end_time' => $duration,
+                         'leave_reason' => $request->leave_reason,
+                     ];
+                     Utility::sendEmailTemplate('new_leave_request', [$companyUser->email], $uArr);
+                 }
+             }
 
                 if ($request->leave_type_id == 'comp_off') {
                 $employee = Employee::find($request->employee_id);
@@ -412,7 +538,6 @@ class LeaveController extends Controller
                         'end_date' => 'required',
                         'leave_duration' => 'required',
                         'leave_reason' => 'required',
-                        'remark' => 'required',
                     ]
                 );
                 if ($validator->fails()) {
@@ -426,10 +551,10 @@ class LeaveController extends Controller
                 $leave_type = LeaveType::find($request->leave_type_id);
                 
                 // Validate contract employee leave type restrictions
-                if ($employee && $employee->employee_type === 'Contract') {
+                if ($employee && ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant')) {
                     $leaveTypeName = strtolower(trim($leave_type->title));
                     if (!$leave_type->is_unlimited && $leaveTypeName !== 'casual leave') {
-                        return redirect()->back()->with('error', __('Contract employees can only apply for Casual Leave and Unlimited Leaves.'));
+                        return redirect()->back()->with('error', __('Contract/Consultant employees can only apply for Casual Leave and Unlimited Leaves.'));
                     }
                 }
                 
@@ -454,19 +579,26 @@ class LeaveController extends Controller
                     $leaves_pending  = LocalLeave::whereNotIn('id', [$leave->id])->where('employee_id', '=', $request->employee_id)->where('leave_type_id', $leave_type->id)->where('status', 'Pending')->whereBetween('created_at', [$date['start_date'],$date['end_date']])->sum('total_leave_days');
                 }
 
-                // Get allocated days based on employee type
-                $allocatedDays = $this->getAllocatedDaysForEmployee($employee, $leave_type);
-                
-                $return = $allocatedDays - $leaves_used;
-                if ($total_leave_days > $return) {
-                    return redirect()->back()->with('error', __('You are not eligible for leave.'));
-                }
+                if (strtolower(trim($leave_type->title)) === 'comp-off') {
+                    $earned = self::getCompOffEarned($request->employee_id);
+                    $compOffLeaveType = LeaveType::where('title', 'Comp-Off')
+                        ->where('created_by', $employee->created_by)
+                        ->first();
+                    $usedDaysExcludingCurrent = LocalLeave::where('employee_id', $request->employee_id)
+                        ->where('leave_type_id', $compOffLeaveType->id)
+                        ->whereIn('status', ['Approved'])
+                        ->whereNotIn('id', [$leave->id])
+                        ->sum('total_leave_days');
+                    
+                    $available = $earned - $usedDaysExcludingCurrent;
+                    
+                    if ($total_leave_days > $available) {
+                        return redirect()->back()->with('error', __('You are not eligible for leave. Available Comp-Off balance: ' . $available . ' days.'));
+                    }
+                    if (!empty($leaves_pending) && $leaves_pending + $total_leave_days > $available) {
+                        return redirect()->back()->with('error', __('Multiple leave entry is pending. Available Comp-Off balance: ' . ($available - $leaves_pending) . ' days.'));
+                    }
 
-                if (!empty($leaves_pending) && $leaves_pending + $total_leave_days > $return) {
-                    return redirect()->back()->with('error', __('Multiple leave entry is pending.'));
-                }
-
-                if ($allocatedDays >= $total_leave_days) {
                     $leave->employee_id      = $request->employee_id;
                     $leave->leave_type_id    = $request->leave_type_id;
                     $leave->start_date       = $request->start_date;
@@ -475,13 +607,39 @@ class LeaveController extends Controller
                     $leave->leave_duration   = $request->leave_duration;
                     $leave->half_day_type    = ($request->leave_duration == 'half_day') ? $request->half_day_type : null;
                     $leave->leave_reason     = $request->leave_reason;
-                    $leave->remark           = $request->remark;
 
                     $leave->save();
 
                     return redirect()->route('leave.index')->with('success', __('Leave successfully updated.'));
                 } else {
-                    return redirect()->back()->with('error', __('Leave type ' . $leave_type->name . ' is provide maximum ' . $allocatedDays . "  days please make sure your selected days is under " . $allocatedDays . ' days.'));
+                    // Get allocated days based on employee type
+                    $allocatedDays = $this->getAllocatedDaysForEmployee($employee, $leave_type);
+                    
+                    $return = $allocatedDays - $leaves_used;
+                    if ($total_leave_days > $return) {
+                        return redirect()->back()->with('error', __('You are not eligible for leave.'));
+                    }
+
+                    if (!empty($leaves_pending) && $leaves_pending + $total_leave_days > $return) {
+                        return redirect()->back()->with('error', __('Multiple leave entry is pending.'));
+                    }
+
+                    if ($allocatedDays >= $total_leave_days) {
+                        $leave->employee_id      = $request->employee_id;
+                        $leave->leave_type_id    = $request->leave_type_id;
+                        $leave->start_date       = $request->start_date;
+                        $leave->end_date         = ($request->leave_duration == 'half_day') ? $request->start_date : $request->end_date;
+                        $leave->total_leave_days = $total_leave_days;
+                        $leave->leave_duration   = $request->leave_duration;
+                        $leave->half_day_type    = ($request->leave_duration == 'half_day') ? $request->half_day_type : null;
+                        $leave->leave_reason     = $request->leave_reason;
+
+                        $leave->save();
+
+                        return redirect()->route('leave.index')->with('success', __('Leave successfully updated.'));
+                    } else {
+                        return redirect()->back()->with('error', __('Leave type ' . $leave_type->name . ' is provide maximum ' . $allocatedDays . "  days please make sure your selected days is under " . $allocatedDays . ' days.'));
+                    }
                 }
             } else {
                 return redirect()->back()->with('error', __('Permission denied.'));
@@ -538,6 +696,16 @@ class LeaveController extends Controller
 
         $leave->save();
 
+        // Send notification to employee
+        $employee = Employee::find($leave->employee_id);
+        if ($employee) {
+            $employeeUser = \App\Models\User::find($employee->user_id);
+            if ($employeeUser) {
+                $leave->load(['employees', 'leaveType']);
+                $employeeUser->notify(new \App\Notifications\LeaveNotification($leave, $request->status));
+            }
+        }
+
         // twilio
         $setting = Utility::settings(\Auth::user()->creatorId());
         $emp = Employee::find($leave->employee_id);
@@ -581,6 +749,17 @@ class LeaveController extends Controller
         
         if (!$employee || !$leaveType) {
             return response()->json(['error' => 'Employee or leave type not found'], 404);
+        }
+
+        if (strtolower(trim($leaveType->title)) === 'comp-off') {
+            $availableDays = self::getCompOffBalance($employeeId);
+            return response()->json([
+                'allocated_days' => self::getCompOffEarned($employeeId),
+                'available_days' => max(0, $availableDays),
+                'is_unlimited' => false,
+                'employee_type' => $employee->employee_type,
+                'confirm_of_employment' => $employee->confirm_of_employment
+            ]);
         }
         
         // Get allocated days based on employee type
@@ -641,6 +820,9 @@ class LeaveController extends Controller
             return response()->json(['error' => 'Employee not found'], 404);
         }
         
+        // Ensure Comp-Off leave type exists
+        self::getOrCreateCompOffLeaveType(\Auth::user()->creatorId());
+
         $leavetypes = LeaveType::where('created_by', '=', \Auth::user()->creatorId())->get();
         
         // Filter leave types based on employee type
@@ -658,9 +840,23 @@ class LeaveController extends Controller
                 // Check if employee's type identifier is in the eligible list
                 return in_array($employeeTypeIdentifier, $leaveType->eligible_employee_types);
             });
+
+            // Dynamic Comp-Off Balance checking
+            $compOffBalance = self::getCompOffBalance($employeeId);
+            $leavetypes = $leavetypes->filter(function($leaveType) use ($compOffBalance) {
+                if (strtolower(trim($leaveType->title)) === 'comp-off') {
+                    return $compOffBalance > 0;
+                }
+                return true;
+            })->map(function($leaveType) use ($compOffBalance) {
+                if (strtolower(trim($leaveType->title)) === 'comp-off') {
+                    $leaveType->days = $compOffBalance;
+                }
+                return $leaveType;
+            });
         }
         
-        return response()->json($leavetypes);
+        return response()->json($leavetypes->values());
     }
 
     public function jsoncount(Request $request)
@@ -809,11 +1005,11 @@ class LeaveController extends Controller
             
             // Categorize employees by type
             $contractConfirmEmployees = $employees->filter(function($employee) {
-                return $employee->employee_type === 'Contract' && $employee->confirm_of_employment;
+                return ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant') && $employee->confirm_of_employment;
             });
             
             $contractNotConfirmEmployees = $employees->filter(function($employee) {
-                return $employee->employee_type === 'Contract' && !$employee->confirm_of_employment;
+                return ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant') && !$employee->confirm_of_employment;
             });
             
             $payrollEmployees = $employees->filter(function($employee) {

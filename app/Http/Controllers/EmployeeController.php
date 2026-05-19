@@ -272,11 +272,11 @@ class EmployeeController extends Controller
             try {
                 $employee = Employee::findOrFail($employeeId);
                 
-                // Check if employee is contract or payroll type and not already confirmed
-                if (!in_array($employee->employee_type, ['Contract', 'Payroll'])) {
+                // Check if employee is consultant or payroll type and not already confirmed
+                if (!in_array($employee->employee_type, ['Consultant', 'Payroll'])) {
                     return response()->json([
                         'success' => false,
-                        'message' => __('Only contract and payroll employees can be confirmed.')
+                        'message' => __('Only consultant and payroll employees can be confirmed.')
                     ]);
                 }
                 
@@ -320,11 +320,11 @@ class EmployeeController extends Controller
             try {
                 $employee = Employee::findOrFail($employeeId);
                 
-                // Check if employee is contract or payroll type and already confirmed
-                if (!in_array($employee->employee_type, ['Contract', 'Payroll'])) {
+                // Check if employee is consultant or payroll type and already confirmed
+                if (!in_array($employee->employee_type, ['Consultant', 'Payroll'])) {
                     return response()->json([
                         'success' => false,
-                        'message' => __('Only contract and payroll employees can have their confirmation cancelled.')
+                        'message' => __('Only consultant and payroll employees can have their confirmation cancelled.')
                     ]);
                 }
                 

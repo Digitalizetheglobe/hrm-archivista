@@ -217,20 +217,23 @@ class EmailTemplateController extends Controller
 
         $usr = \Auth::user();
 
-        if($usr->type == 'super admin' || $usr->type == 'company')
-        {
-            UserEmailTemplate::where('user_id', $usr->id)->update([ 'is_active' => 0]);
-            foreach ($post as $key => $value) {
-                $UserEmailTemplate  = UserEmailTemplate::where('user_id', $usr->id)->where('template_id', $key)->first();
-                $UserEmailTemplate->is_active = $value;
-                $UserEmailTemplate->save();
+        if ($usr->type == 'super admin' || $usr->type == 'company') {
+            $templates = EmailTemplate::all();
+            foreach ($templates as $template) {
+                $status = isset($post[$template->id]) ? 1 : 0;
+                UserEmailTemplate::updateOrCreate(
+                    [
+                        'user_id' => $usr->id,
+                        'template_id' => $template->id,
+                    ],
+                    [
+                        'is_active' => $status,
+                    ]
+                );
             }
             return redirect()->back()->with('success', __('Status successfully updated!'));
-        }
-        else
-        {
+        } else {
             return redirect()->back()->with('error', __('Permission Denied.'));
-
         }
     }
 

@@ -69,10 +69,10 @@
                                                         <span class="badge bg-secondary">{{ __('Payroll - Not Confirm') }}</span>
                                                         @break
                                                     @case('contract_confirm')
-                                                        <span class="badge bg-info">{{ __('Contract - Confirm') }}</span>
+                                                        <span class="badge bg-info">{{ __('Contract/Consultant - Confirm') }}</span>
                                                         @break
                                                     @case('contract_not_confirm')
-                                                        <span class="badge bg-warning">{{ __('Contract - Not Confirm') }}</span>
+                                                        <span class="badge bg-warning">{{ __('Contract/Consultant - Not Confirm') }}</span>
                                                         @break
                                                 @endswitch
                                             @endforeach

@@ -257,14 +257,14 @@ class LeaveAllocationService
                     
                 case 'contract_confirm':
                     $query->orWhere(function($q) {
-                        $q->where('employee_type', 'Contract')
+                        $q->whereIn('employee_type', ['Contract', 'Consultant'])
                           ->where('confirm_of_employment', true);
                     });
                     break;
                     
                 case 'contract_not_confirm':
                     $query->orWhere(function($q) {
-                        $q->where('employee_type', 'Contract')
+                        $q->whereIn('employee_type', ['Contract', 'Consultant'])
                           ->where('confirm_of_employment', false);
                     });
                     break;
@@ -312,7 +312,7 @@ class LeaveAllocationService
     private function getAllocatedDaysForEmployee(Employee $employee, LeaveType $leaveType)
     {
         // For contract employees with casual leave, use special calculation
-        if ($employee->employee_type === 'Contract' && 
+        if (($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant') && 
             strtolower(trim($leaveType->title)) === 'casual leave') {
             
             return $employee->confirm_of_employment ? 2.5 : 1.5;
@@ -352,6 +352,30 @@ class LeaveAllocationService
         foreach ($eligibleLeaveTypes as $leaveType) {
             $leaveTypeName = strtolower(trim($leaveType->title));
             
+            if ($leaveTypeName === 'comp-off') {
+                $earned = \App\Http\Controllers\LeaveController::getCompOffEarned($employeeId);
+                $available = \App\Http\Controllers\LeaveController::getCompOffBalance($employeeId);
+                $usedThisMonth = $this->calculateUsedDaysInPeriod($employeeId, $leaveType->id, $currentMonth, 'monthly');
+                $totalLeavesThisMonth += $usedThisMonth;
+                $totalUsed = $this->calculateUsedDaysInPeriod($employeeId, $leaveType->id, $currentYear, 'yearly');
+
+                $balanceData = [
+                    'title' => $leaveType->title,
+                    'total_allocated' => $earned,
+                    'carried_forward' => 0,
+                    'used_this_month' => $usedThisMonth,
+                    'total_used' => $totalUsed,
+                    'available' => max(0, $available),
+                    'type' => 'yearly',
+                    'days_per_period' => $earned,
+                    'is_unlimited' => false
+                ];
+
+                $balances[$leaveTypeName] = $balanceData;
+                $balances[strtolower($leaveType->title)] = $balanceData;
+                continue;
+            }
+
             // Get current balance from carry_forward_balances table
             $currentBalance = CarryForwardBalance::where('employee_id', $employeeId)
                 ->where('leave_type_id', $leaveType->id)
@@ -407,7 +431,7 @@ class LeaveAllocationService
     {
         if ($employee->employee_type === 'Payroll') {
             return $employee->confirm_of_employment ? 'payroll_confirm' : 'payroll_not_confirm';
-        } elseif ($employee->employee_type === 'Contract') {
+        } elseif ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant') {
             return $employee->confirm_of_employment ? 'contract_confirm' : 'contract_not_confirm';
         }
         

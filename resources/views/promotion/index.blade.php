@@ -49,7 +49,7 @@
                             @foreach ($promotions as $promotion)
                                 <tr>
                                     @role('company')
-                                        <td>{{ !empty($promotion->employee_id) ? $promotion->employee->name : '' }}</td>
+                                        <td>{{ !empty($promotion->employee) ? $promotion->employee->name : '' }}</td>
                                     @endrole
                                     <td>{{ !empty($promotion->designation_id) ? $promotion->designation->name : '' }}
                                     </td>

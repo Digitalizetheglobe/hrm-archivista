@@ -175,126 +175,346 @@
             <div class="card">
                 <div class="card-header card-body table-border-style">
                     
-                    <div class="table-responsive">
-                        <table class="table" id="pc-dt-simple">
-                            <thead>
-                                <tr>
-                                    <?php if(\Auth::user()->type != 'employee'): ?>
-                                        <th><?php echo e(__('Employee')); ?></th>
-                                    <?php endif; ?>
-                                    <th><?php echo e(__('Leave Type')); ?></th>
-                                    <th><?php echo e(__('Applied On')); ?></th>
-                                    <th><?php echo e(__('Start Date')); ?></th>
-                                    <th><?php echo e(__('End Date')); ?></th>
-                                    <th><?php echo e(__('Total Days')); ?></th>
-                                    <th><?php echo e(__('Leave Reason')); ?></th>
-                                    <th><?php echo e(__('status')); ?></th>
-                                    <th width="200px"><?php echo e(__('Action')); ?></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <tr>
-                                        <?php if(\Auth::user()->type != 'employee'): ?>
-                                            <td><?php echo e(!empty($leave->employee_id) ? $leave->employees->name : ''); ?>
+                    <ul class="nav nav-tabs mb-3" id="leaveTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab" aria-controls="approved" aria-selected="true">
+                                <?php echo e(__('Approved Leaves')); ?>
 
-                                            </td>
-                                        <?php endif; ?>
-                                        <td><?php echo e(!empty($leave->leave_type_id) ? $leave->leaveType->title : ''); ?>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="false">
+                                <?php echo e(__('Pending Leaves')); ?>
 
-                                        </td>
-                                        <td><?php echo e(\Auth::user()->dateFormat($leave->applied_on)); ?></td>
-                                        <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
-                                        <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab" aria-controls="rejected" aria-selected="false">
+                                <?php echo e(__('Rejected Leaves')); ?>
 
-                                        <td>
-                                            <?php echo e($leave->total_leave_days); ?>
+                            </button>
+                        </li>
+                    </ul>
 
-                                            <?php if($leave->leave_duration == 'half_day'): ?>
-                                                <br>
-                                                <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
-                                                    <?php echo e($leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half')); ?>
-
-                                                </span>
+                    <div class="tab-content" id="leaveTabsContent">
+                        <!-- Approved Leaves Tab -->
+                        <div class="tab-pane fade show active" id="approved" role="tabpanel" aria-labelledby="approved-tab">
+                            <div class="table-responsive">
+                                <table class="table pc-dt-simple">
+                                    <thead>
+                                        <tr>
+                                            <?php if(\Auth::user()->type != 'employee'): ?>
+                                                <th><?php echo e(__('Employee')); ?></th>
                                             <?php endif; ?>
-                                        </td>
-                                        <td><?php echo e($leave->leave_reason); ?></td>
-                                        <td>
-                                            <?php if($leave->status == 'Pending'): ?>
-                                                <div class="badge bg-warning p-2 px-3 rounded status-badge5">
-                                                    <?php echo e($leave->status); ?></div>
-                                            <?php elseif($leave->status == 'Approved'): ?>
-                                                <div class="badge bg-success p-2 px-3 rounded status-badge5">
-                                                    <?php echo e($leave->status); ?></div>
-                                            <?php elseif($leave->status == 'Reject'): ?>
-                                                <div class="badge bg-danger p-2 px-3 rounded status-badge5">
-                                                    <?php echo e($leave->status); ?></div>
-                                            <?php endif; ?>
-                                        </td>
-
-                                        <td class="Action">
-
-                                            <span>
-                                                <?php if(\Auth::user()->type != 'employee'): ?>
-                                                    <div class="action-btn bg-success ms-2">
-                                                        <a href="#" class="mx-3 btn btn-sm  align-items-center"
-                                                            data-size="lg"
-                                                            data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
-                                                            data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                            title="" data-title="<?php echo e(__('Leave Action')); ?>"
-                                                            data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
-                                                            <i class="ti ti-caret-right text-white"></i>
-                                                        </a>
-                                                    </div>
-                                                    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Edit Leave')): ?>
-                                                        <div class="action-btn bg-info ms-2">
-                                                            <a href="#" class="mx-3 btn btn-sm  align-items-center"
-                                                                data-size="lg"
-                                                                data-url="<?php echo e(URL::to('leave/' . $leave->id . '/edit')); ?>"
-                                                                data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                title="" data-title="<?php echo e(__('Edit Leave')); ?>"
-                                                                data-bs-original-title="<?php echo e(__('Edit')); ?>">
-                                                                <i class="ti ti-pencil text-white"></i>
-                                                            </a>
-                                                        </div>
+                                            <th><?php echo e(__('Leave Type')); ?></th>
+                                            <th><?php echo e(__('Applied On')); ?></th>
+                                            <th><?php echo e(__('Start Date')); ?></th>
+                                            <th><?php echo e(__('End Date')); ?></th>
+                                            <th><?php echo e(__('Total Days')); ?></th>
+                                            <th><?php echo e(__('status')); ?></th>
+                                            <th width="200px"><?php echo e(__('Action')); ?></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php if($leave->status == 'Approved'): ?>
+                                                <tr>
+                                                    <?php if(\Auth::user()->type != 'employee'): ?>
+                                                        <td><?php echo e(!empty($leave->employees) ? $leave->employees->name : ''); ?></td>
                                                     <?php endif; ?>
-                                                    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Delete Leave')): ?>
-                                                        <?php if(\Auth::user()->type != 'employee'): ?>
-                                                            <div class="action-btn bg-danger ms-2">
-                                                                <?php echo Form::open([
-                                                                    'method' => 'DELETE',
-                                                                    'route' => ['leave.destroy', $leave->id],
-                                                                    'id' => 'delete-form-' . $leave->id,
-                                                                ]); ?>
+                                                    <td><?php echo e(!empty($leave->leaveType) ? $leave->leaveType->title : ''); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->applied_on)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
+                                                    <td>
+                                                        <?php echo e($leave->total_leave_days); ?>
 
-                                                                <a href="#"
-                                                                    class="mx-3 btn btn-sm  align-items-center bs-pass-para"
-                                                                    data-bs-toggle="tooltip" title=""
-                                                                    data-bs-original-title="Delete" aria-label="Delete"><i
-                                                                        class="ti ti-trash text-white text-white"></i></a>
-                                                                </form>
-                                                            </div>
+                                                        <?php if($leave->leave_duration == 'half_day'): ?>
+                                                            <br>
+                                                            <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
+                                                                <?php echo e($leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half')); ?>
+
+                                                            </span>
                                                         <?php endif; ?>
-                                                    <?php endif; ?>
-                                                <?php else: ?>
-                                                    <div class="action-btn bg-success ms-2">
-                                                        <a href="#" class="mx-3 btn btn-sm  align-items-center"
-                                                            data-size="lg"
-                                                            data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
-                                                            data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                            title="" data-title="<?php echo e(__('Leave Action')); ?>"
-                                                            data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
-                                                            <i class="ti ti-caret-right text-white"></i>
-                                                        </a>
-                                                    </div>
-                                                <?php endif; ?>
+                                                    </td>
+                                                    <td>
+                                                        <div class="badge bg-success p-2 px-3 rounded status-badge5"><?php echo e($leave->status); ?></div>
+                                                    </td>
+                                                    <td class="Action">
+                                                        <span>
+                                                            <?php if(\Auth::user()->type != 'employee'): ?>
+                                                                <div class="action-btn bg-success ms-2">
+                                                                    <a href="#" class="mx-3 btn btn-sm align-items-center"
+                                                                        data-size="lg"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
+                                                                        data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
+                                                                        <i class="ti ti-caret-right text-white"></i>
+                                                                    </a>
+                                                                </div>
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Edit Leave')): ?>
+                                                                    <div class="action-btn bg-info ms-2">
+                                                                        <a href="#" class="mx-3 btn btn-sm align-items-center"
+                                                                            data-size="lg"
+                                                                            data-url="<?php echo e(URL::to('leave/' . $leave->id . '/edit')); ?>"
+                                                                            data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
+                                                                            title="" data-title="<?php echo e(__('Edit Leave')); ?>"
+                                                                            data-bs-original-title="<?php echo e(__('Edit')); ?>">
+                                                                            <i class="ti ti-pencil text-white"></i>
+                                                                        </a>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Delete Leave')): ?>
+                                                                    <div class="action-btn bg-danger ms-2">
+                                                                        <?php echo Form::open([
+                                                                            'method' => 'DELETE',
+                                                                            'route' => ['leave.destroy', $leave->id],
+                                                                            'id' => 'delete-form-' . $leave->id,
+                                                                        ]); ?>
 
-                                            </span>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </tbody>
-                        </table>
+                                                                        <a href="#"
+                                                                            class="mx-3 btn btn-sm align-items-center bs-pass-para"
+                                                                            data-bs-toggle="tooltip" title=""
+                                                                            data-bs-original-title="Delete" aria-label="Delete"><i
+                                                                                class="ti ti-trash text-white text-white"></i></a>
+                                                                        </form>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                            <?php else: ?>
+                                                                <div class="action-btn bg-success ms-2">
+                                                                    <a href="#" class="mx-3 btn btn-sm align-items-center"
+                                                                        data-size="lg"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
+                                                                        data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
+                                                                        <i class="ti ti-caret-right text-white"></i>
+                                                                    </a>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            <?php endif; ?>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pending Leaves Tab -->
+                        <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+                            <div class="table-responsive">
+                                <table class="table pc-dt-simple">
+                                    <thead>
+                                        <tr>
+                                            <?php if(\Auth::user()->type != 'employee'): ?>
+                                                <th><?php echo e(__('Employee')); ?></th>
+                                            <?php endif; ?>
+                                            <th><?php echo e(__('Leave Type')); ?></th>
+                                            <th><?php echo e(__('Applied On')); ?></th>
+                                            <th><?php echo e(__('Start Date')); ?></th>
+                                            <th><?php echo e(__('End Date')); ?></th>
+                                            <th><?php echo e(__('Total Days')); ?></th>
+                                            <th><?php echo e(__('status')); ?></th>
+                                            <th width="200px"><?php echo e(__('Action')); ?></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php if($leave->status == 'Pending'): ?>
+                                                <tr>
+                                                    <?php if(\Auth::user()->type != 'employee'): ?>
+                                                        <td><?php echo e(!empty($leave->employees) ? $leave->employees->name : ''); ?></td>
+                                                    <?php endif; ?>
+                                                    <td><?php echo e(!empty($leave->leaveType) ? $leave->leaveType->title : ''); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->applied_on)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
+                                                    <td>
+                                                        <?php echo e($leave->total_leave_days); ?>
+
+                                                        <?php if($leave->leave_duration == 'half_day'): ?>
+                                                            <br>
+                                                            <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
+                                                                <?php echo e($leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half')); ?>
+
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td>
+                                                        <div class="badge bg-warning p-2 px-3 rounded status-badge5"><?php echo e($leave->status); ?></div>
+                                                    </td>
+                                                    <td class="Action">
+                                                        <span>
+                                                            <?php if(\Auth::user()->type != 'employee'): ?>
+                                                                <div class="action-btn bg-success ms-2">
+                                                                    <a href="#" class="mx-3 btn btn-sm align-items-center"
+                                                                        data-size="lg"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
+                                                                        data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
+                                                                        <i class="ti ti-caret-right text-white"></i>
+                                                                    </a>
+                                                                </div>
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Edit Leave')): ?>
+                                                                    <div class="action-btn bg-info ms-2">
+                                                                        <a href="#" class="mx-3 btn btn-sm align-items-center"
+                                                                            data-size="lg"
+                                                                            data-url="<?php echo e(URL::to('leave/' . $leave->id . '/edit')); ?>"
+                                                                            data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
+                                                                            title="" data-title="<?php echo e(__('Edit Leave')); ?>"
+                                                                            data-bs-original-title="<?php echo e(__('Edit')); ?>">
+                                                                            <i class="ti ti-pencil text-white"></i>
+                                                                        </a>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Delete Leave')): ?>
+                                                                    <div class="action-btn bg-danger ms-2">
+                                                                        <?php echo Form::open([
+                                                                            'method' => 'DELETE',
+                                                                            'route' => ['leave.destroy', $leave->id],
+                                                                            'id' => 'delete-form-' . $leave->id,
+                                                                        ]); ?>
+
+                                                                        <a href="#"
+                                                                            class="mx-3 btn btn-sm align-items-center bs-pass-para"
+                                                                            data-bs-toggle="tooltip" title=""
+                                                                            data-bs-original-title="Delete" aria-label="Delete"><i
+                                                                                class="ti ti-trash text-white text-white"></i></a>
+                                                                        </form>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                            <?php else: ?>
+                                                                <div class="action-btn bg-success ms-2">
+                                                                    <a href="#" class="mx-3 btn btn-sm align-items-center"
+                                                                        data-size="lg"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
+                                                                        data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
+                                                                        <i class="ti ti-caret-right text-white"></i>
+                                                                    </a>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            <?php endif; ?>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Rejected Leaves Tab -->
+                        <div class="tab-pane fade" id="rejected" role="tabpanel" aria-labelledby="rejected-tab">
+                            <div class="table-responsive">
+                                <table class="table pc-dt-simple">
+                                    <thead>
+                                        <tr>
+                                            <?php if(\Auth::user()->type != 'employee'): ?>
+                                                <th><?php echo e(__('Employee')); ?></th>
+                                            <?php endif; ?>
+                                            <th><?php echo e(__('Leave Type')); ?></th>
+                                            <th><?php echo e(__('Applied On')); ?></th>
+                                            <th><?php echo e(__('Start Date')); ?></th>
+                                            <th><?php echo e(__('End Date')); ?></th>
+                                            <th><?php echo e(__('Total Days')); ?></th>
+                                            <th><?php echo e(__('status')); ?></th>
+                                            <th width="200px"><?php echo e(__('Action')); ?></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php if($leave->status == 'Reject'): ?>
+                                                <tr>
+                                                    <?php if(\Auth::user()->type != 'employee'): ?>
+                                                        <td><?php echo e(!empty($leave->employees) ? $leave->employees->name : ''); ?></td>
+                                                    <?php endif; ?>
+                                                    <td><?php echo e(!empty($leave->leaveType) ? $leave->leaveType->title : ''); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->applied_on)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
+                                                    <td>
+                                                        <?php echo e($leave->total_leave_days); ?>
+
+                                                        <?php if($leave->leave_duration == 'half_day'): ?>
+                                                            <br>
+                                                            <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
+                                                                <?php echo e($leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half')); ?>
+
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td>
+                                                        <div class="badge bg-danger p-2 px-3 rounded status-badge5"><?php echo e($leave->status); ?></div>
+                                                    </td>
+                                                    <td class="Action">
+                                                        <span>
+                                                            <?php if(\Auth::user()->type != 'employee'): ?>
+                                                                <div class="action-btn bg-success ms-2">
+                                                                    <a href="#" class="mx-3 btn btn-sm align-items-center"
+                                                                        data-size="lg"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
+                                                                        data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
+                                                                        <i class="ti ti-caret-right text-white"></i>
+                                                                    </a>
+                                                                </div>
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Edit Leave')): ?>
+                                                                    <div class="action-btn bg-info ms-2">
+                                                                        <a href="#" class="mx-3 btn btn-sm align-items-center"
+                                                                            data-size="lg"
+                                                                            data-url="<?php echo e(URL::to('leave/' . $leave->id . '/edit')); ?>"
+                                                                            data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
+                                                                            title="" data-title="<?php echo e(__('Edit Leave')); ?>"
+                                                                            data-bs-original-title="<?php echo e(__('Edit')); ?>">
+                                                                            <i class="ti ti-pencil text-white"></i>
+                                                                        </a>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Delete Leave')): ?>
+                                                                    <div class="action-btn bg-danger ms-2">
+                                                                        <?php echo Form::open([
+                                                                            'method' => 'DELETE',
+                                                                            'route' => ['leave.destroy', $leave->id],
+                                                                            'id' => 'delete-form-' . $leave->id,
+                                                                        ]); ?>
+
+                                                                        <a href="#"
+                                                                            class="mx-3 btn btn-sm align-items-center bs-pass-para"
+                                                                            data-bs-toggle="tooltip" title=""
+                                                                            data-bs-original-title="Delete" aria-label="Delete"><i
+                                                                                class="ti ti-trash text-white text-white"></i></a>
+                                                                        </form>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                            <?php else: ?>
+                                                                <div class="action-btn bg-success ms-2">
+                                                                    <a href="#" class="mx-3 btn btn-sm align-items-center"
+                                                                        data-size="lg"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
+                                                                        data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
+                                                                        <i class="ti ti-caret-right text-white"></i>
+                                                                    </a>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            <?php endif; ?>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -304,6 +524,8 @@
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('script-page'); ?>
+    <!-- Conflicting legacy script commented out to allow create.blade.php / edit.blade.php to manage the dropdown layout dynamically -->
+    <!--
     <script>
         $(document).on('change', '#employee_id', function() {
             var employee_id = $(this).val();
@@ -343,6 +565,7 @@
             });
         });
     </script>
+    -->
 <?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/leave/index.blade.php ENDPATH**/ ?>

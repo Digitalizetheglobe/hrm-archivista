@@ -293,6 +293,10 @@
                                 <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('leave.index') }}">{{ __('Manage Leave') }}</a>
                             </li>
 
+                            <li class="dash-item {{ Request::segment(1) == 'compoff' ? ' active' : '' }}">
+                                <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('compoff.index') }}">{{ __('Comp-Off') }}</a>
+                            </li>
+
                         @endcan
 
                         @if (\Auth::user()->type == 'company')

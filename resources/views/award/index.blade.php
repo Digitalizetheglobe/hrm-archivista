@@ -46,7 +46,7 @@
                             @foreach ($awards as $award)
                                 <tr>
                                     @role('company')
-                                        <td>{{ !empty($award->employee_id) ? $award->employee->name : '' }}</td>
+                                        <td>{{ !empty($award->employee) ? $award->employee->name : '' }}</td>
                                     @endrole
                                     <td>{{ !empty($award->award_type) ? $award->awardType->name : '' }}</td>
                                     <td>{{ \Auth::user()->dateFormat($award->date) }}</td>

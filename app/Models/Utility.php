@@ -85,6 +85,7 @@ class Utility extends Model
             'employee_termination' => '1',
             'leave_status' => '1',
             'contract' => '1',
+            'new_leave_request' => '1',
             "default_language" => "en",
             "display_landing_page" => "on",
             "ip_restrict" => "on",
@@ -587,8 +588,8 @@ class Utility extends Model
         if (isset($template) && !empty($template)) {
 
             // check template is active or not by company
-            $is_active = UserEmailTemplate::where('template_id', '=', $template->id)->first();
-            if ($is_active->is_active == 1) {
+            $is_active = UserEmailTemplate::where('template_id', '=', $template->id)->where('user_id', '=', $usr ? $usr->creatorId() : 1)->first();
+            if (!$is_active || $is_active->is_active == 1) {
                 $settings = self::settings();
 
                 $data = Utility::getSetting();
@@ -609,11 +610,8 @@ class Utility extends Model
                 }
 
                 // get email content language base
-                if ($usr) {
-                    $content = EmailTemplateLang::where('parent_id', '=', $template->id)->where('lang', 'LIKE', $usr->lang)->first();
-                } else {
-                    $content = EmailTemplateLang::where('parent_id', '=', $template->id)->where('lang', 'LIKE', 'en')->first();
-                }
+                $lang = (!empty($usr) && !empty($usr->lang)) ? $usr->lang : 'en';
+                $content = EmailTemplateLang::where('parent_id', '=', $template->id)->where('lang', 'LIKE', $lang)->first();
                 $content['from'] = $template->from;
 
                 if (!empty($content->content)) {
@@ -638,20 +636,28 @@ class Utility extends Model
                     try {
                         config(
                             [
-                                'mail.driver' => $settings['mail_driver'] ? $settings['mail_driver'] : $setting['mail_driver'],
-                                'mail.host' => $settings['mail_host'] ? $settings['mail_host'] : $setting['mail_host'],
-                                'mail.port' => $settings['mail_port'] ? $settings['mail_port'] : $setting['mail_port'],
-                                'mail.encryption' => $settings['mail_encryption'] ? $settings['mail_encryption'] : $setting['mail_encryption'],
-                                'mail.username' => $settings['mail_username'] ? $settings['mail_username'] : $setting['mail_username'],
-                                'mail.password' => $settings['mail_password'] ? $settings['mail_password'] : $setting['mail_password'],
-                                'mail.from.address' => $settings['mail_from_address'] ? $settings['mail_from_address'] : $setting['mail_from_address'],
-                                'mail.from.name' => $settings['mail_from_name'] ? $settings['mail_from_name'] : $setting['mail_from_name'],
+                                'mail.driver' => $settings['mail_driver'] ?: ($setting['mail_driver'] ?: config('mail.driver')),
+                                'mail.host' => $settings['mail_host'] ?: ($setting['mail_host'] ?: config('mail.host')),
+                                'mail.port' => $settings['mail_port'] ?: ($setting['mail_port'] ?: config('mail.port')),
+                                'mail.encryption' => $settings['mail_encryption'] ?: ($setting['mail_encryption'] ?: config('mail.encryption')),
+                                'mail.username' => $settings['mail_username'] ?: ($setting['mail_username'] ?: config('mail.username')),
+                                'mail.password' => $settings['mail_password'] ?: ($setting['mail_password'] ?: config('mail.password')),
+                                'mail.from.address' => $settings['mail_from_address'] ?: ($setting['mail_from_address'] ?: config('mail.from.address')),
+                                'mail.from.name' => $settings['mail_from_name'] ?: ($setting['mail_from_name'] ?: config('mail.from.name')),
+
+                                'mail.default' => $settings['mail_driver'] ?: ($setting['mail_driver'] ?: config('mail.default', 'smtp')),
+                                'mail.mailers.smtp.transport' => $settings['mail_driver'] ?: ($setting['mail_driver'] ?: config('mail.mailers.smtp.transport', 'smtp')),
+                                'mail.mailers.smtp.host' => $settings['mail_host'] ?: ($setting['mail_host'] ?: config('mail.mailers.smtp.host')),
+                                'mail.mailers.smtp.port' => $settings['mail_port'] ?: ($setting['mail_port'] ?: config('mail.mailers.smtp.port')),
+                                'mail.mailers.smtp.encryption' => $settings['mail_encryption'] ?: ($setting['mail_encryption'] ?: config('mail.mailers.smtp.encryption')),
+                                'mail.mailers.smtp.username' => $settings['mail_username'] ?: ($setting['mail_username'] ?: config('mail.mailers.smtp.username')),
+                                'mail.mailers.smtp.password' => $settings['mail_password'] ?: ($setting['mail_password'] ?: config('mail.mailers.smtp.password')),
                             ]
                         );
-
                         Mail::to($mailTo)->send(new CommonEmailTemplate($content, $settings, $mailTo[0]));
                     } catch (\Exception $e) {
-                        $error = __('E-Mail has been not sent due to SMTP configuration');
+                        \Log::error("SMTP Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+                        $error = __('E-Mail has been not sent due to SMTP configuration') . ': ' . $e->getMessage();
                     }
 
                     if (isset($error)) {
@@ -772,6 +778,9 @@ class Utility extends Model
 
             '{contract_number}',
             '{contract_company_name}',
+            '{leave_type}',
+            '{leave_start_end_time}',
+            '{company_name}',
 
         ];
         $arrValue    = [
@@ -861,6 +870,9 @@ class Utility extends Model
 
             'contract_number' => '-',
             'contract_company_name' => '-',
+            'leave_type' => '-',
+            'leave_start_end_time' => '-',
+            'company_name' => '-',
 
         ];
 

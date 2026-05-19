@@ -8,9 +8,9 @@
     $unseenCounter = App\Models\ChMessage::where('to_id', Auth::user()->id)
         ->where('seen', 0)
         ->count();
-    $unseen_count = DB::select('SELECT from_id, COUNT(*) AS totalmasseges FROM ch_messages WHERE seen = 0 GROUP BY from_id');
-
-    
+    $unreadNotifications = $users->unreadNotifications;
+    $notificationCount = $unreadNotifications->count();
+    $recentNotifications = $users->notifications()->orderBy('created_at', 'desc')->take(5)->get();
 ?>
 
 
@@ -87,28 +87,60 @@
                        style="background-color: white;">
                         <i class="ti ti-message-2"></i>
                         <span class="bg-danger dash-h-badge message-counter custom_messanger_counter"
-                              style="background-color: white;"><?php echo e($unseenCounter); ?></span>
+                              style="background-color: white; <?php echo e(($unseenCounter + $notificationCount) == 0 ? 'display: none;' : ''); ?>"><?php echo e($unseenCounter + $notificationCount); ?></span>
                     </a>
-                    <div class="dropdown-menu dash-h-dropdown dropdown-menu-end" style="background-color: white;">
-                        <div class="noti-header" style="background-color: white;">
-                            <h5 class="m-0" style="background-color: white;"><?php echo e(__('Messages')); ?></h5>
-                            <a href="#" class="dash-head-link mark_all_as_read_message"
-                               style="background-color: white;"><?php echo e(__('Clear All')); ?></a>
+                    <div class="dropdown-menu dash-h-dropdown dropdown-menu-end" style="background-color: white; width: 360px;">
+                        <div class="noti-header d-flex justify-content-between align-items-center" style="background-color: white; border-bottom: 1px solid #f1f1f1; padding: 10px 15px;">
+                            <h5 class="m-0" style="background-color: white;"><?php echo e(__('Notifications')); ?></h5>
+                            <?php if(!$recentNotifications->isEmpty()): ?>
+                                <a href="#" class="dash-head-link clear_all_notifications text-xs text-primary"
+                                   style="background-color: white; text-decoration: none; font-size: 11px;"><?php echo e(__('Clear Notifications')); ?></a>
+                            <?php endif; ?>
                         </div>
-                        <div class="noti-body dropdown-list-message-msg" style="background-color: white;">
-                            <div style="display: flex; background-color: white;">
-                                <a href="#" class="show-listView" style="background-color: white;"></a>
-                                <div class="count-listOfContacts" style="background-color: white;"></div>
-                            </div>
+                        
+                        <!-- Leave Notifications Section -->
+                        <div class="notifications-list-wrapper" style="background-color: white; max-height: 180px; overflow-y: auto;">
+                            <?php if(!$recentNotifications->isEmpty()): ?>
+                                <ul class="list-group list-group-flush" style="background-color: white; padding: 0; margin: 0;">
+                                    <?php $__currentLoopData = $recentNotifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php
+                                            $notiData = $notification->data;
+                                            $action = $notiData['action'] ?? '';
+                                            $bgColor = 'bg-primary';
+                                            if ($action === 'Approved') {
+                                                $bgColor = 'bg-success';
+                                            } elseif ($action === 'Rejected') {
+                                                $bgColor = 'bg-danger';
+                                            } elseif ($action === 'created') {
+                                                $bgColor = 'bg-warning';
+                                            }
+                                        ?>
+                                        <a href="<?php echo e(route('leave.index')); ?>" data-id="<?php echo e($notification->id); ?>" class="list-group-item list-group-item-action d-flex align-items-start notification-item-click <?php echo e($notification->read_at ? 'opacity-75' : 'fw-bold'); ?>" style="background-color: white; border-bottom: 1px solid #f8f9fa; padding: 10px 15px; text-decoration: none; border-left: none; border-right: none;">
+                                            <span class="theme-avtar me-3 d-flex align-items-center justify-content-center text-white rounded-circle <?php echo e($bgColor); ?>" style="width: 28px; height: 28px; min-width: 28px;">
+                                                <?php if($action === 'Approved'): ?>
+                                                    <i class="ti ti-check" style="font-size: 14px;"></i>
+                                                <?php elseif($action === 'Rejected'): ?>
+                                                    <i class="ti ti-x" style="font-size: 14px;"></i>
+                                                <?php else: ?>
+                                                    <i class="ti ti-file-text" style="font-size: 14px;"></i>
+                                                <?php endif; ?>
+                                            </span>
+                                            <div class="flex-grow-1" style="min-width: 0;">
+                                                <p class="m-0 text-sm" style="font-size: 12px; line-height: 1.4; color: #333; word-wrap: break-word; font-weight: inherit;">
+                                                    <?php echo e($notiData['message'] ?? ''); ?>
+
+                                                </p>
+                                                <small class="text-muted d-block mt-1" style="font-size: 10px;">
+                                                    <?php echo e($notification->created_at->diffForHumans()); ?>
+
+                                                </small>
+                                            </div>
+                                        </a>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </ul>
+                            <?php endif; ?>
                         </div>
-                        <div class="noti-footer" style="background-color: white;">
-                            <div class="d-grid">
-                                
-                                <a href="#"
-                                   class="btn dash-head-link justify-content-center text-primary mx-0"
-                                   style="background-color: white;">View all</a>
-                            </div>
-                        </div>
+
                     </div>
                 </li>
             <?php endif; ?>
@@ -163,6 +195,47 @@
                 },
             });
         })
+        $(document).on('click', '.clear_all_notifications', function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: "<?php echo e(route('notifications.clear-all')); ?>",
+                method: "POST",
+                data: {
+                    _token: "<?php echo e(csrf_token()); ?>"
+                },
+                dataType: "JSON",
+                success: (data) => {
+                    if (data.success) {
+                        $(".notifications-list-wrapper").fadeOut(300, function() {
+                            $(this).html('').show();
+                        });
+                        $(".clear_all_notifications").fadeOut();
+                        let unseenMessages = parseInt("<?php echo e($unseenCounter); ?>") || 0;
+                        if (unseenMessages > 0) {
+                            $(".custom_messanger_counter").text(unseenMessages).show();
+                        } else {
+                            $(".custom_messanger_counter").text(0).hide();
+                        }
+                    }
+                },
+                error: (error) => {
+                    console.error(error);
+                }
+            });
+        });
+        $(document).on('click', '.notification-item-click', function(e) {
+            let notificationId = $(this).data('id');
+            let url = "<?php echo e(route('notifications.mark-as-read', ['id' => ':id'])); ?>".replace(':id', notificationId);
+            $.ajax({
+                url: url,
+                method: "POST",
+                data: {
+                    _token: "<?php echo e(csrf_token()); ?>"
+                },
+                async: false
+            });
+        });
     </script>
 <?php $__env->stopPush(); ?>
 <?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/partial/Admin/header.blade.php ENDPATH**/ ?>

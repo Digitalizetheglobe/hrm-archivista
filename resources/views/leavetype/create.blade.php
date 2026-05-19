@@ -99,8 +99,8 @@
                             $employeeTypes = [
                                 'payroll_confirm' => 'Payroll - Confirm',
                                 'payroll_not_confirm' => 'Payroll - Not Confirm',
-                                'contract_confirm' => 'Contract - Confirm',
-                                'contract_not_confirm' => 'Contract - Not Confirm'
+                                'contract_confirm' => 'Contract/Consultant - Confirm',
+                                'contract_not_confirm' => 'Contract/Consultant - Not Confirm'
                             ];
                         @endphp
                         @foreach($employeeTypes as $value => $label)
