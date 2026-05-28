@@ -53,9 +53,14 @@
                     </div>
                     <div class="col-md-8">
                         <div class="d-flex align-items-center justify-content-end">
+                            <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
+                                <div class="btn-box">
+                                    {{ Form::select('employee_id', $employeeList, isset($_GET['employee_id']) ? $_GET['employee_id'] : '', ['class' => 'form-control employee_id ']) }}
+                                </div>
+                            </div>
                             <div class="col-xl-2 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
                                 <div class="btn-box">
-                                    <select class="form-control month_date " name="year" tabindex="-1"
+                                    <select class="form-control month_date " name="month" tabindex="-1"
                                         aria-hidden="true">
                                         <option value="--">--</option>
                                         @foreach ($month as $k => $mon)
@@ -77,6 +82,7 @@
                                 {{ Form::open(['route' => ['invoice.export'], 'method' => 'POST', 'id' => 'invoice_export_form']) }}
                                 <input type="hidden" name="filter_month" class="filter_month">
                                 <input type="hidden" name="filter_year" class="filter_year">
+                                <input type="hidden" name="filter_employee" class="filter_employee">
                                 <input type="submit" value="{{ __('Export') }}" class="btn btn-primary">
                                 {{ Form::close() }}
                             @endif
@@ -122,9 +128,11 @@
             function callback() {
                 var month = $(".month_date").val();
                 var year = $(".year_date").val();
+                var employee_id = $(".employee_id").val();
 
                 $('.filter_month').val(month);
                 $('.filter_year').val(year);
+                $('.filter_employee').val(employee_id);
 
                 if (month == '') {
                     month = '{{ date('m', strtotime('last month')) }}';
@@ -141,6 +149,7 @@
                     type: 'POST',
                     data: {
                         "datePicker": datePicker,
+                        "employee_id": employee_id,
                         "_token": "{{ csrf_token() }}",
                     },
                     success: function(data) {
@@ -315,7 +324,7 @@
                 });
             }
 
-            $(document).on("change", ".month_date,.year_date", function() {
+            $(document).on("change", ".month_date,.year_date,.employee_id", function() {
                 callback();
             });
 

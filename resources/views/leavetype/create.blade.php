@@ -129,7 +129,7 @@
 {{ Form::close() }}
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     const unlimitedCheckbox = document.getElementById('is_unlimited');
     const daysField = document.getElementById('days_field');
     const daysInput = document.getElementById('days_input');
@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const typeSelect = document.getElementById('type');
     
     function toggleFields() {
+        if (!unlimitedCheckbox) return;
         const isUnlimited = unlimitedCheckbox.checked;
         const isCarryForwardEnabled = carryForwardCheckbox.checked;
         
@@ -171,11 +172,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    unlimitedCheckbox.addEventListener('change', toggleFields);
-    carryForwardCheckbox.addEventListener('change', toggleFields);
+    if (unlimitedCheckbox) unlimitedCheckbox.addEventListener('change', toggleFields);
+    if (carryForwardCheckbox) carryForwardCheckbox.addEventListener('change', toggleFields);
     
     toggleFields(); // Initialize on page load
-});
+})();
 </script>
 
 

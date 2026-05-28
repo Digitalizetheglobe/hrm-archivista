@@ -78,7 +78,7 @@
                                                     class="mx-3 btn btn-sm align-items-center bs-pass-para"
                                                     data-bs-toggle="tooltip" title="{{ __('Delete Deduction') }}"
                                                     data-bs-original-title="{{ __('Delete') }}" aria-label="{{ __('Delete') }}"
-                                                    onclick="event.preventDefault(); document.getElementById('delete-form-{{ $deduction->id }}').submit();">
+                                                    onclick="event.preventDefault();">
                                                     <i class="ti ti-trash text-white"></i>
                                                 </a>
                                                 {!! Form::close() !!}

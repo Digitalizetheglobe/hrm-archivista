@@ -38,6 +38,11 @@ class InvoiceExport implements FromCollection, WithHeadings
         }
         $formate_month_year = $year . '-' . $month;
         $data->where('salary_month', '=', $formate_month_year);
+
+        if (isset($request->filter_employee) && !empty($request->filter_employee)) {
+            $data->where('employee_id', $request->filter_employee);
+        }
+
         $data=$data->get();
         $result = array();
         foreach($data as $k => $invoice)

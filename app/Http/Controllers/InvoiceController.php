@@ -57,7 +57,10 @@ class InvoiceController extends Controller
                 $year[$tempyear + $i] = $tempyear + $i;
             }
 
-            return view('invoice.index', compact('employees', 'month', 'year'));
+            $employeeList = Employee::where('created_by', \Auth::user()->creatorId())->pluck('name', 'id');
+            $employeeList->prepend('All', '');
+
+            return view('invoice.index', compact('employees', 'month', 'year', 'employeeList'));
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
@@ -212,13 +215,19 @@ class InvoiceController extends Controller
     public function search_json(Request $request)
     {
         $formate_month_year = $request->datePicker;
-        $validatePaysilp    = Invoice::where('salary_month', '=', $formate_month_year)->where('created_by', \Auth::user()->creatorId())->get()->toarray();
+        
+        $query = Invoice::where('salary_month', '=', $formate_month_year)->where('created_by', \Auth::user()->creatorId());
+        if (!empty($request->employee_id)) {
+            $query->where('employee_id', $request->employee_id);
+        }
+        $validatePaysilp = $query->get()->toarray();
+        
         $data = [];
         if (empty($validatePaysilp)) {
             $data = [];
             return;
         } else {
-            $paylip_employee = Invoice::select(
+            $query = Invoice::select(
                 [
                     'employees.id',
                     'employees.employee_id',
@@ -237,7 +246,13 @@ class InvoiceController extends Controller
                 }
             )
             ->where('in_voices.salary_month', '=', $formate_month_year)
-            ->where('employees.created_by', \Auth::user()->creatorId())->get();
+            ->where('employees.created_by', \Auth::user()->creatorId());
+
+            if (!empty($request->employee_id)) {
+                $query->where('in_voices.employee_id', $request->employee_id);
+            }
+
+            $paylip_employee = $query->get();
 
             foreach ($paylip_employee as $employee) {
                 if (Auth::user()->type == 'employee') {

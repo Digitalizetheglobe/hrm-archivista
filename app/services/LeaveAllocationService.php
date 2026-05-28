@@ -309,7 +309,7 @@ class LeaveAllocationService
      * @param LeaveType $leaveType
      * @return float
      */
-    private function getAllocatedDaysForEmployee(Employee $employee, LeaveType $leaveType)
+    public function getAllocatedDaysForEmployee(Employee $employee, LeaveType $leaveType)
     {
         // For contract employees with casual leave, use special calculation
         if (($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant') && 
@@ -376,20 +376,28 @@ class LeaveAllocationService
                 continue;
             }
 
-            // Get current balance from carry_forward_balances table
             $currentBalance = CarryForwardBalance::where('employee_id', $employeeId)
                 ->where('leave_type_id', $leaveType->id)
                 ->where('month', $currentMonth)
                 ->where('period_type', 'monthly')
                 ->first();
             
+            $carriedForwardDays = 0;
+
             if (!$currentBalance) {
                 // Create balance if it doesn't exist
                 $currentBalance = CarryForwardBalance::getOrCreateBalance($employeeId, $leaveType->id, $currentMonth, 'monthly');
-                $currentBalance->allocated_days = $this->getAllocatedDaysForEmployee($employee, $leaveType);
-                $currentBalance->save();
             }
-            
+
+            // ALWAYS fetch real-time allocated days to override any stale cached values in CarryForwardBalance
+            $realTimeAllocatedDays = $this->getAllocatedDaysForEmployee($employee, $leaveType);
+
+            // Calculate carry forward from previous month if enabled
+            if ($leaveType->carry_forward_enabled) {
+                $previousMonth = date('Y-m', strtotime($currentMonth . '-01 -1 month'));
+                $carriedForwardDays = CarryForwardBalance::calculateCarryForward($employeeId, $leaveType->id, $previousMonth);
+            }
+
             // Calculate used this month
             $usedThisMonth = $this->calculateUsedDaysInPeriod($employeeId, $leaveType->id, $currentMonth, 'monthly');
             $totalLeavesThisMonth += $usedThisMonth;
@@ -397,18 +405,30 @@ class LeaveAllocationService
             // Calculate total used
             $totalUsed = $this->calculateUsedDaysInPeriod($employeeId, $leaveType->id, $currentYear, 'yearly');
             
-            // Calculate available
-            $availableDays = ($currentBalance->allocated_days + $currentBalance->carried_forward_days) - $usedThisMonth;
+            // Get extra days for this month
+            $extraDays = $currentBalance->extra_days ?? 0;
+
+            $totalAllocatedThisMonth = $realTimeAllocatedDays + $carriedForwardDays + $extraDays;
+
+            // Calculate available using real-time allocated days + extra days
+            $availableDays = $totalAllocatedThisMonth - $usedThisMonth;
+
+            // Update the current balance record so it accurately passes remaining days to the next month
+            $currentBalance->carried_forward_days = $carriedForwardDays;
+            $currentBalance->allocated_days = $realTimeAllocatedDays;
+            $currentBalance->used_days = $usedThisMonth;
+            $currentBalance->remaining_days = max(0, $availableDays);
+            $currentBalance->save();
             
             $balanceData = [
                 'title' => $leaveType->title,
-                'total_allocated' => $currentBalance->allocated_days,
-                'carried_forward' => $currentBalance->carried_forward_days,
+                'total_allocated' => $totalAllocatedThisMonth,
+                'carried_forward' => $carriedForwardDays,
                 'used_this_month' => $usedThisMonth,
                 'total_used' => $totalUsed,
                 'available' => max(0, $availableDays),
                 'type' => $leaveType->type,
-                'days_per_period' => $currentBalance->allocated_days,
+                'days_per_period' => $realTimeAllocatedDays,
                 'is_unlimited' => $leaveType->is_unlimited
             ];
             

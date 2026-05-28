@@ -57,23 +57,11 @@ class PaySlipController extends Controller
             for ($i = 0; $i < 10; $i++) {
                 $year[$tempyear + $i] = $tempyear + $i;
             }
-            // $year = [
 
-            //     '2021' => '2021',
-            //     '2022' => '2022',
-            //     '2023' => '2023',
-            //     '2024' => '2024',
-            //     '2025' => '2025',
-            //     '2026' => '2026',
-            //     '2027' => '2027',
-            //     '2028' => '2028',
-            //     '2029' => '2029',
-            //     '2030' => '2030',
-            //     '2031' => '2031',
-            //     '2032' => '2032',
-            // ];
+            $employeeList = Employee::where('created_by', \Auth::user()->creatorId())->pluck('name', 'id');
+            $employeeList->prepend('All', '');
 
-            return view('payslip.index', compact('employees', 'month', 'year'));
+            return view('payslip.index', compact('employees', 'month', 'year', 'employeeList'));
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
@@ -229,13 +217,19 @@ class PaySlipController extends Controller
     public function search_json(Request $request)
     {
         $formate_month_year = $request->datePicker;
-        $validatePaysilp    = PaySlip::where('salary_month', '=', $formate_month_year)->where('created_by', \Auth::user()->creatorId())->get()->toarray();
+        
+        $query = PaySlip::where('salary_month', '=', $formate_month_year)->where('created_by', \Auth::user()->creatorId());
+        if (!empty($request->employee_id)) {
+            $query->where('employee_id', $request->employee_id);
+        }
+        $validatePaysilp = $query->get()->toarray();
+        
         $data = [];
         if (empty($validatePaysilp)) {
             $data = [];
             return;
         } else {
-            $paylip_employee = PaySlip::select(
+            $query = PaySlip::select(
                 [
                     'employees.id',
                     'employees.employee_id',
@@ -254,7 +248,13 @@ class PaySlipController extends Controller
                 }
             )
             ->where('pay_slips.salary_month', '=', $formate_month_year)
-            ->where('employees.created_by', \Auth::user()->creatorId())->get();
+            ->where('employees.created_by', \Auth::user()->creatorId());
+
+            if (!empty($request->employee_id)) {
+                $query->where('pay_slips.employee_id', $request->employee_id);
+            }
+
+            $paylip_employee = $query->get();
 
             foreach ($paylip_employee as $employee) {
                 if (Auth::user()->type == 'employee') {

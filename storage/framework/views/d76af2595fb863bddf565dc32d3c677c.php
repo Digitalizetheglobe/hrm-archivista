@@ -12,6 +12,11 @@
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('action-button'); ?>
+    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Delete Leave')): ?>
+        <button id="bulk-delete-btn" class="btn btn-sm btn-danger d-none me-2" data-bs-toggle="tooltip" title="<?php echo e(__('Bulk Delete')); ?>">
+            <i class="ti ti-trash"></i>
+        </button>
+    <?php endif; ?>
     <a href="<?php echo e(route('leave.export')); ?>" class="btn btn-sm btn-primary" data-bs-toggle="tooltip"
         data-bs-original-title="<?php echo e(__('Export')); ?>">
         <i class="ti ti-file-export"></i>
@@ -89,7 +94,7 @@
                     'name'            => ucwords($key),
                     'used_this_month' => $balance['used_this_month'] ?? 0,
                     'total_used'      => $balance['total_used'] ?? 0,
-                    'total_allocated' => $balance['days_per_period'] ?? 0,
+                    'total_allocated' => $balance['total_allocated'] ?? $balance['days_per_period'] ?? 0,
                     'is_unlimited'    => $balance['is_unlimited'] ?? false,
                 ];
             }
@@ -101,7 +106,7 @@
                         'name'            => $lt->title,
                         'used_this_month' => $bal['used_this_month'] ?? 0,
                         'total_used'      => $bal['total_used'] ?? 0,
-                        'total_allocated' => $bal['days_per_period'] ?? 0,
+                        'total_allocated' => $bal['total_allocated'] ?? $bal['days_per_period'] ?? 0,
                         'is_unlimited'    => $lt->is_unlimited ?? false,
                     ];
                 }
@@ -174,7 +179,49 @@
         <div class="col-xl-12">
             <div class="card">
                 <div class="card-header card-body table-border-style">
-                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-start">
+                                <h5><?php echo e(__('Manage Leave List')); ?></h5>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <?php echo e(Form::open(['route' => ['leave.index'], 'method' => 'GET', 'id' => 'leave_filter_form'])); ?>
+
+                            <div class="d-flex align-items-center justify-content-end">
+                                <?php if(Auth::user()->type == 'company' || Auth::user()->type == 'hr'): ?>
+                                    <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
+                                        <div class="btn-box">
+                                            <?php echo e(Form::select('employee_id', $employeeList, isset($_GET['employee_id']) ? $_GET['employee_id'] : '', ['class' => 'form-control', 'onchange' => 'document.getElementById("leave_filter_form").submit()'])); ?>
+
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="col-xl-2 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
+                                    <div class="btn-box">
+                                        <select class="form-control" name="month" onchange="document.getElementById('leave_filter_form').submit()">
+                                            <option value="--">--</option>
+                                            <?php $__currentLoopData = $month; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k => $mon): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <?php
+                                                    $selected = (isset($_GET['month']) && $_GET['month'] == $k) || (!isset($_GET['month']) && date('m') == $k) ? 'selected' : '';
+                                                ?>
+                                                <option value="<?php echo e($k); ?>" <?php echo e($selected); ?>><?php echo e($mon); ?></option>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-xl-2 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
+                                    <div class="btn-box">
+                                        <?php echo e(Form::select('year', $year, isset($_GET['year']) ? $_GET['year'] : date('Y'), ['class' => 'form-control', 'onchange' => 'document.getElementById("leave_filter_form").submit()'])); ?>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <?php echo e(Form::close()); ?>
+
+                        </div>
+                    </div>
+
                     <ul class="nav nav-tabs mb-3" id="leaveTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab" aria-controls="approved" aria-selected="true">
@@ -203,6 +250,9 @@
                                 <table class="table pc-dt-simple">
                                     <thead>
                                         <tr>
+                                            <th width="30px">
+                                                <input type="checkbox" id="select-all-approved" class="form-check-input select-all">
+                                            </th>
                                             <?php if(\Auth::user()->type != 'employee'): ?>
                                                 <th><?php echo e(__('Employee')); ?></th>
                                             <?php endif; ?>
@@ -219,6 +269,9 @@
                                         <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <?php if($leave->status == 'Approved'): ?>
                                                 <tr>
+                                                    <td>
+                                                        <input type="checkbox" class="form-check-input leave-checkbox" value="<?php echo e($leave->id); ?>">
+                                                    </td>
                                                     <?php if(\Auth::user()->type != 'employee'): ?>
                                                         <td><?php echo e(!empty($leave->employees) ? $leave->employees->name : ''); ?></td>
                                                     <?php endif; ?>
@@ -309,6 +362,9 @@
                                 <table class="table pc-dt-simple">
                                     <thead>
                                         <tr>
+                                            <th width="30px">
+                                                <input type="checkbox" id="select-all-pending" class="form-check-input select-all">
+                                            </th>
                                             <?php if(\Auth::user()->type != 'employee'): ?>
                                                 <th><?php echo e(__('Employee')); ?></th>
                                             <?php endif; ?>
@@ -325,6 +381,9 @@
                                         <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <?php if($leave->status == 'Pending'): ?>
                                                 <tr>
+                                                    <td>
+                                                        <input type="checkbox" class="form-check-input leave-checkbox" value="<?php echo e($leave->id); ?>">
+                                                    </td>
                                                     <?php if(\Auth::user()->type != 'employee'): ?>
                                                         <td><?php echo e(!empty($leave->employees) ? $leave->employees->name : ''); ?></td>
                                                     <?php endif; ?>
@@ -415,6 +474,9 @@
                                 <table class="table pc-dt-simple">
                                     <thead>
                                         <tr>
+                                            <th width="30px">
+                                                <input type="checkbox" id="select-all-rejected" class="form-check-input select-all">
+                                            </th>
                                             <?php if(\Auth::user()->type != 'employee'): ?>
                                                 <th><?php echo e(__('Employee')); ?></th>
                                             <?php endif; ?>
@@ -431,6 +493,9 @@
                                         <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <?php if($leave->status == 'Reject'): ?>
                                                 <tr>
+                                                    <td>
+                                                        <input type="checkbox" class="form-check-input leave-checkbox" value="<?php echo e($leave->id); ?>">
+                                                    </td>
                                                     <?php if(\Auth::user()->type != 'employee'): ?>
                                                         <td><?php echo e(!empty($leave->employees) ? $leave->employees->name : ''); ?></td>
                                                     <?php endif; ?>
@@ -566,6 +631,89 @@
         });
     </script>
     -->
+    <script>
+        $(document).ready(function() {
+            // Select All Checkbox for each tab
+            $('.select-all').on('click', function() {
+                var isChecked = $(this).prop('checked');
+                $(this).closest('table').find('.leave-checkbox').prop('checked', isChecked);
+                toggleBulkDeleteBtn();
+            });
+
+            // Individual Checkbox
+            $('.leave-checkbox').on('change', function() {
+                var table = $(this).closest('table');
+                var total = table.find('.leave-checkbox').length;
+                var checked = table.find('.leave-checkbox:checked').length;
+                
+                table.find('.select-all').prop('checked', total === checked && total > 0);
+                toggleBulkDeleteBtn();
+            });
+
+            // Toggle Bulk Delete Button Visibility
+            function toggleBulkDeleteBtn() {
+                if ($('.leave-checkbox:checked').length > 0) {
+                    $('#bulk-delete-btn').removeClass('d-none');
+                } else {
+                    $('#bulk-delete-btn').addClass('d-none');
+                }
+            }
+
+            // Handle Bulk Delete Button Click
+            $('#bulk-delete-btn').on('click', function() {
+                var selectedIds = [];
+                $('.leave-checkbox:checked').each(function() {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length === 0) {
+                    return;
+                }
+
+                const swalWithBootstrapButtons = Swal.mixin({
+                    customClass: {
+                        confirmButton: 'btn btn-success',
+                        cancelButton: 'btn btn-danger'
+                    },
+                    buttonsStyling: false
+                });
+
+                swalWithBootstrapButtons.fire({
+                    title: 'Are you sure?',
+                    text: "You want to delete these leaves? This action cannot be undone.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, delete them!',
+                    cancelButtonText: 'No, cancel!',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '<?php echo e(route('leave.bulk_delete')); ?>',
+                            type: 'POST',
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content'),
+                                ids: selectedIds
+                            },
+                            success: function(response) {
+                                if(response.status == 'success' || response.status == 'warning') {
+                                    show_toastr(response.status.charAt(0).toUpperCase() + response.status.slice(1), response.message, response.status);
+                                    setTimeout(function() {
+                                        location.reload();
+                                    }, 1500);
+                                } else {
+                                    show_toastr('Error', response.message, 'error');
+                                }
+                            },
+                            error: function(xhr) {
+                                show_toastr('Error', 'Something went wrong. Please try again.', 'error');
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 <?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/leave/index.blade.php ENDPATH**/ ?>

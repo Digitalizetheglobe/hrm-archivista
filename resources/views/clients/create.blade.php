@@ -4,21 +4,6 @@
 {{ Form::open(['url' => 'clients', 'method' => 'post']) }}
 <div class="modal-body">
     <div class="row">
-        <!-- Client Group Field -->
-        <div class="col-lg-6 col-md-6 col-sm-6">
-            <div class="form-group">
-                {{ Form::label('clients_group_id', __('Client Group'), ['class' => 'form-label']) }}
-                <div class="form-icon-user">
-                    <select class="form-control" name="clients_group_id" id="clients_group_id" required>
-                        <option value="">{{ __('Select Client Group') }}</option>
-                        @foreach ($sites as $id => $name)
-                            <option value="{{ $id }}">{{ $name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </div>
-
         <!-- Client Code Field -->
         <div class="col-lg-6 col-md-6 col-sm-6">
             <div class="form-group">

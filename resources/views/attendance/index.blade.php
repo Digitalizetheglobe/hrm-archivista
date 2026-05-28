@@ -11,66 +11,111 @@
 
     @push('script-page')
         <script>
-            $('input[name="type"]:radio').on('change', function(e) {
-                var type = $(this).val();
+            $(document).ready(function () {
 
-                if (type == 'monthly') {
-                    $('.month').addClass('d-block');
-                    $('.month').removeClass('d-none');
-                    $('.date').addClass('d-none');
-                    $('.date').removeClass('d-block');
-                } else {
-                    $('.date').addClass('d-block');
-                    $('.date').removeClass('d-none');
-                    $('.month').addClass('d-none');
-                    $('.month').removeClass('d-block');
-                }
-            });
-
-            $('input[name="type"]:radio:checked').trigger('change');
-        </script>
-
-        <script>
-            $(document).ready(function() {
-                var b_id = $('#branch_id').val();
-                // getDepartment(b_id);
-            });
-            $(document).on('change', 'select[name=branch]', function() {
-                var branch_id = $(this).val();
-
-                getDepartment(branch_id);
-            });
-
-            function getDepartment(bid) {
-
-                $.ajax({
-                    url: '{{ route('monthly.getdepartment') }}',
-                    type: 'POST',
-                    data: {
-                        "branch_id": bid,
-                        "_token": "{{ csrf_token() }}",
-                    },
-                    success: function(data) {
-
-                        $('.department_id').empty();
-                        var emp_selct = `<select class="form-control department_id" name="department_id" id="choices-multiple"
-                                                placeholder="Select Department" >
-                                                </select>`;
-                        $('.department_div').html(emp_selct);
-
-                        $('.department_id').append('<option value=""> {{ __('Select Department') }} </option>');
-                        $.each(data, function(key, value) {
-                            $('.department_id').append('<option value="' + key + '">' + value +
-                                '</option>');
-                        });
-                        new Choices('#choices-multiple', {
-                            removeItemButton: true,
-                        });
+                // ─── View Type Toggle ──────────────────────────────────────────
+                $('input[name="type"]').on('change', function () {
+                    var type = $(this).val();
+                    $('.filter-type-btn').removeClass('active');
+                    $(this).closest('.filter-type-btn').addClass('active');
+                    if (type === 'monthly') {
+                        $('.month').show(); $('.date').hide();
+                    } else {
+                        $('.date').show(); $('.month').hide();
                     }
                 });
-            }
+
+                // Init on load
+                var currentType = $('input[name="type"]:checked').val() || 'monthly';
+                if (currentType === 'daily') { $('.date').show(); $('.month').hide(); }
+                else { $('.month').show(); $('.date').hide(); }
+
+                // ─── Cascading Dropdowns ───────────────────────────────────────
+
+                // Initially hide department and employee cols
+                $('#dept-col').hide();
+                $('#emp-col').hide();
+
+                // If branch is already selected (from query string), load departments
+                var selectedBranch     = '{{ request('branch') }}';
+                var selectedDepartment = '{{ request('department') }}';
+                var selectedEmployee   = '{{ request('employee') }}';
+
+                if (selectedBranch) {
+                    loadDepartments(selectedBranch, selectedDepartment, selectedEmployee);
+                }
+
+                // ── Branch changes ──
+                $(document).on('change', '#branch_id', function () {
+                    var branchId = $(this).val();
+
+                    // Reset downstream
+                    $('#department_id').html('<option value="">— Select Department —</option>');
+                    $('#employee_id').html('<option value="">— Select Employee —</option>');
+                    $('#dept-col').hide();
+                    $('#emp-col').hide();
+
+                    if (!branchId) return;
+
+                    loadDepartments(branchId, '', '');
+                });
+
+                // ── Department changes ──
+                $(document).on('change', '#department_id', function () {
+                    var deptId = $(this).val();
+
+                    // Reset downstream
+                    $('#employee_id').html('<option value="">— Select Employee —</option>');
+                    $('#emp-col').hide();
+
+                    if (!deptId) return;
+
+                    loadEmployees(deptId, '');
+                });
+
+                // ─── Helpers ──────────────────────────────────────────────────
+
+                function loadDepartments(branchId, preselectedDept, preselectedEmp) {
+                    $.ajax({
+                        url: '{{ route('monthly.getdepartment') }}',
+                        type: 'POST',
+                        data: { branch_id: branchId, _token: '{{ csrf_token() }}' },
+                        success: function (data) {
+                            var options = '<option value="">— Select Department —</option>';
+                            $.each(data, function (id, name) {
+                                var sel = (id == preselectedDept) ? 'selected' : '';
+                                options += '<option value="' + id + '" ' + sel + '>' + name + '</option>';
+                            });
+                            $('#department_id').html(options);
+                            $('#dept-col').show();
+
+                            if (preselectedDept) {
+                                loadEmployees(preselectedDept, preselectedEmp);
+                            }
+                        }
+                    });
+                }
+
+                function loadEmployees(deptId, preselectedEmp) {
+                    $.ajax({
+                        url: '{{ route('monthly.getemployee') }}',
+                        type: 'POST',
+                        data: { department_id: deptId, _token: '{{ csrf_token() }}' },
+                        success: function (data) {
+                            var options = '<option value="">— All Employees —</option>';
+                            $.each(data, function (id, name) {
+                                var sel = (id == preselectedEmp) ? 'selected' : '';
+                                options += '<option value="' + id + '" ' + sel + '>' + name + '</option>';
+                            });
+                            $('#employee_id').html(options);
+                            $('#emp-col').show();
+                        }
+                    });
+                }
+            });
         </script>
     @endpush
+
     @section('action-button')
     @endsection
     @section('content')
@@ -80,105 +125,260 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
+
+        <style>
+            .filter-card {
+                border: none;
+                border-radius: 16px;
+                box-shadow: 0 2px 16px rgba(253, 117, 35, 0.08);
+                background: #fff;
+                margin-bottom: 20px;
+            }
+            .filter-card .card-body {
+                padding: 20px 24px 16px 24px;
+            }
+            .filter-header {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 16px;
+                border-bottom: 2px solid #fff4ee;
+                padding-bottom: 12px;
+            }
+            .filter-header .filter-title {
+                font-size: 13px;
+                font-weight: 700;
+                color: #fd7523;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+            }
+            .filter-header i {
+                color: #fd7523;
+                font-size: 17px;
+            }
+            .filter-type-group {
+                display: flex;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            .filter-type-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 7px 14px;
+                border-radius: 8px;
+                border: 1.5px solid #e0e3ee;
+                background: #f8f9fc;
+                color: #6c757d;
+                font-size: 13px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.18s;
+            }
+            .filter-type-btn input[type="radio"] {
+                display: none;
+            }
+            .filter-type-btn.active,
+            .filter-type-btn:has(input:checked) {
+                background: #fd7523;
+                border-color: #fd7523;
+                color: #fff;
+                box-shadow: 0 3px 10px rgba(253,117,35,0.25);
+            }
+            .filter-type-btn:not(.active):hover {
+                border-color: #fd7523;
+                color: #fd7523;
+                background: #fff4ee;
+            }
+            .filter-type-btn i { font-size: 14px; }
+            .filter-label {
+                font-size: 11px;
+                font-weight: 700;
+                color: #adb5bd;
+                margin-bottom: 5px;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+            }
+            .filter-control {
+                border-radius: 8px;
+                border: 1.5px solid #e0e3ee;
+                font-size: 13px;
+                color: #3a3b45;
+                background: #f8f9fc;
+                transition: border-color 0.18s, box-shadow 0.18s;
+                padding: 7px 10px;
+            }
+            .filter-control:focus {
+                border-color: #fd7523;
+                box-shadow: 0 0 0 3px rgba(253,117,35,0.12);
+                background: #fff;
+                outline: none;
+            }
+            .filter-actions {
+                display: flex;
+                gap: 8px;
+                align-items: flex-end;
+                padding-bottom: 2px;
+            }
+            .btn-filter-apply {
+                background: linear-gradient(135deg, #fd7523 0%, #e8621a 100%);
+                border: none;
+                border-radius: 8px;
+                color: #fff;
+                font-size: 13px;
+                font-weight: 600;
+                padding: 8px 18px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.18s;
+                white-space: nowrap;
+                box-shadow: 0 3px 10px rgba(253,117,35,0.30);
+            }
+            .btn-filter-apply:hover {
+                background: linear-gradient(135deg, #e8621a 0%, #d45510 100%);
+                color: #fff;
+                box-shadow: 0 6px 16px rgba(253,117,35,0.40);
+                transform: translateY(-1px);
+            }
+            .btn-filter-reset {
+                background: #fff;
+                border: 1.5px solid #e0e3ee;
+                border-radius: 8px;
+                color: #6c757d;
+                font-size: 13px;
+                font-weight: 600;
+                padding: 8px 14px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.18s;
+                white-space: nowrap;
+            }
+            .btn-filter-reset:hover {
+                background: #fff4ee;
+                border-color: #fd7523;
+                color: #fd7523;
+            }
+            .btn-filter-import {
+                background: #fff;
+                border: 1.5px solid #fd7523;
+                border-radius: 8px;
+                color: #fd7523;
+                font-size: 13px;
+                font-weight: 600;
+                padding: 8px 14px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.18s;
+                white-space: nowrap;
+            }
+            .btn-filter-import:hover {
+                background: #fff4ee;
+                border-color: #e8621a;
+                color: #e8621a;
+            }
+            .filter-divider {
+                width: 1px;
+                height: 36px;
+                background: #e0e3ee;
+                margin: 0 4px;
+                align-self: flex-end;
+            }
+        </style>
+
         <div class="row">
             <div class="col-sm-12">
-                <div class=" mt-2 " id="multiCollapseExample1">
-                    <div class="card">
-                        <div class="card-body">
-                            {{ Form::open(['route' => ['attendanceemployee.index'], 'method' => 'get', 'id' => 'attendanceemployee_filter']) }}
-                            <div class="row align-items-center justify-content-end">
-                                <div class="col-xl-10">
-                                    <div class="row">
+                <div class="filter-card card mt-2" id="multiCollapseExample1">
+                    <div class="card-body">
+                        {{ Form::open(['route' => ['attendanceemployee.index'], 'method' => 'get', 'id' => 'attendanceemployee_filter']) }}
 
-                                        <div class="col-3">
-                                            <label class="form-label">{{ __('Type') }}</label> <br>
+                        <div class="filter-header">
+                            <i class="ti ti-adjustments-horizontal"></i>
+                            <span class="filter-title">{{ __('Filter Attendance') }}</span>
+                        </div>
 
-                                            <div class="form-check form-check-inline form-group">
-                                                <input type="radio" id="monthly" value="monthly" name="type"
-                                                    class="form-check-input"
-                                                    {{ isset($_GET['type']) && $_GET['type'] == 'monthly' ? 'checked' : 'checked' }}>
-                                                <label class="form-check-label" for="monthly">{{ __('Monthly') }}</label>
-                                            </div>
-                                            <div class="form-check form-check-inline form-group">
-                                                <input type="radio" id="daily" value="daily" name="type"
-                                                    class="form-check-input"
-                                                    {{ isset($_GET['type']) && $_GET['type'] == 'daily' ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="daily">{{ __('Daily') }}</label>
-                                            </div>
+                        <div class="row g-3 align-items-end">
 
-                                        </div>
-
-                                        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12 month">
-                                            <div class="btn-box">
-                                                {{ Form::label('month', __('Month'), ['class' => 'form-label']) }}
-                                                {{ Form::month('month', isset($_GET['month']) ? $_GET['month'] : date('Y-m'), ['class' => 'month-btn form-control month-btn']) }}
-                                            </div>
-                                        </div>
-                                        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12 date">
-                                            <div class="btn-box">
-                                                {{ Form::label('date', __('Date'), ['class' => 'form-label']) }}
-                                                {{ Form::date('date', isset($_GET['date']) ? $_GET['date'] : '', ['class' => 'form-control month-btn']) }}
-                                            </div>
-                                        </div>
-                                        @if (\Auth::user()->type != 'employee')
-                                            <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
-                                                <div class="btn-box">
-                                                    {{ Form::label('branch', __('Branch'), ['class' => 'form-label']) }}
-                                                    {{ Form::select('branch', $branch, isset($_GET['branch']) ? $_GET['branch'] : '', ['class' => 'form-control select branch_id', 'id' => 'branch_id']) }}
-                                                </div>
-                                            </div>
-                                            <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
-                                                <div class="btn-box">
-                                                    {{ Form::label('department', __('department'), ['class' => 'form-label']) }}
-                                                    {{ Form::select('department', $department, isset($_GET['department']) ? $_GET['department'] : '', ['class' => 'form-control select department_id', 'id' => 'department_id']) }}
-                                                </div>
-
-                                                {{-- <div class="form-icon-user" id="department_div">
-                                                    {{ Form::label('department', __('Department'), ['class' => 'form-label']) }}
-                                                    <select class="form-control select department_id" name="department_id"
-                                                        id="department_id" placeholder="Select Department">
-                                                    </select>
-                                                </div> --}}
-
-                                            </div>
-                                        @endif
-
-                                    </div>
-                                </div>
-                                <div class="col-auto mt-4">
-                                    <div class="row">
-                                        <div class="col-auto">
-
-                                            <a href="#" class="btn btn-sm btn-primary"
-                                                onclick="document.getElementById('attendanceemployee_filter').submit(); return false;"
-                                                data-bs-toggle="tooltip" title="{{ __('Apply') }}"
-                                                data-original-title="{{ __('apply') }}">
-                                                <span class="btn-inner--icon"><i class="ti ti-search"></i></span>
-                                            </a>
-
-                                            <a href="{{ route('attendanceemployee.index') }}" class="btn btn-sm btn-danger "
-                                                data-bs-toggle="tooltip" title="{{ __('Reset') }}"
-                                                data-original-title="{{ __('Reset') }}">
-                                                <span class="btn-inner--icon"><i
-                                                        class="ti ti-trash-off text-white-off "></i></span>
-                                            </a>
-
-                                            <a href="#" data-url="{{ route('attendance.file.import') }}"
-                                                data-ajax-popup="true" data-title="{{ __('Import  Attendance CSV File') }}"
-                                                data-bs-toggle="tooltip" title="" class="btn btn-sm btn-primary"
-                                                data-bs-original-title="{{ __('Import') }}">
-                                                <i class="ti ti-file"></i>
-                                            </a>
-                                        </div>
-
-                                    </div>
+                            {{-- Type --}}
+                            <div class="col-xl-auto col-lg-auto col-md-6 col-12">
+                                <div class="filter-label">{{ __('View Type') }}</div>
+                                <div class="filter-type-group">
+                                    <label class="filter-type-btn {{ (!isset($_GET['type']) || $_GET['type'] == 'monthly') ? 'active' : '' }}" id="label-monthly">
+                                        <input type="radio" name="type" value="monthly" {{ (!isset($_GET['type']) || $_GET['type'] == 'monthly') ? 'checked' : '' }}>
+                                        <i class="ti ti-calendar-month"></i> {{ __('Monthly') }}
+                                    </label>
+                                    <label class="filter-type-btn {{ isset($_GET['type']) && $_GET['type'] == 'daily' ? 'active' : '' }}" id="label-daily">
+                                        <input type="radio" name="type" value="daily" {{ isset($_GET['type']) && $_GET['type'] == 'daily' ? 'checked' : '' }}>
+                                        <i class="ti ti-calendar-day"></i> {{ __('Daily') }}
+                                    </label>
                                 </div>
                             </div>
+
+                            {{-- Month --}}
+                            <div class="col-xl col-lg col-md-6 col-12 month">
+                                <div class="filter-label">{{ __('Month') }}</div>
+                                {{ Form::month('month', isset($_GET['month']) ? $_GET['month'] : date('Y-m'), ['class' => 'form-control filter-control']) }}
+                            </div>
+
+                            {{-- Date --}}
+                            <div class="col-xl col-lg col-md-6 col-12 date" style="display:none;">
+                                <div class="filter-label">{{ __('Date') }}</div>
+                                {{ Form::date('date', isset($_GET['date']) ? $_GET['date'] : '', ['class' => 'form-control filter-control']) }}
+                            </div>
+
+                            @if (\Auth::user()->type != 'employee')
+                                {{-- Branch --}}
+                                <div class="col-xl col-lg col-md-6 col-12">
+                                    <div class="filter-label">{{ __('Branch') }}</div>
+                                    {{ Form::select('branch', $branch, isset($_GET['branch']) ? $_GET['branch'] : '', ['class' => 'form-control filter-control select', 'id' => 'branch_id']) }}
+                                </div>
+
+                                {{-- Department --}}
+                                <div class="col-xl col-lg col-md-6 col-12" id="dept-col">
+                                    <div class="filter-label">{{ __('Department') }}</div>
+                                    <select name="department" id="department_id" class="form-control filter-control">
+                                        <option value="">— Select Department —</option>
+                                    </select>
+                                </div>
+
+                                {{-- Employee --}}
+                                <div class="col-xl col-lg col-md-6 col-12" id="emp-col">
+                                    <div class="filter-label">{{ __('Employee') }}</div>
+                                    <select name="employee" id="employee_id" class="form-control filter-control">
+                                        <option value="">— All Employees —</option>
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- Action Buttons --}}
+                            <div class="col-xl-auto col-lg-auto col-md-12 col-12">
+                                <div class="filter-actions">
+                                    <a href="#" class="btn-filter-apply"
+                                        onclick="document.getElementById('attendanceemployee_filter').submit(); return false;"
+                                        data-bs-toggle="tooltip" title="{{ __('Apply Filter') }}">
+                                        <i class="ti ti-search"></i>
+                                    </a>
+                                    <a href="{{ route('attendanceemployee.index') }}" class="btn-filter-reset"
+                                        data-bs-toggle="tooltip" title="{{ __('Reset Filters') }}">
+                                        <i class="ti ti-refresh"></i>
+                                    </a>
+                                    <a href="#" class="btn-filter-import"
+                                        onclick="let form = document.getElementById('attendanceemployee_filter'); form.action = '{{ route('attendance.export') }}'; form.submit(); form.action = '{{ route('attendanceemployee.index') }}'; return false;"
+                                        data-bs-toggle="tooltip" title="{{ __('Export Excel') }}">
+                                        <i class="ti ti-file-export"></i>
+                                    </a>
+                                </div>
+                            </div>
+
                         </div>
+
                         {{ Form::close() }}
                     </div>
                 </div>
             </div>
+
 
             <div class="col-xl-12">
                 <div class="card">

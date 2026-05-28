@@ -10,6 +10,11 @@
 @endsection
 
 @section('action-button')
+    @can('Delete Leave Type')
+        <button id="bulk-delete-btn" class="btn btn-sm btn-danger d-none me-2" data-bs-toggle="tooltip" title="{{ __('Bulk Delete') }}">
+            <i class="ti ti-trash"></i>
+        </button>
+    @endcan
     @can('Create Branch')
         <a href="#" data-url="{{ route('leavetype.create') }}" data-ajax-popup="true"
             data-title="{{ __('Create New Leave Type') }}" data-bs-toggle="tooltip" title="" class="btn btn-sm btn-primary"
@@ -34,6 +39,9 @@
                     <table class="table" id="pc-dt-simple">
                         <thead>
                             <tr>
+                                <th width="30px">
+                                    <input type="checkbox" id="select-all" class="form-check-input">
+                                </th>
                                 <th>{{ __('Leave Type') }}</th>
                                 <th>{{ __('Period') }}</th>
                                 <th>{{ __('Days') }}</th>
@@ -44,6 +52,9 @@
                         <tbody>
                             @foreach ($leavetypes as $leavetype)
                                 <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input leavetype-checkbox" value="{{ $leavetype->id }}">
+                                    </td>
                                     <td>{{ $leavetype->title }}</td>
                                     <td><span class="badge bg-{{ $leavetype->type == 'monthly' ? 'info' : 'primary' }}">{{ __(ucfirst($leavetype->type)) }}</span></td>
                                     <td>
@@ -115,4 +126,90 @@
             </div>
         </div>
 </div>
+</div>
 @endsection
+
+@push('script-page')
+<script>
+    $(document).ready(function() {
+        // Select All Checkbox
+        $('#select-all').on('click', function() {
+            var isChecked = $(this).prop('checked');
+            $('.leavetype-checkbox').prop('checked', isChecked);
+            toggleBulkDeleteBtn();
+        });
+
+        // Individual Checkbox
+        $('.leavetype-checkbox').on('change', function() {
+            var total = $('.leavetype-checkbox').length;
+            var checked = $('.leavetype-checkbox:checked').length;
+            
+            $('#select-all').prop('checked', total === checked);
+            toggleBulkDeleteBtn();
+        });
+
+        // Toggle Bulk Delete Button Visibility
+        function toggleBulkDeleteBtn() {
+            if ($('.leavetype-checkbox:checked').length > 0) {
+                $('#bulk-delete-btn').removeClass('d-none');
+            } else {
+                $('#bulk-delete-btn').addClass('d-none');
+            }
+        }
+
+        // Handle Bulk Delete Button Click
+        $('#bulk-delete-btn').on('click', function() {
+            var selectedIds = [];
+            $('.leavetype-checkbox:checked').each(function() {
+                selectedIds.push($(this).val());
+            });
+
+            if (selectedIds.length === 0) {
+                return;
+            }
+
+            const swalWithBootstrapButtons = Swal.mixin({
+                customClass: {
+                    confirmButton: 'btn btn-success',
+                    cancelButton: 'btn btn-danger'
+                },
+                buttonsStyling: false
+            });
+
+            swalWithBootstrapButtons.fire({
+                title: 'Are you sure?',
+                text: "You want to delete these leave types? This action cannot be undone.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete them!',
+                cancelButtonText: 'No, cancel!',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '{{ route('leavetype.bulk_delete') }}',
+                        type: 'POST',
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr('content'),
+                            ids: selectedIds
+                        },
+                        success: function(response) {
+                            if(response.status == 'success' || response.status == 'warning') {
+                                show_toastr(response.status.charAt(0).toUpperCase() + response.status.slice(1), response.message, response.status);
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                show_toastr('Error', response.message, 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            show_toastr('Error', 'Something went wrong. Please try again.', 'error');
+                        }
+                    });
+                }
+            });
+        });
+    });
+</script>
+@endpush

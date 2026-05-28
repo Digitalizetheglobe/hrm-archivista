@@ -31,6 +31,7 @@ class Allowance extends Model
             'Leave Encashment' => 'Leave Encashment',
             'Site Expenses' => 'Site Expenses',
             'Special Allowance' => 'Special Allowance',
+            'Festival Allowance' => 'Festival Allowance',
         ];
     }
 

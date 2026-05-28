@@ -46,12 +46,12 @@
                                     <td class="Action">
                                         <span>
                                             <div class="action-btn bg-warning ms-2">
-                                                <button type="button" 
-                                                    class="mx-3 btn btn-sm align-items-center" data-bs-toggle="tooltip"
-                                                    title="" data-bs-original-title="{{ __('View') }}"
-                                                    onclick="openSalaryModal('{{ $employee->name }}', '{{ $employee->id }}', '{{ $employee->set_salary ?? 0 }}')">
+                                                <a href="{{ route('setsalary.salary-page', $employee->id) }}"
+                                                   class="mx-3 btn btn-sm align-items-center"
+                                                   data-bs-toggle="tooltip" title=""
+                                                   data-bs-original-title="{{ __('Set Salary') }}">
                                                     <i class="ti ti-eye text-white"></i>
-                                                </button>
+                                                </a>
                                             </div>
                                         </span>
                                     </td>
@@ -65,102 +65,6 @@
     </div>
 </div>
 
-<!-- Salary Management Modal -->
-<div class="modal fade" id="salaryModal" tabindex="-1" role="dialog" aria-labelledby="salaryModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="salaryModalLabel">Manage Salary: <span id="modalEmployeeName"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="salaryForm">
-                    <div class="mb-3">
-                        <label for="employeeName" class="form-label">Employee Name</label>
-                        <input type="text" class="form-control" id="employeeName" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="salary" class="form-label">Salary</label>
-                        <input type="number" class="form-control" id="salary" name="salary" required>
-                        <input type="hidden" id="employeeId" name="employee_id">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="saveSalary(this)">Save Change</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-function openSalaryModal(employeeName, employeeId, currentSalary) {
-    document.getElementById('modalEmployeeName').textContent = employeeName;
-    document.getElementById('employeeName').value = employeeName;
-    document.getElementById('employeeId').value = employeeId;
-    document.getElementById('salary').value = currentSalary;
-    
-    var salaryModal = new bootstrap.Modal(document.getElementById('salaryModal'));
-    salaryModal.show();
-}
-
-function saveSalary(btn) {
-    var employeeId = document.getElementById('employeeId').value;
-    var salary = document.getElementById('salary').value;
-    
-    console.log('Saving salary:', { employeeId, salary });
-    
-    if (!salary || salary <= 0) {
-        alert('Please enter a valid salary amount');
-        return;
-    }
-    
-    // Show loading state
-    var saveButton = btn;
-    var originalText = saveButton.textContent;
-    saveButton.textContent = 'Saving...';
-    saveButton.disabled = true;
-    
-    var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    // Make AJAX call to save the salary
-    fetch(`{{ url('/employee/update/sallary') }}/${employeeId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({
-            set_salary: salary
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => { throw err; });
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Success:', data);
-        // Reload page to show updated salary
-        location.reload();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.error || 'Error updating salary. Please try again.');
-        saveButton.textContent = originalText;
-        saveButton.disabled = false;
-    });
-}
-
-function showSuccessModal(message) {
-    document.getElementById('successModalBody').textContent = message;
-    var successModal = new bootstrap.Modal(document.getElementById('successModal'));
-    successModal.show();
-}
-</script>
 
 @endsection
+

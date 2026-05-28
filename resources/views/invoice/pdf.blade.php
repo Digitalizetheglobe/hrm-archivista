@@ -313,18 +313,16 @@ try {
             $lwpDays = 0;
         }
         
-        // 6. Calculate Days Payable: Present Days + Weekly Off + Total Leave + OT Hrs + PH - LWP
-        $otHours = 0; // You can update this later if you have OT calculation
-        $calculatedDaysPayable = $presentDays + $weeklyOff + $totalAvailed + $otHours + $holidays - $lwpDays;
+        // 6. Calculate Days Payable: Present Days + Weekly Off + Total Leave + PH - LWP
+        $calculatedDaysPayable = $presentDays + $weeklyOff + $totalAvailed + $holidays - $lwpDays;
         
         \Log::info('Days Payable final calculation', [
             'present_days' => $presentDays,
             'weekly_off' => $weeklyOff,
             'total_leave' => $totalAvailed,
-            'ot_hours' => $otHours,
             'holidays' => $holidays,
             'lwp_days' => $lwpDays,
-            'calculation' => "{$presentDays} + {$weeklyOff} + {$totalAvailed} + {$otHours} + {$holidays} - {$lwpDays} = {$calculatedDaysPayable}",
+            'calculation' => "{$presentDays} + {$weeklyOff} + {$totalAvailed} + {$holidays} - {$lwpDays} = {$calculatedDaysPayable}",
             'calculated_days_payable' => $calculatedDaysPayable
         ]);
         
@@ -465,7 +463,7 @@ try {
         }
 
         // Calculate gross salary as sum of all components
-        $grossSalaryWithExtra = $basicComponent + $hraComponent + $medicalComponent + $conveyanceComponent + $educationAllowance + $executive + (float)$extraAllowance + $totalAllowances;
+        $grossSalaryWithExtra = $basicComponent + $hraComponent + $medicalComponent + $conveyanceComponent + $educationAllowance + $executive + $totalAllowances;
 
         // User requested: only TDS 10% of gross salary and absent deduction
         $pfDeduction = 0;
@@ -786,18 +784,16 @@ try {
             $lwpDays = 0;
         }
         
-        // 6. Calculate Days Payable: Present Days + Weekly Off + Total Leave + OT Hrs + PH - LWP
-        $otHours = 0; // You can update this later if you have OT calculation
-        $calculatedDaysPayable = $presentDays + $weeklyOff + $totalAvailed + $otHours + $holidays - $lwpDays;
+        // 6. Calculate Days Payable: Present Days + Weekly Off + Total Leave + PH - LWP
+        $calculatedDaysPayable = $presentDays + $weeklyOff + $totalAvailed + $holidays - $lwpDays;
         
         \Log::info('Days Payable final calculation', [
             'present_days' => $presentDays,
             'weekly_off' => $weeklyOff,
             'total_leave' => $totalAvailed,
-            'ot_hours' => $otHours,
             'holidays' => $holidays,
             'lwp_days' => $lwpDays,
-            'calculation' => "{$presentDays} + {$weeklyOff} + {$totalAvailed} + {$otHours} + {$holidays} - {$lwpDays} = {$calculatedDaysPayable}",
+            'calculation' => "{$presentDays} + {$weeklyOff} + {$totalAvailed} + {$holidays} - {$lwpDays} = {$calculatedDaysPayable}",
             'calculated_days_payable' => $calculatedDaysPayable
         ]);
         
@@ -933,10 +929,14 @@ try {
     $annualIncomeData = [];
     $totalAnnualIncome = 0;
     try {
+        $payslipMonth = date('m', strtotime($payslip->salary_month));
+        $payslipYear = date('Y', strtotime($payslip->salary_month));
+        $fyStart = ($payslipMonth >= 4) ? $payslipYear . '-04' : ($payslipYear - 1) . '-04';
+
         $pastSlips = \App\Models\PaySlip::where('employee_id', $employee->id)
+            ->where('salary_month', '>=', $fyStart)
             ->where('salary_month', '<=', $payslip->salary_month)
             ->orderBy('salary_month', 'desc')
-            ->limit(12)
             ->get()
             ->reverse();
             
@@ -1092,7 +1092,10 @@ try {
                                     </tr>
                                     @if(!empty($leaveDetails))
                                         @php
+                                            $totalOpBal = 0;
+                                            $totalCredited = 0;
                                             $totalAvailedLeaves = 0;
+                                            $totalClBal = 0;
                                         @endphp
                                         @foreach($leaveDetails as $leave)
                                         <tr>
@@ -1103,9 +1106,19 @@ try {
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($leave['closing_balance'], 2) }}</td>
                                         </tr>
                                         @php
+                                            $totalOpBal += $leave['opening_balance'];
+                                            $totalCredited += $leave['credited'];
                                             $totalAvailedLeaves += $leave['availed'];
+                                            $totalClBal += $leave['closing_balance'];
                                         @endphp
                                         @endforeach
+                                        <tr style="background-color: #f8f9fa;">
+                                            <td style="padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: center;">Total Leave</td>
+                                            <td style="padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: right;">{{ number_format($totalOpBal, 2) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: right;">{{ number_format($totalCredited, 2) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: right;">{{ number_format($totalAvailedLeaves, 2) }}</td>
+                                            <td style="padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; text-align: right;">{{ number_format($totalClBal, 2) }}</td>
+                                        </tr>
                                     @else
                                         <tr>
                                             <td colspan="6" style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: center;">No leave records found</td>
@@ -1134,19 +1147,19 @@ try {
                                     </tr>
                                     <tr >
                                         <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Total Leave</td>
-                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($totalAvailedLeaves ?? 0, 2) }}</td>
+                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($totalAvailed, 2) }}</td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">PH</td>
                                         <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($holidays, 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">LWP</td>
-                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format($lwpDays, 2) }}</td>
+                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Absent Days</td>
+                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ number_format(max(0, $totalDays - $calculatedDaysPayable), 2) }}</td>
                                     </tr>
                                     <tr style="background-color: #f8f9fa;">
                                         <td style="padding: 4px; font-size: 11px; font-weight: bold; border-right: 1px solid #000;">Days Payable</td>
-                                        <td style="padding: 4px; font-size: 11px; font-weight: bold; text-align: right;">{{ number_format($calculatedDaysPayable, 2) }}</td>
+                                        <td style="padding: 4px; font-size: 11px; font-weight: bold; text-align: right;">{{ number_format($calculatedDaysPayable + max(0, $totalDays - $calculatedDaysPayable), 2) }}</td>
                                     </tr>
                                 </table>
                             </td>
@@ -1178,16 +1191,7 @@ try {
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">Gross Salary</td>
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($grossSalaryWithExtra) }}</td>
                                         </tr>
-                                        @for($i = $earningsCount; $i < $maxRows; $i++)
-                                        <tr>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">&nbsp;</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000;">&nbsp;</td>
-                                        </tr>
-                                        @endfor
-                                        <tr style="background-color: #f8f9fa;">
-                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000;">Gross Earning (A)</td>
-                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right;">{{ \Auth::user()->priceFormat($grossSalaryWithExtra) }}</td>
-                                        </tr>
+                                        <!-- Totals moved to bottom -->
                                     </table>
                                 </td>
                                 
@@ -1212,17 +1216,7 @@ try {
                                             <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($deductionForAbsent) }}</td>
                                         </tr>
                                         
-                                        @for($i = $deductionsCount; $i < $maxRows; $i++)
-                                        <tr>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">&nbsp;</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000;">&nbsp;</td>
-                                        </tr>
-                                        @endfor
-
-                                        <tr style="background-color: #f8f9fa;">
-                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000;">Total Deductions (B)</td>
-                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right;">{{ \Auth::user()->priceFormat($totalDeductions) }}</td>
-                                        </tr>
+                                        <!-- Totals moved to bottom -->
                                     </table>
                                 </td>
 
@@ -1248,15 +1242,31 @@ try {
                                                 <td colspan="2" style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: center;">No income records found</td>
                                             </tr>
                                         @endif
-                                        @for($i = $annualIncomeCount; $i < $maxRows; $i++)
-                                        <tr>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; border-right: 1px solid #000;">&nbsp;</td>
-                                            <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000;">&nbsp;</td>
-                                        </tr>
-                                        @endfor
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 33.33%; border-right: 2px solid #000; padding: 0; vertical-align: bottom;">
+                                    <table style="width: 100%; border-collapse: collapse;">
                                         <tr style="background-color: #f8f9fa;">
-                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000;">Total</td>
-                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right;">{{ \Auth::user()->priceFormat($totalAnnualIncome) }}</td>
+                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000; border-top: 1px solid #000;">Gross Earning (A)</td>
+                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right; border-top: 1px solid #000;">{{ \Auth::user()->priceFormat($grossSalaryWithExtra) }}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td style="width: 33.33%; border-right: 2px solid #000; padding: 0; vertical-align: bottom;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <tr style="background-color: #f8f9fa;">
+                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000; border-top: 1px solid #000;">Total Deductions (B)</td>
+                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right; border-top: 1px solid #000;">{{ \Auth::user()->priceFormat($totalDeductions) }}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td style="width: 33.34%; padding: 0; vertical-align: bottom;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <tr style="background-color: #f8f9fa;">
+                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000; border-top: 1px solid #000;">Total</td>
+                                            <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right; border-top: 1px solid #000;">{{ \Auth::user()->priceFormat($totalAnnualIncome) }}</td>
                                         </tr>
                                     </table>
                                 </td>

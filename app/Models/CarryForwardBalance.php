@@ -15,6 +15,7 @@ class CarryForwardBalance extends Model
         'month',
         'period_type',
         'carried_forward_days',
+        'extra_days',
         'allocated_days',
         'used_days',
         'remaining_days',
@@ -22,6 +23,7 @@ class CarryForwardBalance extends Model
 
     protected $casts = [
         'carried_forward_days' => 'decimal:2',
+        'extra_days' => 'decimal:2',
         'allocated_days' => 'decimal:2',
         'used_days' => 'decimal:2',
         'remaining_days' => 'decimal:2',

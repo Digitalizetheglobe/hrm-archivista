@@ -232,4 +232,14 @@ class Employee extends Model
     {
         return $this->hasMany(SiteVisit::class, 'employee_id', 'id');
     }
+
+    public function leaveAllocations()
+    {
+        return $this->hasMany(EmployeeLeaveAllocation::class, 'employee_id', 'id');
+    }
+
+    public function payrollData()
+    {
+        return $this->hasOne(PayrollData::class, 'employee_id', 'id');
+    }
 }

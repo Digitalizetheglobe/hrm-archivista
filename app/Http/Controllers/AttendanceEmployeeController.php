@@ -196,6 +196,9 @@ class AttendanceEmployeeController extends Controller
             $department = Department::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
             $department->prepend('All', '');
 
+            $employeeList = Employee::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
+            $employeeList->prepend('All', '');
+
             if (\Auth::user()->type == 'employee') {
                 $emp = !empty(\Auth::user()->employee) ? \Auth::user()->employee->id : 0;
 
@@ -249,6 +252,10 @@ class AttendanceEmployeeController extends Controller
                     $employee->where('department_id', $request->department);
                 }
 
+                if (!empty($request->employee)) {
+                    $employee->where('id', $request->employee);
+                }
+
                 $employee = $employee->get()->pluck('id');
 
                 $attendanceEmployee = AttendanceEmployee::whereIn('employee_id', $employee);
@@ -291,10 +298,18 @@ class AttendanceEmployeeController extends Controller
                 $attendanceEmployee = $attendanceEmployee->orderBy('id', 'desc')->get();
             }
 
-            return view('attendance.index', compact('attendanceEmployee', 'branch', 'department'));
+            return view('attendance.index', compact('attendanceEmployee', 'branch', 'department', 'employeeList'));
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
+    }
+
+    public function export(Request $request)
+    {
+        $name = 'attendance_' . date('Y-m-d i:h:s');
+        $data = \Excel::download(new \App\Exports\AttendanceExport($request->all()), $name . '.xlsx');
+
+        return $data;
     }
 
     public function create()

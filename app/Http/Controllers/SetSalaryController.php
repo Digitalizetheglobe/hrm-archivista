@@ -12,6 +12,7 @@ use App\Models\Loan;
 use App\Models\LoanOption;
 use App\Models\OtherPayment;
 use App\Models\Overtime;
+use App\Models\PayrollData;
 use App\Models\SaturationDeduction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -246,6 +247,67 @@ class SetSalaryController extends Controller
             $employees = Employee::where('user_id', \Auth::user()->id)->get();
             return view('setsalary.index', compact('employees'));
         }
+    }
+
+    /**
+     * Show the new full salary configuration page.
+     */
+    public function salaryPage($id)
+    {
+        if (!\Auth::user()->can('Edit Set Salary')) {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+
+        $employee = Employee::findOrFail($id);
+        $payrollData = PayrollData::where('employee_id', $id)->first();
+
+        return view('setsalary.set_salary_page', compact('employee', 'payrollData'));
+    }
+
+    /**
+     * Save the salary and payroll data (allowances & deductions) to the database.
+     */
+    public function savePayroll(Request $request, $id)
+    {
+        if (!\Auth::user()->can('Edit Set Salary')) {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+
+        $request->validate([
+            'set_salary'      => 'required|numeric|min:0',
+            'basic'           => 'nullable|numeric|min:0|max:100',
+            'medical'         => 'nullable|numeric|min:0|max:100',
+            'hra'             => 'nullable|numeric|min:0|max:100',
+            'conveyance'      => 'nullable|numeric|min:0|max:100',
+            'education'       => 'nullable|numeric|min:0|max:100',
+            'executive'       => 'nullable|numeric|min:0|max:100',
+            'esi'             => 'nullable|numeric|min:0',
+            'pf'              => 'nullable|numeric|min:0',
+            'professional_tax'=> 'nullable|numeric|min:0',
+        ]);
+
+        // Update the employee's set salary
+        $employee = Employee::findOrFail($id);
+        $employee->set_salary = $request->set_salary;
+        $employee->save();
+
+        // Create or update the payroll data
+        PayrollData::updateOrCreate(
+            ['employee_id' => $id],
+            [
+                'basic'            => $request->basic ?? 0,
+                'medical'          => $request->medical ?? 0,
+                'hra'              => $request->hra ?? 0,
+                'conveyance'       => $request->conveyance ?? 0,
+                'education'        => $request->education ?? 0,
+                'executive'        => $request->executive ?? 0,
+                'esi'              => $request->esi ?? 0,
+                'pf'               => $request->pf ?? 0,
+                'professional_tax' => $request->professional_tax ?? 0,
+            ]
+        );
+
+        return redirect()->route('setsalary.index')->with('success', __('Salary and payroll data saved successfully.'));
     }
 
     public function employeeBasicSalary($id)

@@ -41,7 +41,7 @@
             <!-- dashboard-->
             @if (\Auth::user()->type != 'company')
             <li class="dash-item" style="color: white;" >
-                <a href="{{ route('dashboard') }}" class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg flex items-center space-x-2"">
+                <a href="{{ route('dashboard') }}" class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg flex items-center space-x-2">
                     <span class="dash-micon shadow-none" style="background: none;"><i class="ti ti-home text-white text-[30px]"></i></span>
                     <span class="dash-mtext" style="color: white;">{{ __('Dashboard') }}</span>
                 </a>
@@ -266,6 +266,7 @@
             @endif
             <!--Attendance-->
 
+
             <!-- Site Visit -->
             @auth
                 <li class="dash-item {{ Request::segment(1) == 'site-visit' ? 'active' : '' }}">
@@ -292,6 +293,12 @@
                             <li class="dash-item {{ Request::segment(1) == 'calender' ? ' active' : '' }}">
                                 <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('leave.index') }}">{{ __('Manage Leave') }}</a>
                             </li>
+
+                            @if (\Auth::user()->type == 'company')
+                                <li class="dash-item {{ Request::segment(1) == 'employee-leave-allocations' ? ' active' : '' }}">
+                                    <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('employee-leave-allocations.index') }}">{{ __('Custom Leave Allocations') }}</a>
+                                </li>
+                            @endif
 
                             <li class="dash-item {{ Request::segment(1) == 'compoff' ? ' active' : '' }}">
                                 <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('compoff.index') }}">{{ __('Comp-Off') }}</a>

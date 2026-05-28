@@ -41,7 +41,7 @@
             <!-- dashboard-->
             <?php if(\Auth::user()->type != 'company'): ?>
             <li class="dash-item" style="color: white;" >
-                <a href="<?php echo e(route('dashboard')); ?>" class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg flex items-center space-x-2"">
+                <a href="<?php echo e(route('dashboard')); ?>" class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg flex items-center space-x-2">
                     <span class="dash-micon shadow-none" style="background: none;"><i class="ti ti-home text-white text-[30px]"></i></span>
                     <span class="dash-mtext" style="color: white;"><?php echo e(__('Dashboard')); ?></span>
                 </a>
@@ -275,6 +275,7 @@
             <?php endif; ?>
             <!--Attendance-->
 
+
             <!-- Site Visit -->
             <?php if(auth()->guard()->check()): ?>
                 <li class="dash-item <?php echo e(Request::segment(1) == 'site-visit' ? 'active' : ''); ?>">
@@ -301,6 +302,12 @@
                             <li class="dash-item <?php echo e(Request::segment(1) == 'calender' ? ' active' : ''); ?>">
                                 <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('leave.index')); ?>"><?php echo e(__('Manage Leave')); ?></a>
                             </li>
+
+                            <?php if(\Auth::user()->type == 'company'): ?>
+                                <li class="dash-item <?php echo e(Request::segment(1) == 'employee-leave-allocations' ? ' active' : ''); ?>">
+                                    <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('employee-leave-allocations.index')); ?>"><?php echo e(__('Custom Leave Allocations')); ?></a>
+                                </li>
+                            <?php endif; ?>
 
                             <li class="dash-item <?php echo e(Request::segment(1) == 'compoff' ? ' active' : ''); ?>">
                                 <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('compoff.index')); ?>"><?php echo e(__('Comp-Off')); ?></a>

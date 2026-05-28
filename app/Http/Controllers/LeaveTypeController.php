@@ -207,4 +207,43 @@ class LeaveTypeController extends Controller
             return redirect()->back()->with('error', __('Permission denied.'));
         }
     }
+
+    public function bulkDelete(Request $request)
+    {
+        if (\Auth::user()->can('Delete Leave Type')) {
+            $ids = $request->ids;
+            if (!empty($ids)) {
+                $deletedCount = 0;
+                $failedCount = 0;
+
+                foreach ($ids as $id) {
+                    $leavetype = LeaveType::find($id);
+                    if ($leavetype && $leavetype->created_by == \Auth::user()->creatorId()) {
+                        $leave = Leave::where('leave_type_id', $leavetype->id)->get();
+                        if (count($leave) == 0) {
+                            $leavetype->delete();
+                            $deletedCount++;
+                        } else {
+                            $failedCount++;
+                        }
+                    }
+                }
+
+                if ($failedCount > 0) {
+                    return response()->json([
+                        'status' => 'warning',
+                        'message' => __($deletedCount . ' Leave Type(s) successfully deleted. ' . $failedCount . ' Leave Type(s) could not be deleted because they have associated leaves.')
+                    ]);
+                }
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => __('Leave Type(s) successfully deleted.')
+                ]);
+            }
+            return response()->json(['status' => 'error', 'message' => __('Please select at least one item.')]);
+        } else {
+            return response()->json(['status' => 'error', 'message' => __('Permission denied.')], 403);
+        }
+    }
 }

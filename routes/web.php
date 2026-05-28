@@ -1030,12 +1030,11 @@ Route::group(['middleware' => ['verified']], function () {
     );
 
 
-    Route::resource('setsalary', SetSalaryController::class)->middleware(
-        [
-            'auth',
-            'XSS',
-        ]
-    );
+    // Salary page and save routes
+    Route::get('setsalary/{id}/salary-page', [SetSalaryController::class, 'salaryPage'])->name('setsalary.salary-page')->middleware(['auth', 'XSS']);
+    Route::post('setsalary/{id}/save-payroll', [SetSalaryController::class, 'savePayroll'])->name('setsalary.save-payroll')->middleware(['auth', 'XSS']);
+    
+    Route::resource('setsalary', SetSalaryController::class)->middleware(['auth', 'XSS']);
 
     Route::get('payslip/paysalary/{id}/{date}', [PaySlipController::class, 'paysalary'])->name('payslip.paysalary')->middleware(
         [
@@ -1256,6 +1255,10 @@ Route::group(['middleware' => ['verified']], function () {
     Route::get('leave/get-leave-types/{employeeId}', [LeaveController::class, 'getLeaveTypesForEmployee'])->middleware(['auth', 'XSS']);
     Route::get('leave/get-leave-balance/{employeeId}/{leaveTypeId}', [LeaveController::class, 'getLeaveBalanceForEmployee'])->middleware(['auth', 'XSS']);
     Route::get('leave-details', [LeaveController::class, 'leaveDetails'])->name('leave.details')->middleware(['auth', 'XSS']);
+    Route::post('leave/bulk-delete', [LeaveController::class, 'bulkDelete'])->name('leave.bulk_delete')->middleware(['auth', 'XSS']);
+    Route::get('employee-leave-allocations', [\App\Http\Controllers\EmployeeLeaveAllocationController::class, 'index'])->name('employee-leave-allocations.index')->middleware(['auth', 'XSS']);
+    Route::get('employee-leave-allocations/{employee_id}/edit', [\App\Http\Controllers\EmployeeLeaveAllocationController::class, 'edit'])->name('employee-leave-allocations.edit')->middleware(['auth', 'XSS']);
+    Route::post('employee-leave-allocations/{employee_id}', [\App\Http\Controllers\EmployeeLeaveAllocationController::class, 'update'])->name('employee-leave-allocations.update')->middleware(['auth', 'XSS']);
 
     Route::get('ticket/{id}/reply', [TicketController::class, 'reply'])->name('ticket.reply')->middleware(
         [
@@ -1309,7 +1312,8 @@ Route::group(['middleware' => ['verified']], function () {
     Route::get('import/attendance/file', [AttendanceEmployeeController::class, 'importFile'])->name('attendance.file.import');
     Route::post('import/attendance', [AttendanceEmployeeController::class, 'import'])->name('attendance.import');
 
-    
+    //export attendance
+    Route::get('export/attendance', [AttendanceEmployeeController::class, 'export'])->name('attendance.export');
 
         // Route::resource('timesheet', TimeSheetController::class)->middleware(
         //     [
@@ -1351,6 +1355,7 @@ Route::group(['middleware' => ['verified']], function () {
             'XSS',
         ]
     );
+    Route::post('leavetype/bulk-delete', [LeaveTypeController::class, 'bulkDelete'])->name('leavetype.bulk_delete')->middleware(['auth', 'XSS']);
     Route::resource('leavetype', LeaveTypeController::class)->middleware(
         [
             'auth',

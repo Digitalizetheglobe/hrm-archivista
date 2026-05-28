@@ -30,8 +30,7 @@ class ClientController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $sites = Site::pluck('name', 'id');
-        return view('clients.create', compact('sites'));
+        return view('clients.create');
     }
 
     public function store(Request $request)
@@ -52,11 +51,9 @@ class ClientController extends Controller
             'contact_person_name' => 'nullable|string|max:100',
             'contact_person_phone' => 'nullable|string|max:20',
             'remark' => 'nullable|string',
-            'clients_group_id' => 'required|exists:sites,id',
         ]);
 
         Client::create([
-            'clients_group_id' => $request->clients_group_id,
             'client_code' => $request->client_code,
             'client_name' => $request->client_name,
             'client_address' => $request->client_address,
@@ -80,8 +77,7 @@ class ClientController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $sites = Site::pluck('name', 'id');
-        return view('clients.edit', compact('client', 'sites'));
+        return view('clients.edit', compact('client'));
     }
 
     public function update(Request $request, Client $client)
@@ -102,11 +98,9 @@ class ClientController extends Controller
             'contact_person_name' => 'nullable|string|max:100',
             'contact_person_phone' => 'nullable|string|max:20',
             'remark' => 'nullable|string',
-            'clients_group_id' => 'required|exists:sites,id',
         ]);
 
         $client->update([
-            'clients_group_id' => $request->clients_group_id,
             'client_code' => $request->client_code,
             'client_name' => $request->client_name,
             'client_address' => $request->client_address,
