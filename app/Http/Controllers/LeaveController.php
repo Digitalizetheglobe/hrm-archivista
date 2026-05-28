@@ -112,7 +112,7 @@ class LeaveController extends Controller
     /**
      * Get allocated days for employee based on leave type
      */
-    private function getAllocatedDaysForEmployee($employee, $leaveType)
+    public function getAllocatedDaysForEmployee($employee, $leaveType)
     {
         // Use the centralized logic from LeaveAllocationService
         return $this->leaveAllocationService->getAllocatedDaysForEmployee($employee, $leaveType);
