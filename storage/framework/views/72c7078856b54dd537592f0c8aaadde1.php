@@ -14,7 +14,7 @@
                 <?php echo e(Form::label('allocations[' . $leaveType->id . ']', 'Add Extra ' . $leaveType->title, ['class' => 'col-form-label'])); ?>
 
                 <div class="input-group">
-                    <?php echo e(Form::number('allocations[' . $leaveType->id . ']', '', ['class' => 'form-control', 'step' => '0.5', 'min' => '0', 'placeholder' => __('Enter extra days to add')])); ?>
+                    <?php echo e(Form::number('allocations[' . $leaveType->id . ']', '', ['class' => 'form-control', 'step' => '0.01', 'min' => '0', 'placeholder' => __('Enter extra days to add')])); ?>
 
                     <span class="input-group-text"><?php echo e(__('Days')); ?></span>
                 </div>

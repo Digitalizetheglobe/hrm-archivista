@@ -11,7 +11,7 @@
             <div class="form-group col-md-6">
                 {{ Form::label('allocations[' . $leaveType->id . ']', 'Add Extra ' . $leaveType->title, ['class' => 'col-form-label']) }}
                 <div class="input-group">
-                    {{ Form::number('allocations[' . $leaveType->id . ']', '', ['class' => 'form-control', 'step' => '0.5', 'min' => '0', 'placeholder' => __('Enter extra days to add')]) }}
+                    {{ Form::number('allocations[' . $leaveType->id . ']', '', ['class' => 'form-control', 'step' => '0.01', 'min' => '0', 'placeholder' => __('Enter extra days to add')]) }}
                     <span class="input-group-text">{{ __('Days') }}</span>
                 </div>
             </div>
