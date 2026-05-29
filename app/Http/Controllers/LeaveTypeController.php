@@ -46,7 +46,6 @@ class LeaveTypeController extends Controller
                     'type' => 'required|in:monthly,yearly',
                     'is_unlimited' => 'boolean',
                     'carry_forward_enabled' => 'boolean',
-                    'max_carry_forward_days' => 'nullable|numeric|min:0.01',
                     'days' => 'required_unless:is_unlimited,true|nullable|numeric|min:0.01',
                     'eligible_employee_types' => 'required|array|min:1',
                     'eligible_employee_types.*' => 'required|string|in:payroll_confirm,payroll_not_confirm,contract_confirm,contract_not_confirm',
@@ -59,7 +58,7 @@ class LeaveTypeController extends Controller
                 $leavetype->type = $request->type;
                 $leavetype->is_unlimited = $request->has('is_unlimited') ? true : false;
                 $leavetype->carry_forward_enabled = $request->has('carry_forward_enabled') ? true : false;
-                $leavetype->max_carry_forward_days = ($leavetype->carry_forward_enabled && $request->max_carry_forward_days) ? $request->max_carry_forward_days : 0;
+                $leavetype->max_carry_forward_days = 0;
                 $leavetype->days = $leavetype->is_unlimited ? 0 : $request->days;
                 $leavetype->eligible_employee_types = $request->eligible_employee_types;
                 $leavetype->created_by = \Auth::user()->creatorId();
@@ -129,7 +128,6 @@ class LeaveTypeController extends Controller
                             'type' => 'required|in:monthly,yearly',
                             'is_unlimited' => 'boolean',
                             'carry_forward_enabled' => 'boolean',
-                            'max_carry_forward_days' => 'nullable|numeric|min:0.01',
                             'days' => 'required_unless:is_unlimited,true|nullable|numeric|min:0.01',
                             'eligible_employee_types' => 'required|array|min:1',
                             'eligible_employee_types.*' => 'required|string|in:payroll_confirm,payroll_not_confirm,contract_confirm,contract_not_confirm',
@@ -149,7 +147,7 @@ class LeaveTypeController extends Controller
                     $leavetype->type = $request->type;
                     $leavetype->is_unlimited = $request->has('is_unlimited') ? true : false;
                     $leavetype->carry_forward_enabled = $request->has('carry_forward_enabled') ? true : false;
-                    $leavetype->max_carry_forward_days = ($leavetype->carry_forward_enabled && $request->max_carry_forward_days) ? $request->max_carry_forward_days : 0;
+                    $leavetype->max_carry_forward_days = 0;
                     $leavetype->days = $leavetype->is_unlimited ? 0 : $request->days;
                     $leavetype->eligible_employee_types = $request->eligible_employee_types;
                     

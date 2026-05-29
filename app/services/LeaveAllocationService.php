@@ -108,7 +108,7 @@ class LeaveAllocationService
                 
                 // Calculate carry-forward amount
                 $carryForwardAmount = $previousBalance->remaining_days > 0 
-                    ? min($previousBalance->remaining_days, $leaveType->max_carry_forward_days) 
+                    ? $previousBalance->remaining_days 
                     : 0;
                 
                 // Get or create current month balance
@@ -185,7 +185,7 @@ class LeaveAllocationService
                 
                 // Calculate carry-forward amount
                 $carryForwardAmount = $remainingDays > 0 
-                    ? min($remainingDays, $leaveType->max_carry_forward_days) 
+                    ? $remainingDays 
                     : 0;
                 
                 // Create current year balance with carry-forward

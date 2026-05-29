@@ -61,20 +61,7 @@
             </div>
         </div>
 
-        <div class="col-lg-12 col-md-12 col-sm-12" id="max_carry_forward_field" style="display: none;">
-            <div class="form-group">
-                {{ Form::label('max_carry_forward_days', __('Max Carry Forward Days'), ['class' => 'form-label']) }}
-                <div class="form-icon-user">
-                    {{ Form::number('max_carry_forward_days', null, ['class' => 'form-control', 'placeholder' => __('Enter maximum carry forward days'),'min'=>'0.01', 'step'=>'0.01', 'id' => 'max_carry_forward_input']) }}
-                </div>
-                <small class="form-text text-muted">{{ __('Maximum days that can be carried forward to next period') }}</small>
-                @error('max_carry_forward_days')
-                    <span class="invalid-name" role="alert">
-                        <strong class="text-danger">{{ $message }}</strong>
-                    </span>
-                @enderror
-            </div>
-        </div>
+
 
         <div class="col-lg-12 col-md-12 col-sm-12" id="days_field">
             <div class="form-group">
@@ -134,9 +121,6 @@
     const daysField = document.getElementById('days_field');
     const daysInput = document.getElementById('days_input');
     const carryForwardCheckbox = document.getElementById('carry_forward_enabled');
-    const maxCarryForwardField = document.getElementById('max_carry_forward_field');
-    const maxCarryForwardInput = document.getElementById('max_carry_forward_input');
-    const typeSelect = document.getElementById('type');
     
     function toggleFields() {
         if (!unlimitedCheckbox) return;
@@ -156,19 +140,8 @@
         if (isUnlimited) {
             document.getElementById('carry_forward_section').style.display = 'none';
             carryForwardCheckbox.checked = false;
-            maxCarryForwardField.style.display = 'none';
-            maxCarryForwardInput.removeAttribute('required');
         } else {
             document.getElementById('carry_forward_section').style.display = 'block';
-        }
-        
-        // Toggle max carry forward field
-        if (isCarryForwardEnabled && !isUnlimited) {
-            maxCarryForwardField.style.display = 'block';
-            maxCarryForwardInput.setAttribute('required', 'required');
-        } else {
-            maxCarryForwardField.style.display = 'none';
-            maxCarryForwardInput.removeAttribute('required');
         }
     }
     
