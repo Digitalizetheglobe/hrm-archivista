@@ -6,526 +6,901 @@
 
 @section('content')
 <style>
+    :root {
+        --primary: #e8590c;
+        --primary-dark: #c04a08;
+        --primary-light: #ff7a3d;
+        --primary-bg: rgba(232, 89, 12, 0.08);
+        --primary-bg-hover: rgba(232, 89, 12, 0.15);
+        --surface: #ffffff;
+        --surface-2: #f8f9fc;
+        --border: #e9ecef;
+        --text-main: #1a1d23;
+        --text-muted: #6c757d;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+        --shadow-lg: 0 8px 32px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06);
+        --radius: 14px;
+        --radius-sm: 8px;
+    }
+
+    /* ---- Base ---- */
+    .db-wrapper { background: var(--surface-2); min-height: 100vh; }
+
+    /* ---- Cards ---- */
+    .db-card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        transition: box-shadow 0.22s ease, transform 0.22s ease;
+    }
+    .db-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .db-card-header {
+        padding: 18px 22px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .db-card-header .card-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+        letter-spacing: -0.2px;
+    }
+    .db-card-header .card-icon {
+        width: 34px; height: 34px;
+        background: var(--primary-bg);
+        border-radius: var(--radius-sm);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--primary);
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    .db-card-body { padding: 20px 22px; }
+
+    /* ---- Profile Card ---- */
+    .profile-banner {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        padding: 24px 22px 18px;
+        position: relative;
+        overflow: hidden;
+    }
+    .profile-banner::before {
+        content: '';
+        position: absolute;
+        top: -30px; right: -30px;
+        width: 120px; height: 120px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+    .profile-banner::after {
+        content: '';
+        position: absolute;
+        bottom: -20px; right: 40px;
+        width: 70px; height: 70px;
+        background: rgba(255,255,255,0.07);
+        border-radius: 50%;
+    }
+    .profile-avatar-wrap {
+        position: relative;
+        display: inline-block;
+    }
+    .profile-avatar-wrap img {
+        width: 72px; height: 72px;
+        border-radius: 50%;
+        border: 3px solid rgba(255,255,255,0.8);
+        object-fit: cover;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    }
+    .profile-online-dot {
+        position: absolute;
+        bottom: 4px; right: 2px;
+        width: 14px; height: 14px;
+        background: #22c55e;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+    .profile-name { font-size: 19px; font-weight: 700; color: white; margin: 0; line-height: 1.2; }
+    .profile-role { font-size: 12px; color: rgba(255,255,255,0.82); margin-top: 4px; }
+    .profile-dept-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 20px;
+        margin-top: 8px;
+        backdrop-filter: blur(4px);
+    }
+    .profile-info-row {
+        padding: 16px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+    .profile-info-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .profile-info-item .pi-icon {
+        width: 36px; height: 36px;
+        background: var(--primary-bg);
+        border-radius: var(--radius-sm);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--primary);
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+    .profile-info-item .pi-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-bottom: 2px;
+    }
+    .profile-info-item .pi-value {
+        font-size: 13.5px;
+        color: var(--text-main);
+        font-weight: 600;
+    }
+
+    /* ---- Attendance Card ---- */
+    .attendance-card-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 22px;
+        gap: 14px;
+    }
+    .clock-ring-wrap {
+        position: relative;
+        width: 160px; height: 160px;
+        flex-shrink: 0;
+    }
+    .clock-ring-wrap svg {
+        transform: rotate(-90deg);
+        filter: drop-shadow(0 4px 12px rgba(232,89,12,0.18));
+    }
+    .clock-ring-wrap .clock-inner {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    .clock-inner .ct-time {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text-main);
+        letter-spacing: -1px;
+        font-variant-numeric: tabular-nums;
+    }
+    .clock-inner .ct-label {
+        font-size: 10px;
+        color: var(--text-muted);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Live dot */
+    .live-dot {
+        display: inline-block;
+        width: 9px; height: 9px;
+        background: #22c55e;
+        border-radius: 50%;
+        animation: pulseDot 1.5s infinite;
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+    .live-dot.punched-out { background: #ef4444; animation: none; }
+    @keyframes pulseDot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.75); }
+    }
+
+    .att-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 16px;
+        border-radius: 30px;
+        font-size: 12.5px;
+        font-weight: 600;
+    }
+    .att-status-badge.status-in  { background: rgba(34,197,94,0.1);  color: #16a34a; }
+    .att-status-badge.status-out { background: rgba(239,68,68,0.1);   color: #dc2626; }
+    .att-status-badge.status-idle{ background: rgba(107,114,128,0.1); color: #6b7280; }
+    .att-status-badge.status-warn{ background: rgba(234,179,8,0.1);   color: #a16207; }
+
+    /* Datetime strip */
+    .datetime-strip {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+        background: var(--surface-2);
+        padding: 6px 14px;
+        border-radius: 30px;
+    }
+
+    /* Punch buttons */
+    .punch-btn {
+        width: 100%;
+        padding: 12px 24px;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .punch-btn-in {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(232,89,12,0.35);
+    }
+    .punch-btn-in:hover {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+        box-shadow: 0 6px 20px rgba(232,89,12,0.45);
+        transform: translateY(-1px);
+        color: white;
+    }
+    .punch-btn-out {
+        background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(239,68,68,0.3);
+    }
+    .punch-btn-out:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        box-shadow: 0 6px 20px rgba(239,68,68,0.4);
+        transform: translateY(-1px);
+        color: white;
+    }
+    .punch-btn-warn {
+        background: linear-gradient(135deg, #f59e0b 0%, #fcd34d 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(245,158,11,0.3);
+    }
+    .punch-btn-disabled {
+        background: #e5e7eb;
+        color: #9ca3af;
+        cursor: not-allowed;
+    }
+
+    /* ---- Data Tables ---- */
+    .db-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .db-table thead th {
+        background: var(--surface-2);
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+    }
+    .db-table tbody td {
+        padding: 11px 14px;
+        font-size: 13px;
+        color: var(--text-main);
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+    .db-table tbody tr:last-child td { border-bottom: none; }
+    .db-table tbody tr { transition: background 0.15s ease; }
+    .db-table tbody tr:hover td { background: var(--primary-bg); }
+
+    /* ---- Events Panel ---- */
+    .event-item-new {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+        cursor: default;
+    }
+    .event-item-new:hover {
+        background: var(--surface-2);
+        border-color: var(--border);
+        transform: translateX(2px);
+    }
+    .event-item-new.birthday-event:hover  { border-color: rgba(232,89,12,0.2); background: var(--primary-bg); }
+    .event-item-new.anniversary-event:hover { border-color: rgba(34,197,94,0.2); background: rgba(34,197,94,0.05); }
+    .event-avatar-new img {
+        width: 42px; height: 42px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--border);
+    }
+    .event-item-new.birthday-event .event-avatar-new img   { border-color: rgba(232,89,12,0.35); }
+    .event-item-new.anniversary-event .event-avatar-new img { border-color: rgba(34,197,94,0.35); }
+    .event-name { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+    .event-msg  { font-size: 12px; font-weight: 600; }
+    .event-msg.birthday-msg    { color: var(--primary); }
+    .event-msg.anniversary-msg { color: #16a34a; }
+    .event-meta { font-size: 11px; color: var(--text-muted); }
+    .event-badge {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+    }
+    .birthday-badge    { background: var(--primary-bg); }
+    .anniversary-badge { background: rgba(34,197,94,0.1); }
+    .events-scroll {
+        max-height: 340px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .events-scroll::-webkit-scrollbar { width: 4px; }
+    .events-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ---- Calendar ---- */
     .fc-prev-button, .fc-next-button {
-        padding: 5px 8px !important;
-        font-size: 14px !important;
-        background-color: #007bff !important;
-        border-radius: 5px !important;  
+        padding: 4px 8px !important;
+        background: var(--primary) !important;
         border: none !important;
+        border-radius: var(--radius-sm) !important;
         color: white !important;
     }
+    .fc-prev-button:hover, .fc-next-button:hover { background: var(--primary-dark) !important; }
+    .fc-toolbar-title { font-size: 14px !important; font-weight: 700 !important; }
 
-    .fc-prev-button:hover, .fc-next-button:hover {
-        background-color: #0056b3 !important;
-    }
+    /* ---- Priority badges ---- */
+    .prio-high   { background: rgba(239,68,68,0.12);   color: #dc2626; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .prio-medium { background: rgba(245,158,11,0.12);  color: #d97706; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .prio-low    { background: rgba(34,197,94,0.12);   color: #16a34a; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .status-done { background: rgba(34,197,94,0.12);   color: #16a34a; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+    .status-pend { background: rgba(239,68,68,0.12);   color: #dc2626; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
 
-    #calendar {
-        margin-bottom: 10px;
-    }
-
-    .calendar-navigation {
+    /* ---- Section label ---- */
+    .section-label {
         display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+    }
+    .section-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+    }
+
+    /* ---- Modal ---- */
+    .db-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        backdrop-filter: blur(3px);
+        z-index: 1050;
+        align-items: center;
         justify-content: center;
-        gap: 10px;
-        margin-top: 10px;
     }
+    .db-modal-overlay.active { display: flex; }
+    .db-modal-box {
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 32px;
+        max-width: 380px;
+        width: 92%;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+        animation: modalIn 0.22s ease;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.93) translateY(10px); } to { opacity: 1; transform: none; } }
+    .db-modal-icon {
+        width: 64px; height: 64px;
+        background: rgba(239,68,68,0.1);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 26px;
+        color: #dc2626;
+    }
+    .db-modal-title { font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+    .db-modal-desc  { font-size: 13.5px; color: var(--text-muted); margin-bottom: 24px; }
+    .db-modal-actions { display: flex; gap: 10px; justify-content: center; }
+    .db-modal-actions button {
+        flex: 1;
+        padding: 11px 18px;
+        border-radius: var(--radius-sm);
+        font-size: 13.5px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .btn-cancel-modal { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border) !important; }
+    .btn-cancel-modal:hover { background: var(--border); }
+    .btn-confirm-modal { background: linear-gradient(135deg, #ef4444, #f87171); color: white; box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+    .btn-confirm-modal:hover { background: linear-gradient(135deg, #dc2626, #ef4444); }
 
-    /* Events Styling */
-    .events-container {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    .event-item {
-        background: #f8f9fa;
-        border-left: 4px solid transparent;
-        transition: all 0.3s ease;
-        border: 1px solid #e9ecef;
-    }
-
-    .event-item:hover {
-        background: #e9ecef;
-        transform: translateX(2px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .birthday-event {
-        border-left-color: #007bff;
-        background: linear-gradient(90deg, rgba(0,123,255,0.05) 0%, #f8f9fa 100%);
-    }
-
-    .birthday-event:hover {
-        background: linear-gradient(90deg, rgba(0,123,255,0.1) 0%, #e9ecef 100%);
-    }
-
-    .anniversary-event {
-        border-left-color: #28a745;
-        background: linear-gradient(90deg, rgba(40,167,69,0.05) 0%, #f8f9fa 100%);
-    }
-
-    .anniversary-event:hover {
-        background: linear-gradient(90deg, rgba(40,167,69,0.1) 0%, #e9ecef 100%);
-    }
-
-    .event-avatar img {
-        border: 2px solid #fff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .birthday-event .event-avatar img {
-        border-color: #007bff;
-    }
-
-    .anniversary-event .event-avatar img {
-        border-color: #28a745;
-    }
-
-    .event-icon {
-        font-size: 1.5rem;
-        opacity: 0.8;
-        transition: opacity 0.3s ease;
-    }
-
-    .event-item:hover .event-icon {
-        opacity: 1;
-    }
-
-    .events-container::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .events-container::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 3px;
-    }
-
-    .events-container::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 3px;
-    }
-
-    .events-container::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
-    }
+    /* ---- Empty states ---- */
+    .empty-state { text-align: center; padding: 28px 16px; }
+    .empty-state i { font-size: 2rem; color: #d1d5db; margin-bottom: 10px; }
+    .empty-state p { font-size: 13px; color: var(--text-muted); margin: 0; }
 </style>
 
-<div>
-    <div class="row">
+<div class="db-wrapper">
+    <div class="row g-3">
         @if (session('status'))
-            <div class="alert alert-success" role="alert">
-                {{ session('status') }}
+            <div class="col-12">
+                <div class="alert alert-success border-0 rounded-3 d-flex align-items-center gap-2" role="alert">
+                    <i class="fas fa-check-circle text-success"></i>
+                    {{ session('status') }}
+                </div>
             </div>
         @endif
 
         @if (\Auth::user()->type == 'employee')
-            <div class="col-xxl-9">
-                <div class="row">
-                    <div class="col-xl-12">
-                        <div class="row">
-                            <div class="col-xl-6">
-                                <div class="card">  
-                                    <div class="card-header d-flex align-items-center">
-                                        @php
-                                            $profile = \App\Models\Utility::get_file('uploads/avatar/');
-                                        @endphp
-                                        <img src="{{ !empty($emp->user->avatar) ? $profile . $emp->user->avatar : $profile . 'avatar.png' }}" 
-                                            alt="Profile Image" 
-                                            class="rounded-circle me-4 shadow-sm" 
-                                            width="60" 
-                                            height="60"
-                                            style="object-fit: cover;">
-                                        <div>
-                                            <h4 class="mb-0" style="color:black;">{{ $emp->name }}</h4>
-                                            <small style="font-size: 12px; color:black;">{{ $emp->department->name ?? 'No Department' }} Team</small><small style="font-size:16px; color:black;"> &nbsp{{ $emp->designation->name ?? 'No Designation' }}&nbsp</small><br>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <p><strong>Phone Number:<br></strong> {{ $emp->phone ?? 'N/A' }}</p><br>
-                                        <p><strong>Email Address:<br></strong> {{ $emp->email ?? 'N/A' }}</p><br>
-                                        <p><strong>Joined On:<br></strong> {{ \Carbon\Carbon::parse($emp->company_doj)->format('d M Y') }}</p>
-                                    </div>
+
+        {{-- ===== LEFT / MAIN CONTENT ===== --}}
+        <div class="col-xxl-9">
+            <div class="row g-3">
+
+                {{-- --- TOP ROW: Profile + Attendance --- --}}
+                <div class="col-lg-5">
+                    <div class="db-card h-100">
+                        {{-- Banner --}}
+                        <div class="profile-banner">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="profile-avatar-wrap">
+                                    @php $profile = \App\Models\Utility::get_file('uploads/avatar/'); @endphp
+                                    <img src="{{ !empty($emp->user->avatar) ? $profile . $emp->user->avatar : $profile . 'avatar.png' }}" alt="Profile">
+                                    <span class="profile-online-dot"></span>
+                                </div>
+                                <div>
+                                    <div class="profile-name">{{ $emp->name }}</div>
+                                    <div class="profile-role">{{ $emp->designation->name ?? 'No Designation' }}</div>
+                                    <span class="profile-dept-badge">
+                                        <i class="fas fa-layer-group me-1" style="font-size:10px;"></i>
+                                        {{ $emp->department->name ?? 'No Department' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Info rows --}}
+                        <div class="profile-info-row">
+                            <div class="profile-info-item">
+                                <div class="pi-icon"><i class="fas fa-phone"></i></div>
+                                <div>
+                                    <div class="pi-label">Phone Number</div>
+                                    <div class="pi-value">{{ $emp->phone ?? 'N/A' }}</div>
+                                </div>
+                            </div>
+                            <div class="profile-info-item">
+                                <div class="pi-icon"><i class="fas fa-envelope"></i></div>
+                                <div>
+                                    <div class="pi-label">Email Address</div>
+                                    <div class="pi-value" style="font-size:12.5px;">{{ $emp->email ?? 'N/A' }}</div>
+                                </div>
+                            </div>
+                            <div class="profile-info-item">
+                                <div class="pi-icon"><i class="fas fa-calendar-check"></i></div>
+                                <div>
+                                    <div class="pi-label">Joined On</div>
+                                    <div class="pi-value">{{ \Carbon\Carbon::parse($emp->company_doj)->format('d M Y') }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Attendance --}}
+                <div class="col-lg-7">
+                    <div class="db-card h-100">
+                        <div class="db-card-header">
+                            <div class="card-icon"><i class="fas fa-clock"></i></div>
+                            <div>
+                                <div class="card-title">Attendance</div>
+                                <div id="currentDateTime" style="font-size:11px;color:var(--text-muted);margin-top:1px;"></div>
+                            </div>
+                        </div>
+                        <div class="attendance-card-body">
+
+                            {{-- SVG Clock Ring --}}
+                            <div class="clock-ring-wrap">
+                                <svg width="160" height="160" viewBox="0 0 160 160">
+                                    <circle cx="80" cy="80" r="68" stroke="#f0f0f0" stroke-width="10" fill="none"/>
+                                    <circle id="progressCircle" cx="80" cy="80" r="68"
+                                        stroke="url(#ringGrad)" stroke-width="10" fill="none"
+                                        stroke-dasharray="427" stroke-dashoffset="427"
+                                        stroke-linecap="round"/>
+                                    <defs>
+                                        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" style="stop-color:#e8590c"/>
+                                            <stop offset="100%" style="stop-color:#ff7a3d"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="clock-inner">
+                                    <div id="progressTime" class="ct-time">00:00:00</div>
+                                    <div class="ct-label">Elapsed</div>
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
-                                <div class="card" style="height:395px;">
-                                    <div class="card-header">
-                                        <h5 style="font-size:20px;color:black">{{ __('Attendance') }}</h5>
-                                        <p id="currentDateTime"></p>
-                                    </div>
-                                    <div class="card-body text-center p-1">
-                                        <div class="progress-container">
-                                            <svg width="140" height="170" viewBox="0 0 100 100">
-                                                <circle cx="50" cy="50" r="45" stroke="#e0e0e0" stroke-width="8" fill="none"></circle>
-                                                <circle id="progressCircle" cx="50" cy="50" r="45" 
-                                                    stroke="#4CAF50" stroke-width="7" fill="none"
-                                                    stroke-dasharray="283" stroke-dashoffset="283"
-                                                    stroke-linecap="round">
-                                                </circle>
-                                                <text id="progressTime" x="50" y="55" font-size="12" text-anchor="middle" fill="#333">0:00:00</text>
-                                            </svg>
-                                        </div>
+                            {{-- Status badge --}}
+                            @php
+                                $siteVisit = \App\Models\SiteVisit::where('employee_id', $emp->id)
+                                    ->where('start_date', '<=', date('Y-m-d'))
+                                    ->where('end_date', '>=', date('Y-m-d'))
+                                    ->where('status', 'Approved')
+                                    ->first();
+                            @endphp
 
-                                        <p id="attendanceStatus" class="font-bold">
+                            <div id="attendanceStatusWrap">
+                                @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)
+                                    <span class="att-status-badge status-idle">
+                                        <i class="fas fa-fingerprint"></i> Not Punched In
+                                    </span>
+                                @else
+                                    @if ($siteVisit)
+                                        @if (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00')
+                                            <span class="att-status-badge status-warn">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                                Site Visit Pending • Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }}
+                                            </span>
+                                        @elseif (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00')
+                                            <span class="att-status-badge status-in">
+                                                <span class="live-dot"></span>
+                                                Site Visit In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in_2)->format('h:i A') }}
+                                            </span>
+                                        @else
+                                            <span class="att-status-badge status-out">
+                                                <i class="fas fa-check-circle"></i> Site Visit Completed
+                                            </span>
+                                        @endif
+                                    @else
+                                        @if ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
+                                            <span class="att-status-badge status-in">
+                                                <span class="live-dot"></span>
+                                                Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }}
+                                            </span>
+                                        @else
+                                            <span class="att-status-badge status-out">
+                                                <i class="fas fa-sign-out-alt"></i>
+                                                Punched Out at {{ \Carbon\Carbon::parse($employeeAttendance->clock_out)->format('h:i A') }}
+                                            </span>
+                                        @endif
+                                    @endif
+                                @endif
+                            </div>
+
+                            {{-- Punch Buttons --}}
+                            {{ Form::open(['url' => 'attendanceemployee/attendance', 'method' => 'post', 'id' => 'attendanceForm', 'style' => 'width:100%']) }}
+                                <input type="hidden" id="latitude"  name="latitude">
+                                <input type="hidden" id="longitude" name="longitude">
+                                <input type="hidden" id="location"  name="location">
+
+                                @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)
+                                    <button type="submit" value="0" name="in" id="clock_in" class="punch-btn punch-btn-in">
+                                        <i class="fas fa-fingerprint"></i> Punch In
+                                    </button>
+                                @elseif ($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00'))
+                                    <button type="submit" value="0" name="in" id="clock_in_2" class="punch-btn punch-btn-warn">
+                                        <i class="fas fa-map-marker-alt"></i> Site Visit In
+                                    </button>
+                                @elseif ($siteVisit && (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00'))
+                                    <button type="button" value="1" name="out" id="clock_out_2" class="punch-btn punch-btn-out" onclick="showClockOutModal()">
+                                        <i class="fas fa-map-marker-alt"></i> Site Visit Out
+                                    </button>
+                                @elseif ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
+                                    <button type="button" value="1" name="out" id="clock_out" class="punch-btn punch-btn-out" onclick="showClockOutModal()">
+                                        <i class="fas fa-sign-out-alt"></i> Punch Out
+                                    </button>
+                                @else
+                                    <button type="button" class="punch-btn punch-btn-disabled" disabled>
+                                        <i class="fas fa-check"></i> Completed for Today
+                                    </button>
+                                @endif
+                            {{ Form::close() }}
+
+                        </div>
+                    </div>
+                </div>
+
+                {{-- --- Site Visit & Leave --- --}}
+                <div class="col-lg-6 d-flex">
+                    <div class="db-card w-100" style="display:flex;flex-direction:column;">
+                        <div class="db-card-header">
+                            <div class="card-icon"><i class="fas fa-map-marked-alt"></i></div>
+                            <span class="card-title">Today's Site Visits</span>
+                        </div>
+                        <div style="height:260px;overflow-y:auto;flex:1;">
+                            @php
+                                $currentDate = date('Y-m-d');
+                                $todaySiteVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
+                                    ->where('end_date', '>=', $currentDate)
+                                    ->where('status', 'Approved')->get();
+                                $siteAttendanceEmployees = collect();
+                                if ($todaySiteVisits->count() > 0) {
+                                    $siteAttendanceEmployees = $todaySiteVisits->map(function ($visit) use ($currentDate) {
+                                        $attendance = \App\Models\AttendanceEmployee::where('employee_id', $visit->employee_id)->where('date', $currentDate)->first();
+                                        if ($attendance && !empty($attendance->clock_in) && $attendance->clock_in != '00:00:00') {
+                                            return ['employee' => $visit->employee];
+                                        }
+                                        return null;
+                                    })->filter();
+                                }
+                                $hasTodaySiteVisits = $todaySiteVisits->count() > 0;
+                            @endphp
+                            @if($hasTodaySiteVisits)
+                                <table class="db-table">
+                                    <thead>
+                                        <tr><th>Employee</th><th>Location</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($siteAttendanceEmployees as $svAtt)
                                             @php
-                                                $siteVisit = \App\Models\SiteVisit::where('employee_id', $emp->id)
+                                                $siteLocation = \App\Models\SiteVisit::where('employee_id', $svAtt['employee']->id)
                                                     ->where('start_date', '<=', date('Y-m-d'))
                                                     ->where('end_date', '>=', date('Y-m-d'))
-                                                    ->where('status', 'Approved')
-                                                    ->first();
+                                                    ->where('status', 'Approved')->value('location');
                                             @endphp
-
-                                            @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)
-                                                <span class="text-primary"><i class="fas fa-fingerprint"></i> Not Punched In</span>
-                                            @else
-                                                @if ($siteVisit)
-                                                    @if (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00')
-                                                        <span class="text-warning"><i class="fas fa-map-marker-alt"></i> Site Visit Pending (Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }})</span>
-                                                    @elseif (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00')
-                                                        <span class="text-success"><i class="fas fa-route"></i> Site Visit In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in_2)->format('h:i A') }}</span>
-                                                    @else
-                                                        <span class="text-danger"><i class="fas fa-check-circle"></i> Site Visit Completed</span>
-                                                    @endif
-                                                @else
-                                                    @if ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
-                                                        <span class="text-success"><i class="fas fa-fingerprint"></i> Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }}</span>
-                                                    @else
-                                                        <span class="text-danger"><i class="fas fa-sign-out-alt"></i> Punched Out at {{ \Carbon\Carbon::parse($employeeAttendance->clock_out)->format('h:i A') }}</span>
-                                                    @endif
-                                                @endif
-                                            @endif
-                                        </p>
-
-                                        {{ Form::open(['url' => 'attendanceemployee/attendance', 'method' => 'post', 'id' => 'attendanceForm']) }}
-                                            <!-- Hidden fields for location capture -->
-                                            <input type="hidden" id="latitude" name="latitude">
-                                            <input type="hidden" id="longitude" name="longitude">
-                                            <input type="hidden" id="location" name="location">
-                                            
-                                            @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)
-                                                <button type="submit" value="0" name="in" id="clock_in" class="btn btn-primary">{{ __('Punch In') }}</button>
-                                            @elseif ($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00'))
-                                                <button type="submit" value="0" name="in" id="clock_in_2" class="btn btn-warning">{{ __('Site Visit In') }}</button>
-                                            @elseif ($siteVisit && (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00'))
-                                                <button type="button" value="1" name="out" id="clock_out_2" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmClockOutModal">
-                                                    {{ __('Site Visit Out') }}
-                                                </button>
-                                            @elseif ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
-                                                <button type="button" value="1" name="out" id="clock_out" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmClockOutModal">
-                                                    {{ __('Punch Out') }}
-                                                </button>
-                                            @else
-                                                <button type="button" class="btn btn-secondary" disabled>{{ __('Completed') }}</button>
-                                            @endif
-                                        {{ Form::close() }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-xl-12">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header card-body table-border-style d-flex justify-content-between align-items-center">
-                                        <h5 style="font-size:20px; color:black; margin: 0;">{{ __('Notices') }}</h5>
-                                    </div>
-                                    <div class="card-body" style="height: 325px; overflow: auto; padding: 10px; padding-top:25px;">
-                                        <div class="table-responsive" style="max-width:452px;">
-                                            <table class="table table-bordered text-center">
-                                                <thead>
-                                                    <tr>
-                                                        <th style="width: 60%;">Title</th>
-                                                        <th style="width: 40%;">Date</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach($notices as $notice)
-                                                    <tr>
-                                                        <td style="word-wrap: break-word; white-space: normal;">
-                                                            {{ Str::limit($notice->title, 50, '...') }}
-                                                        </td>
-                                                        <td>
-                                                            {{ \Carbon\Carbon::parse($notice->notice_startdate)->format('d M Y') }} - 
-                                                            {{ \Carbon\Carbon::parse($notice->notice_enddate)->format('d M Y') }}
-                                                        </td>
-                                                    </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header card-body table-border-style">
-                                        <h5 style="font-size:20px;color:black">{{ __('TO-DO Lists') }}</h5>
-                                    </div>
-                                    <div class="card-body" style="height: 324px; overflow:auto;">
-                                        <div class="table-responsive"> 
-                                            <table class="table">
-                                                <thead>
-                                                    <tr>
-                                                    <th>{{ __('Task Title') }}</th>
-                                                    <th>{{ __('Priority') }}</th>
-                                                    <th>{{ __('Due Date') }}</th>
-                                                    <th>{{ __('Status') }}</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="list">
-                                                    @foreach ($todos as $todo)
-                                                        <tr>
-                                                            <td>{{ $todo->task }}</td>
-                                                            <td>
-                                                                @if($todo->priority == 1)
-                                                                    <span class="badge bg-danger">{{ __('High') }}</span>
-                                                                @elseif($todo->priority == 2)
-                                                                    <span class="badge bg-warning">{{ __('Medium') }}</span>
-                                                                @else
-                                                                    <span class="badge bg-success">{{ __('Low') }}</span>
-                                                                @endif
-                                                            </td>
-                                                            <td>{{ \Carbon\Carbon::parse($todo->expires_at)->format('d M Y') }}</td>
-                                                            <td>
-                                                                @if($todo->is_completed)
-                                                                    <span class="badge bg-success">{{ __('Completed') }}</span>
-                                                                @else
-                                                                    <span class="badge bg-danger">{{ __('Pending') }}</span>
-                                                                @endif
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Today Site Visit & Leave Section -->
-                    <div class="col-xl-12 mt-4">
-                        <div class="row">
-                            <!-- Left Card: Today Site Visit Details -->
-                            <div class="col-xl-6 col-md-6">
-                                <div class="card">
-                                    <div class="card-header card-body table-border-style d-flex justify-content-between align-items-center">
-                                        <h5 style="font-size:20px; color:black; margin: 0;">{{ __('Today Site Visit Details') }}</h5>
-                                    </div>
-                                    <div class="card-body" style="max-height: 400px; overflow: auto; padding: 10px; padding-top:25px;">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered text-center">
-                                                <thead>
-                                                    <tr>
-                                                        <th>{{ __('Employee') }}</th>
-                                                        <th>{{ __('Location') }}</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @php
-                                                        $currentDate = date('Y-m-d');
-                                                        $todaySiteVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
-                                                            ->where('end_date', '>=', $currentDate)
-                                                            ->where('status', 'Approved')
-                                                            ->get();
-
-                                                        $siteAttendanceEmployees = collect();
-                                                        if ($todaySiteVisits->count() > 0) {
-                                                            $siteAttendanceEmployees = $todaySiteVisits->map(function ($visit) use ($currentDate) {
-                                                                $attendance = \App\Models\AttendanceEmployee::where('employee_id', $visit->employee_id)
-                                                                    ->where('date', $currentDate)
-                                                                    ->first();
-
-                                                                if ($attendance && !empty($attendance->clock_in) && $attendance->clock_in != '00:00:00') {
-                                                                    return [
-                                                                        'employee' => $visit->employee,
-                                                                    ];
-                                                                }
-                                                                return null;
-                                                            })->filter();
-                                                        }
-                                                        
-                                                        $hasTodaySiteVisits = $todaySiteVisits->count() > 0;
-                                                    @endphp
-
-                                                    @if($hasTodaySiteVisits)
-                                                        @foreach ($siteAttendanceEmployees as $attendance)
-                                                            @php
-                                                                $siteLocation = \App\Models\SiteVisit::where('employee_id', $attendance['employee']->id)
-                                                                    ->where('start_date', '<=', date('Y-m-d'))
-                                                                    ->where('end_date', '>=', date('Y-m-d'))
-                                                                    ->where('status', 'Approved')
-                                                                    ->value('location');
-                                                            @endphp
-                                                            <tr>
-                                                                <td>{{ $attendance['employee']->name ?? 'Unknown' }}</td>
-                                                                <td>{{ $siteLocation ?? '--:--' }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                        
-                                                        {{-- Also show those who are scheduled but haven't clocked in --}}
-                                                        @php
-                                                            $presentIds = $siteAttendanceEmployees->pluck('employee.id')->toArray();
-                                                            $pendingVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
-                                                                ->where('end_date', '>=', $currentDate)
-                                                                ->where('status', 'Approved')
-                                                                ->whereNotIn('employee_id', $presentIds)
-                                                                ->get();
-                                                        @endphp
-                                                        
-                                                        @foreach ($pendingVisits as $visit)
-                                                            <tr>
-                                                                <td>{{ $visit->employee->name ?? 'Unknown' }}</td>
-                                                                <td>{{ $visit->location ?? '--:--' }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    @else
-                                                        <tr>
-                                                            <td colspan="2">{{ __('No site visits scheduled for today.') }}</td>
-                                                        </tr>
-                                                    @endif
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Right Card: Today's Leave Employees -->
-                            <div class="col-xl-6 col-md-6">
-                                <div class="card">
-                                    <div class="card-header card-body table-border-style d-flex justify-content-between align-items-center">
-                                        <h5 style="font-size:20px; color:black; margin: 0;">{{ __("Today's Leave Employees") }}</h5>
-                                    </div>
-                                    <div class="card-body" style="max-height: 400px; overflow: auto; padding: 10px; padding-top:25px;">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered text-center">
-                                                <thead>
-                                                    <tr>
-                                                        <th style="padding-left: 20px;">{{ __('Employee Name') }}</th>
-                                                        <th>{{ __('Leave Type') }}</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @forelse ($todayLeaveEmployees as $leave)
-                                                        <tr>
-                                                            <td>{{ $leave->employees->name ?? 'N/A' }}</td>
-                                                            <td>{{ $leave->leaveType->title ?? 'N/A' }}</td>
-                                                        </tr>
-                                                    @empty
-                                                        <tr>
-                                                            <td colspan="2">{{ __('No employees are on leave today') }}</td>
-                                                        </tr>
-                                                    @endforelse
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Right Side Calendar -->
-            <div class="col-xxl-3">
-                <div class="d-flex flex-column gap-2 sticky-top" style="top: 10px; height: 100vh;">
-                    
-                    <div class="card flex-grow-1">
-                        <div class="card-header">
-                            <h5 style="font-size:20px;color:black">{{ __("This Month Event's") }}</h5>
-                        </div>
-                        <div class="card-body">
-                            @if(isset($monthlyEvents) && count($monthlyEvents) > 0)
-                                <div class="events-container">
-                                    @foreach($monthlyEvents as $event)
-                                        <div class="event-item d-flex align-items-center mb-3 p-2 rounded {{ $event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event' }}">
-                                            <div class="event-avatar me-3">
-                                                <img src="{{ asset('storage/uploads/avatar/' . $event['avatar']) }}" 
-                                                     alt="{{ $event['employee_name'] }}" 
-                                                     class="rounded-circle" 
-                                                     width="45" 
-                                                     height="45"
-                                                     onerror="this.src='{{ asset('storage/avatars/avatar.png') }}'">
-                                            </div>
-                                            <div class="event-details flex-grow-1">
-                                                <h6 class="mb-1 fw-bold">{{ $event['employee_name'] }}</h6>
-                                                <p class="mb-1 {{ $event['type'] == 'birthday' ? 'text-primary' : 'text-success' }} fw-semibold">
-                                                    {{ $event['message'] }}
-                                                </p>
-                                                <small class="text-muted">
-                                                    <i class="fas fa-calendar-alt me-1"></i>{{ $event['date'] }} • 
-                                                    <i class="fas fa-building me-1"></i>{{ $event['department'] }}
-                                                </small>
-                                            </div>
-                                            <div class="event-icon">
-                                                @if($event['type'] == 'birthday')
-                                                    <div class="birthday-icon">
-                                                        <i class="fas fa-birthday-cake text-primary"></i>
-                                                    </div>
-                                                @else
-                                                    <div class="anniversary-icon">
-                                                        <i class="fas fa-award text-success"></i>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
+                                            <tr>
+                                                <td><i class="fas fa-user-circle text-muted me-1"></i>{{ $svAtt['employee']->name ?? 'Unknown' }}</td>
+                                                <td style="font-size:12px;color:var(--text-muted);">{{ $siteLocation ?? '--' }}</td>
+                                            </tr>
+                                        @endforeach
+                                        @php
+                                            $presentIds = $siteAttendanceEmployees->pluck('employee.id')->toArray();
+                                            $pendingVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
+                                                ->where('end_date', '>=', $currentDate)
+                                                ->where('status', 'Approved')
+                                                ->whereNotIn('employee_id', $presentIds)->get();
+                                        @endphp
+                                        @foreach($pendingVisits as $visit)
+                                            <tr>
+                                                <td><i class="fas fa-user-circle text-muted me-1"></i>{{ $visit->employee->name ?? 'Unknown' }}</td>
+                                                <td style="font-size:12px;color:var(--text-muted);">{{ $visit->location ?? '--' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             @else
-                                <div class="text-center py-4">
-                                    <i class="fas fa-calendar-times text-muted mb-3" style="font-size: 2rem;"></i>
-                                    <p class="text-muted mb-0">No events this month</p>
-                                    <small class="text-muted">Check back next month for upcoming celebrations!</small>
+                                <div class="empty-state">
+                                    <i class="fas fa-map-signs d-block"></i>
+                                    <p>No site visits today</p>
                                 </div>
                             @endif
                         </div>
                     </div>
-                    
-                    <div class="card flex-grow-1">
-                        <div class="card-header">
-                            <div class="row">
-                                <div class="col-lg-6">
-                                    <h5>{{ __('Calendar') }}</h5>
-                                    <!-- <input type="hidden" id="path_admin" value="{{ url('/') }}"> -->
-                                </div>
-                                
-                            </div>
+                </div>
+
+                <div class="col-lg-6 d-flex">
+                    <div class="db-card w-100" style="display:flex;flex-direction:column;">
+                        <div class="db-card-header">
+                            <div class="card-icon"><i class="fas fa-user-clock"></i></div>
+                            <span class="card-title">Today's Leave</span>
                         </div>
-                        <div class="card-body" style="padding-top:0px;">
-                            <div id='calendar' class='calendar'></div>
+                        <div style="height:260px;overflow-y:auto;flex:1;">
+                            @if(isset($todayLeaveEmployees) && $todayLeaveEmployees->count() > 0)
+                                <table class="db-table">
+                                    <thead>
+                                        <tr><th>Employee</th><th>Leave Type</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($todayLeaveEmployees as $leave)
+                                        <tr>
+                                            <td><i class="fas fa-user-circle text-muted me-1"></i>{{ $leave->employees->name ?? 'N/A' }}</td>
+                                            <td style="font-size:12px;">
+                                                <span class="prio-high">{{ $leave->leaveType->title ?? 'N/A' }}</span>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @else
+                                <div class="empty-state">
+                                    <i class="fas fa-umbrella-beach d-block"></i>
+                                    <p>No employees on leave today</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
+
+                {{-- --- Notices & TO-DO --- --}}
+                <div class="col-lg-6 d-flex">
+                    <div class="db-card w-100" style="display:flex;flex-direction:column;">
+                        <div class="db-card-header">
+                            <div class="card-icon"><i class="fas fa-bullhorn"></i></div>
+                            <span class="card-title">Notices</span>
+                        </div>
+                        <div style="height:260px; overflow-y:auto;flex:1;">
+                            @if(isset($notices) && $notices->count() > 0)
+                                <table class="db-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($notices as $notice)
+                                        <tr>
+                                            <td>{{ Str::limit($notice->title, 40, '...') }}</td>
+                                            <td style="white-space:nowrap;font-size:12px;color:var(--text-muted);">
+                                                {{ \Carbon\Carbon::parse($notice->notice_startdate)->format('d M') }}
+                                                –
+                                                {{ \Carbon\Carbon::parse($notice->notice_enddate)->format('d M Y') }}
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @else
+                                <div class="empty-state">
+                                    <i class="fas fa-bell-slash d-block"></i>
+                                    <p>No notices right now</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 d-flex">
+                    <div class="db-card w-100" style="display:flex;flex-direction:column;">
+                        <div class="db-card-header">
+                            <div class="card-icon"><i class="fas fa-tasks"></i></div>
+                            <span class="card-title">TO-DO Lists</span>
+                        </div>
+                        <div style="height:260px; overflow-y:auto;flex:1;">
+                            @if(isset($todos) && $todos->count() > 0)
+                                <table class="db-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Task</th>
+                                            <th>Priority</th>
+                                            <th>Due</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($todos as $todo)
+                                        <tr>
+                                            <td>{{ Str::limit($todo->task, 28, '...') }}</td>
+                                            <td>
+                                                @if($todo->priority == 1)
+                                                    <span class="prio-high">High</span>
+                                                @elseif($todo->priority == 2)
+                                                    <span class="prio-medium">Medium</span>
+                                                @else
+                                                    <span class="prio-low">Low</span>
+                                                @endif
+                                            </td>
+                                            <td style="font-size:12px;color:var(--text-muted);white-space:nowrap;">
+                                                {{ \Carbon\Carbon::parse($todo->expires_at)->format('d M Y') }}
+                                            </td>
+                                            <td>
+                                                @if($todo->is_completed)
+                                                    <span class="status-done">Done</span>
+                                                @else
+                                                    <span class="status-pend">Pending</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @else
+                                <div class="empty-state">
+                                    <i class="fas fa-clipboard-list d-block"></i>
+                                    <p>No tasks found</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
             </div>
-        @endif
+        </div>
+
+        {{-- ===== RIGHT SIDEBAR ===== --}}
+        <div class="col-xxl-3">
+            <div class="d-flex flex-column gap-3 sticky-top" style="top:12px;">
+
+                {{-- Events --}}
+                <div class="db-card">
+                    <div class="db-card-header">
+                        <div class="card-icon"><i class="fas fa-star"></i></div>
+                        <span class="card-title">This Month's Events</span>
+                    </div>
+                    <div class="db-card-body pt-2 pb-3 px-3">
+                        @if(isset($monthlyEvents) && count($monthlyEvents) > 0)
+                            <div class="events-scroll">
+                                @foreach($monthlyEvents as $event)
+                                <div class="event-item-new {{ $event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event' }}">
+                                    <div class="event-avatar-new">
+                                        <img src="{{ asset('storage/uploads/avatar/' . $event['avatar']) }}"
+                                             alt="{{ $event['employee_name'] }}"
+                                             onerror="this.src='{{ asset('storage/avatars/avatar.png') }}'">
+                                    </div>
+                                    <div class="flex-grow-1" style="min-width:0;">
+                                        <div class="event-name">{{ $event['employee_name'] }}</div>
+                                        <div class="event-msg {{ $event['type'] == 'birthday' ? 'birthday-msg' : 'anniversary-msg' }}">
+                                            {{ $event['message'] }}
+                                        </div>
+                                        <div class="event-meta">
+                                            <i class="fas fa-calendar-alt me-1"></i>{{ $event['date'] }}
+                                            &bull;
+                                            <i class="fas fa-building me-1"></i>{{ $event['department'] }}
+                                        </div>
+                                    </div>
+                                    <div class="event-badge {{ $event['type'] == 'birthday' ? 'birthday-badge' : 'anniversary-badge' }}">
+                                        @if($event['type'] == 'birthday')
+                                            🎂
+                                        @else
+                                            🏆
+                                        @endif
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-times d-block"></i>
+                                <p>No events this month</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Calendar --}}
+                <div class="db-card">
+                    <div class="db-card-header">
+                        <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <span class="card-title">Calendar</span>
+                    </div>
+                    <div class="db-card-body" style="padding:12px;">
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        @endif {{-- end employee check --}}
     </div>
 </div>
 
-<!-- Bootstrap Modal -->
-<div class="modal fade" id="confirmClockOutModal" tabindex="-1" aria-labelledby="confirmClockOutModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmClockOutModalLabel">Confirm Clock Out</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Are you sure you want to clock out?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmClockOutBtn">Yes, Clock Out</button>
-            </div>
+{{-- ===== Custom Modal ===== --}}
+<div class="db-modal-overlay" id="clockOutModal">
+    <div class="db-modal-box">
+        <div class="db-modal-icon">
+            <i class="fas fa-sign-out-alt"></i>
+        </div>
+        <div class="db-modal-title">Confirm Punch Out</div>
+        <div class="db-modal-desc">Are you sure you want to punch out? Your working hours will be recorded.</div>
+        <div class="db-modal-actions">
+            <button class="btn-cancel-modal" onclick="hideClockOutModal()">Cancel</button>
+            <button class="btn-confirm-modal" id="confirmClockOutBtn">Yes, Punch Out</button>
         </div>
     </div>
 </div>
+
 @endsection
 
 @push('script-page')
@@ -534,31 +909,15 @@
 
     @if (Auth::user()->type == 'employee')
     <script type="text/javascript">
-    $(document).ready(function() {
-        get_data();
-    });
-
+    $(document).ready(function() { get_data(); });
     function get_data() {
-        var calender_type = $('#calender_type :selected').val();
-
-        $('#calendar').removeClass('local_calender google_calender');
-        if (!calender_type) {
-            calender_type = 'local_calender';
-        }
-        $('#calendar').addClass(calender_type);
-
+        var calender_type = 'local_calender';
+        $('#calendar').removeClass('local_calender google_calender').addClass(calender_type);
         $.ajax({
-            data: {
-                "_token": "{{ csrf_token() }}",
-                'calender_type': calender_type
-            },
+            data: { "_token": "{{ csrf_token() }}", 'calender_type': calender_type },
             success: function(data) {
                 var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-                    headerToolbar: {
-                        left: 'prev',
-                        center: 'title',
-                        right: 'next'
-                    },
+                    headerToolbar: { left: 'prev', center: 'title', right: 'next' },
                     themeSystem: 'bootstrap',
                     slotDuration: '00:10:00',
                     allDaySlot: true,
@@ -569,7 +928,7 @@
                     editable: true,
                     dayMaxEvents: true,
                     handleWindowResize: true,
-                    height: '360px',
+                    height: '320px',
                 });
                 calendar.render();
             }
@@ -579,166 +938,178 @@
     @endif
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            let progressCircle = document.getElementById("progressCircle");
-            let progressTime = document.getElementById("progressTime");
-            let clockInButton = document.getElementById("clock_in");
-            let clockIn2Button = document.getElementById("clock_in_2");
-            let clockOutButton = document.getElementById("clock_out");
-            let clockOut2Button = document.getElementById("clock_out_2");
-            let currentTimeElement = document.getElementById("currentDateTime");
-            let confirmClockOutBtn = document.getElementById("confirmClockOutBtn");
-            let attendanceStatus = document.getElementById("attendanceStatus");
+    // Modal helpers
+    function showClockOutModal() {
+        document.getElementById('clockOutModal').classList.add('active');
+    }
+    function hideClockOutModal() {
+        document.getElementById('clockOutModal').classList.remove('active');
+    }
+    document.getElementById('clockOutModal')?.addEventListener('click', function(e) {
+        if (e.target === this) hideClockOutModal();
+    });
 
-            function isNewDay() {
-                const lastClockOutDate = localStorage.getItem("lastClockOutDate");
-                if (!lastClockOutDate) return false;
-                const today = new Date().toLocaleDateString();
-                return lastClockOutDate !== today;
+    document.addEventListener("DOMContentLoaded", function () {
+        const CIRCUMFERENCE = 427; // 2 * PI * 68
+        let progressCircle = document.getElementById("progressCircle");
+        let progressTime   = document.getElementById("progressTime");
+        let clockInButton  = document.getElementById("clock_in");
+        let clockIn2Button = document.getElementById("clock_in_2");
+        let confirmClockOutBtn = document.getElementById("confirmClockOutBtn");
+        let currentTimeEl  = document.getElementById("currentDateTime");
+
+        function isNewDay() {
+            const last = localStorage.getItem("lastClockOutDate");
+            if (!last) return false;
+            return last !== new Date().toLocaleDateString();
+        }
+        if (isNewDay()) {
+            localStorage.removeItem("clockInTime");
+            localStorage.removeItem("clockOutTime");
+            localStorage.removeItem("isPunchedOut");
+        }
+
+        let clockInTime  = localStorage.getItem("clockInTime")  && !isNewDay() ? new Date(localStorage.getItem("clockInTime"))  : null;
+        let clockOutTime = localStorage.getItem("clockOutTime") && !isNewDay() ? new Date(localStorage.getItem("clockOutTime")) : null;
+        let isPunchedOut = localStorage.getItem("isPunchedOut") === "true" && !isNewDay();
+
+        @if(isset($employeeAttendance) && $employeeAttendance->clock_in)
+            @php
+                $clockInDate = \Carbon\Carbon::parse(($employeeAttendance->date ?? date('Y-m-d')) . ' ' . $employeeAttendance->clock_in);
+            @endphp
+            clockInTime = new Date({{ $clockInDate->year }}, {{ $clockInDate->month - 1 }}, {{ $clockInDate->day }}, {{ $clockInDate->hour }}, {{ $clockInDate->minute }}, {{ $clockInDate->second }});
+            localStorage.setItem("clockInTime", clockInTime.toISOString());
+        @else
+            clockInTime = null;
+            localStorage.removeItem("clockInTime");
+        @endif
+
+        @if(isset($employeeAttendance) && $employeeAttendance->clock_out && $employeeAttendance->clock_out !== '00:00:00')
+            @php
+                $clockOutDate = \Carbon\Carbon::parse(($employeeAttendance->date ?? date('Y-m-d')) . ' ' . $employeeAttendance->clock_out);
+            @endphp
+            clockOutTime = new Date({{ $clockOutDate->year }}, {{ $clockOutDate->month - 1 }}, {{ $clockOutDate->day }}, {{ $clockOutDate->hour }}, {{ $clockOutDate->minute }}, {{ $clockOutDate->second }});
+            localStorage.setItem("clockOutTime", clockOutTime.toISOString());
+            localStorage.setItem("isPunchedOut", "true");
+            localStorage.setItem("lastClockOutDate", new Date().toLocaleDateString());
+            isPunchedOut = true;
+        @else
+            clockOutTime = null;
+            isPunchedOut = false;
+            localStorage.removeItem("clockOutTime");
+            localStorage.removeItem("isPunchedOut");
+            localStorage.removeItem("lastClockOutDate");
+        @endif
+
+        function updateTimeDisplay() {
+            if (!currentTimeEl) return;
+            currentTimeEl.textContent = new Date().toLocaleString("en-US", {
+                hour: "2-digit", minute: "2-digit", second: "2-digit",
+                hour12: true, day: "2-digit", month: "short", year: "numeric"
+            });
+        }
+
+        function updateProgress() {
+            if (!clockInTime || !progressCircle) return;
+            let elapsedSeconds;
+            if (clockOutTime) {
+                elapsedSeconds = Math.floor((clockOutTime - clockInTime) / 1000);
+            } else {
+                elapsedSeconds = Math.floor((new Date() - clockInTime) / 1000);
             }
+            elapsedSeconds = Math.max(0, Math.min(elapsedSeconds, 10 * 60 * 60));
+            let percentage = elapsedSeconds / (10 * 60 * 60);
+            progressCircle.style.strokeDashoffset = CIRCUMFERENCE - (percentage * CIRCUMFERENCE);
 
-            if (isNewDay()) {
-                localStorage.removeItem("clockInTime");
-                localStorage.removeItem("clockOutTime");
-                localStorage.removeItem("isPunchedOut");
+            let h = Math.floor(elapsedSeconds / 3600);
+            let m = Math.floor((elapsedSeconds % 3600) / 60);
+            let s = elapsedSeconds % 60;
+            if (progressTime) {
+                progressTime.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
             }
+        }
 
-            let clockInTime = localStorage.getItem("clockInTime") && !isNewDay() ? new Date(localStorage.getItem("clockInTime")) : null;
-            let clockOutTime = localStorage.getItem("clockOutTime") && !isNewDay() ? new Date(localStorage.getItem("clockOutTime")) : null;
-            let isPunchedOut = localStorage.getItem("isPunchedOut") === "true" && !isNewDay();
+        updateTimeDisplay();
+        updateProgress();
+        setInterval(updateTimeDisplay, 1000);
+        if (!isPunchedOut) setInterval(updateProgress, 1000);
 
-            @if(isset($employeeAttendance) && $employeeAttendance->clock_in)
-                if (!clockInTime) {
-                    clockInTime = new Date("{{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->toIso8601String() }}");
-                    localStorage.setItem("clockInTime", clockInTime.toISOString());
-                }
-            @endif
+        // Geolocation
+        let prefetchedLocation = null;
+        let lastPrefetchTime = 0;
 
-            @if(isset($employeeAttendance) && $employeeAttendance->clock_out && $employeeAttendance->clock_out !== '00:00:00')
-                if (!clockOutTime) {
-                    clockOutTime = new Date("{{ \Carbon\Carbon::parse($employeeAttendance->clock_out)->toIso8601String() }}");
-                    localStorage.setItem("clockOutTime", clockOutTime.toISOString());
-                    localStorage.setItem("isPunchedOut", "true");
-                    localStorage.setItem("lastClockOutDate", new Date().toLocaleDateString());
-                    isPunchedOut = true;
-                }
-            @endif
-
-            function updateTimeDisplay() {
-                let now = new Date();
-                currentTimeElement.textContent = now.toLocaleString("en-US", {
-                    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true, day: "2-digit", month: "short", year: "numeric"
+        async function startLocationPrefetching() {
+            if (!navigator.geolocation) return;
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 60000
+                    });
                 });
+                prefetchedLocation = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy
+                };
+                lastPrefetchTime = Date.now();
+                if(document.getElementById('latitude'))  document.getElementById('latitude').value  = position.coords.latitude;
+                if(document.getElementById('longitude')) document.getElementById('longitude').value = position.coords.longitude;
+            } catch (e) {
+                console.warn("Pre-fetch failed:", e.message);
             }
+        }
+        startLocationPrefetching();
 
-            function updateProgress() {
-                if (!clockInTime) {
-                    progressCircle.style.strokeDashoffset = 283;
-                    progressTime.textContent = "0:00:00";
+        function getLocation(options) {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error("Geolocation not supported"));
                     return;
                 }
-                
-                let elapsedSeconds;
-                if (clockOutTime) {
-                    elapsedSeconds = Math.floor((clockOutTime - clockInTime) / 1000);
-                } else {
-                    let now = new Date();
-                    elapsedSeconds = Math.floor((now - clockInTime) / 1000);
-                }
+                const timeoutId = setTimeout(() => {
+                    reject(new Error("Location request timed out"));
+                }, (options.timeout || 10000) + 2000);
 
-                elapsedSeconds = Math.min(elapsedSeconds, 10 * 60 * 60);
-                let percentage = (elapsedSeconds / (10 * 60 * 60)) * 100;
-                progressCircle.style.strokeDashoffset = 283 - (percentage * 283) / 100;
-
-                let hours = Math.floor(elapsedSeconds / 3600);
-                let minutes = Math.floor((elapsedSeconds % 3600) / 60);
-                let seconds = elapsedSeconds % 60;
-                progressTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
-
-            function updateUI() {
-                if (clockOutButton && isPunchedOut && clockOutTime) {
-                    clockOutButton.disabled = true;
-                    clockOutButton.classList.add("opacity-50", "cursor-not-allowed");
-                }
-            }
-
-            updateTimeDisplay();
-            updateUI();
-            updateProgress();
-            setInterval(updateTimeDisplay, 1000);
-            if (!isPunchedOut) setInterval(updateProgress, 1000);
-
-            // ================= PROFESSIONAL GEOLOCATION SYSTEM =================
-            let preFetchedLocation = null;
-
-            function preFetchLocation() {
-                if (!navigator.geolocation) return;
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => { 
-                        preFetchedLocation = pos;
-                        if(document.getElementById('latitude')) document.getElementById('latitude').value = pos.coords.latitude;
-                        if(document.getElementById('longitude')) document.getElementById('longitude').value = pos.coords.longitude;
-                    },
-                    (err) => { console.log("Pre-fetch background check:", err.code); },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 } // Allow 5-min old location
-                );
-            }
-            preFetchLocation();
-
-            function handleAttendanceAction(action, button) {
-                const originalText = button.innerText;
-                button.disabled = true;
-                button.innerText = "Verifying Location...";
-
-                // Strategy 1: Use pre-fetched location if fresh (< 2 mins)
-                if (preFetchedLocation && (new Date() - preFetchedLocation.timestamp < 120000)) {
-                    console.log("Using fresh pre-fetched location");
-                    submitWithLocation(preFetchedLocation, action);
-                    return;
-                }
-
-                // Strategy 2: High Accuracy Request
-                const options = { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 };
-                
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => { submitWithLocation(pos, action); },
-                    (err) => {
-                        console.log("High accuracy failed, trying network fallback...", err.code);
-                        // Strategy 3: Network-based fallback (much faster/reliable indoors)
-                        navigator.geolocation.getCurrentPosition(
-                            (pos) => { submitWithLocation(pos, action); },
-                            (err2) => {
-                                 button.disabled = false;
-                                 button.innerText = originalText;
-                                 let msg = "Location error: ";
-                                 if (err2.code === 1) {
-                                     // Developer Fallback for localhost testing
-                                     if(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                                         if(confirm("Browser blocked location on localhost (Insecure Origin). \n\nWould you like to use a 'Test Location' (Pune) to verify the Clock-In process works?")) {
-                                             submitWithLocation({coords: {latitude: 18.5204, longitude: 73.8567, accuracy: 0}}, action);
-                                             return;
-                                         }
-                                     }
-                                     msg += "Permission Denied. Please ensure you are using HTTPS and have allowed location in browser settings.";
-                                 } else if (err2.code === 3) {
-                                     msg += "Request timed out. Move to a window or check internet.";
-                                 } else {
-                                     msg += "Please ensure GPS is on and try again.";
-                                 }
-                                 alert(msg);
-                            },
-                            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-                        );
-                    },
+                    (pos) => { clearTimeout(timeoutId); resolve(pos); },
+                    (err) => { clearTimeout(timeoutId); reject(err); },
                     options
                 );
-            }
+            });
+        }
 
-            function submitWithLocation(position, action) {
-                document.getElementById('latitude').value = position.coords.latitude;
-                document.getElementById('longitude').value = position.coords.longitude;
-                document.getElementById('location').value = "GPS Fixed (" + position.coords.accuracy.toFixed(0) + "m)";
+        async function captureGPSLocation() {
+            if (prefetchedLocation && (Date.now() - lastPrefetchTime < 120000)) {
+                return prefetchedLocation;
+            }
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const position = await getLocation({ enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 });
+                    resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy || 100 });
+                } catch (error) {
+                    try {
+                        const position = await getLocation({ enableHighAccuracy: false, timeout: 7000, maximumAge: 60000 });
+                        resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy || 200 });
+                    } catch (err2) {
+                        reject(new Error('Location could not be captured. Please ensure GPS is enabled and permission is granted.'));
+                    }
+                }
+            });
+        }
+
+        async function handleAttendanceAction(action, button) {
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Verifying Location...';
+
+            try {
+                const loc = await captureGPSLocation();
+                
+                document.getElementById('latitude').value  = loc.latitude;
+                document.getElementById('longitude').value = loc.longitude;
+                document.getElementById('location').value  = "GPS Fixed (" + loc.accuracy.toFixed(0) + "m)";
                 
                 if (action === 'punch_in') {
                     localStorage.setItem("clockInTime", new Date().toISOString());
@@ -746,40 +1117,40 @@
                     localStorage.setItem("isPunchedOut", "true");
                     localStorage.setItem("lastClockOutDate", new Date().toLocaleDateString());
                 }
-
+                
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
                 document.getElementById('attendanceForm').submit();
+                
+                // Add safety timeout to prevent stuck button if submit hangs
+                setTimeout(() => {
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = originalText;
+                    }
+                }, 5000);
+            } catch (error) {
+                button.disabled = false;
+                button.innerHTML = originalText;
+                
+                if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                    if(confirm("Browser blocked location on localhost.\n\nUse test location (Pune)?")) {
+                        document.getElementById('latitude').value  = 18.5204;
+                        document.getElementById('longitude').value = 73.8567;
+                        document.getElementById('location').value  = "GPS Fixed (Test)";
+                        document.getElementById('attendanceForm').submit();
+                        return;
+                    }
+                }
+                alert(error.message || "Location error. Please allow location access and try again.");
             }
+        }
 
-            // Event Listeners
-            if (clockInButton) clockInButton.addEventListener("click", (e) => { e.preventDefault(); handleAttendanceAction('punch_in', clockInButton); });
-            if (clockIn2Button) clockIn2Button.addEventListener("click", (e) => { e.preventDefault(); handleAttendanceAction('site_in', clockIn2Button); });
-            if (confirmClockOutBtn) confirmClockOutBtn.addEventListener("click", () => { handleAttendanceAction('punch_out', confirmClockOutBtn); });
+        if (clockInButton)  clockInButton.addEventListener("click",  (e) => { e.preventDefault(); handleAttendanceAction('punch_in', clockInButton); });
+        if (clockIn2Button) clockIn2Button.addEventListener("click",  (e) => { e.preventDefault(); handleAttendanceAction('site_in', clockIn2Button); });
+        if (confirmClockOutBtn) confirmClockOutBtn.addEventListener("click", () => {
+            hideClockOutModal();
+            handleAttendanceAction('punch_out', confirmClockOutBtn);
         });
+    });
     </script>
-
-    @endpush
-
-<style>
-/* Simple modal styling */
-#confirmClockOutModal {
-    display: none;
-}
-
-#confirmClockOutModal.show {
-    display: block !important;
-}
-
-.modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1040;
-}
-
-#confirmClockOutBtn {
-    min-width: 120px;
-}
-</style>
+@endpush

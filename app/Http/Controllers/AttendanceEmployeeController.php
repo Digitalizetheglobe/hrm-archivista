@@ -39,8 +39,8 @@ class AttendanceEmployeeController extends Controller
         $isLate = false;
         
         // Calculate late time (after 10:10 AM)
-        if (strtotime($clockIn) > strtotime($date . ' ' . $lateMarkTime)) {
-            $totalLateSeconds = strtotime($clockIn) - strtotime($date . ' ' . $lateMarkTime);
+        if (strtotime($date . ' ' . $clockIn) > strtotime($date . ' ' . $lateMarkTime)) {
+            $totalLateSeconds = strtotime($date . ' ' . $clockIn) - strtotime($date . ' ' . $lateMarkTime);
             $hours = floor($totalLateSeconds / 3600);
             $mins = floor($totalLateSeconds / 60 % 60);
             $secs = floor($totalLateSeconds % 60);
@@ -91,7 +91,7 @@ class AttendanceEmployeeController extends Controller
             }
         } else {
             // Calculate total worked hours
-            $workedSeconds = strtotime($clockOut) - strtotime($clockIn);
+            $workedSeconds = strtotime($date . ' ' . $clockOut) - strtotime($date . ' ' . $clockIn);
             $workedHours = $workedSeconds / 3600;
             
             // Determine status based on worked hours and timing
@@ -108,14 +108,14 @@ class AttendanceEmployeeController extends Controller
             
             // Calculate early leaving and overtime
             $endTime = Utility::getValByName('company_end_time');
-            if (strtotime($clockOut) < strtotime($date . ' ' . $endTime)) {
-                $totalEarlyLeavingSeconds = strtotime($date . ' ' . $endTime) - strtotime($clockOut);
+            if (strtotime($date . ' ' . $clockOut) < strtotime($date . ' ' . $endTime)) {
+                $totalEarlyLeavingSeconds = strtotime($date . ' ' . $endTime) - strtotime($date . ' ' . $clockOut);
                 $hours = floor($totalEarlyLeavingSeconds / 3600);
                 $mins = floor($totalEarlyLeavingSeconds / 60 % 60);
                 $secs = floor($totalEarlyLeavingSeconds % 60);
                 $earlyLeaving = sprintf('%02d:%02d:%02d', $hours, $mins, $secs);
-            } elseif (strtotime($clockOut) > strtotime($date . ' ' . $endTime)) {
-                $totalOvertimeSeconds = strtotime($clockOut) - strtotime($date . ' ' . $endTime);
+            } elseif (strtotime($date . ' ' . $clockOut) > strtotime($date . ' ' . $endTime)) {
+                $totalOvertimeSeconds = strtotime($date . ' ' . $clockOut) - strtotime($date . ' ' . $endTime);
                 $hours = floor($totalOvertimeSeconds / 3600);
                 $mins = floor($totalOvertimeSeconds / 60 % 60);
                 $secs = floor($totalOvertimeSeconds % 60);
@@ -817,6 +817,12 @@ class AttendanceEmployeeController extends Controller
                     $out     = 'out-' . $employee;
                     $atte[]  = $present;
                     if ($request->$present == 'on') {
+                        $attendance = AttendanceEmployee::where('employee_id', '=', $employee)->where('date', '=', $request->date)->first();
+
+                        // If an attendance record already exists, skip it completely.
+                        if (!empty($attendance)) {
+                            continue;
+                        }
 
                         $in  = date("H:i:s", strtotime($request->$in));
                         $out = date("H:i:s", strtotime($request->$out));
@@ -824,16 +830,9 @@ class AttendanceEmployeeController extends Controller
                         // Use new attendance calculation logic
                         $attendanceData = $this->calculateAttendanceStatus($in, $out, $request->date);
 
-                        $attendance = AttendanceEmployee::where('employee_id', '=', $employee)->where('date', '=', $request->date)->first();
-
-                        if (!empty($attendance)) {
-                            $employeeAttendance = $attendance;
-                        } else {
-                            $employeeAttendance              = new AttendanceEmployee();
-                            $employeeAttendance->employee_id = $employee;
-                            $employeeAttendance->created_by  = \Auth::user()->creatorId();
-                        }
-
+                        $employeeAttendance              = new AttendanceEmployee();
+                        $employeeAttendance->employee_id = $employee;
+                        $employeeAttendance->created_by  = \Auth::user()->creatorId();
                         $employeeAttendance->date          = $request->date;
                         $employeeAttendance->status        = $attendanceData['status'];
                         $employeeAttendance->clock_in      = $in;
@@ -868,26 +867,6 @@ class AttendanceEmployeeController extends Controller
                             'clock_out_location' => $clockOutLoc,
                         ]);
                         
-                        $employeeAttendance->save();
-                    } else {
-                        $attendance = AttendanceEmployee::where('employee_id', '=', $employee)->where('date', '=', $request->date)->first();
-
-                        if (!empty($attendance)) {
-                            $employeeAttendance = $attendance;
-                        } else {
-                            $employeeAttendance              = new AttendanceEmployee();
-                            $employeeAttendance->employee_id = $employee;
-                            $employeeAttendance->created_by  = \Auth::user()->creatorId();
-                        }
-
-                        $employeeAttendance->status        = 'Leave';
-                        $employeeAttendance->date          = $request->date;
-                        $employeeAttendance->clock_in      = '00:00:00';
-                        $employeeAttendance->clock_out     = '00:00:00';
-                        $employeeAttendance->late          = '00:00:00';
-                        $employeeAttendance->early_leaving = '00:00:00';
-                        $employeeAttendance->overtime      = '00:00:00';
-                        $employeeAttendance->total_rest    = '00:00:00';
                         $employeeAttendance->save();
                     }
                 }

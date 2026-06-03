@@ -513,9 +513,9 @@
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('allowance.index') }}">{{ __('Allowance') }}</a>
                         </li>
                         @if (\Auth::user()->type == 'company')
-                        <!-- <li class="dash-item">
+                        <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('tds.index') }}">{{ __('TDS') }}</a>
-                        </li> -->
+                        </li>
                         @endif
 
                     </ul>
@@ -524,6 +524,9 @@
             <!-- payroll-->
 
             @if (\Auth::user()->type == 'employee')
+                @php
+                    $empType = \App\Models\Employee::where('user_id', \Auth::user()->id)->value('employee_type');
+                @endphp
                 <li
                     class="dash-item dash-hasmenu {{ Request::segment(1) == 'setsalary' ? 'dash-trigger active' : '' }}">
                     <a href="#!" class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg flex items-center space-x-2"><span class="dash-micon text-white text-[30px] shadow-none" style="background: none;"><i
@@ -535,21 +538,19 @@
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
                                 href="{{ route('setsalary.show', \Illuminate\Support\Facades\Crypt::encrypt(\Auth::user()->id)) }}">{{ __('Salary') }}</a>
                         </li>
+                        @if ($empType == 'Payroll')
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('payslip.index') }}">{{ __('Payslip') }}</a>
                         </li>
+                        @endif
+                        @if ($empType == 'Contract')
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('invoice.index') }}">{{ __('Invoice') }}</a>
                         </li>
-                        <li class="dash-item">
-                            <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('deduction.index') }}">{{ __('Deduction') }}</a>
-                        </li>
-                        <li class="dash-item">
-                            <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('allowance.index') }}">{{ __('Allowance') }}</a>
-                        </li>
-                        <li class="dash-item">
+                        @endif
+                        <!-- <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('tds.index') }}">{{ __('TDS') }}</a>
-                        </li>
+                        </li> -->
                     </ul>
                 </li>
             @endif

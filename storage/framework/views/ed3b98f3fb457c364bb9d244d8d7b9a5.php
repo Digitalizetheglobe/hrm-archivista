@@ -530,9 +530,9 @@
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('allowance.index')); ?>"><?php echo e(__('Allowance')); ?></a>
                         </li>
                         <?php if(\Auth::user()->type == 'company'): ?>
-                        <!-- <li class="dash-item">
+                        <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('tds.index')); ?>"><?php echo e(__('TDS')); ?></a>
-                        </li> -->
+                        </li>
                         <?php endif; ?>
 
                     </ul>
@@ -541,6 +541,9 @@
             <!-- payroll-->
 
             <?php if(\Auth::user()->type == 'employee'): ?>
+                <?php
+                    $empType = \App\Models\Employee::where('user_id', \Auth::user()->id)->value('employee_type');
+                ?>
                 <li
                     class="dash-item dash-hasmenu <?php echo e(Request::segment(1) == 'setsalary' ? 'dash-trigger active' : ''); ?>">
                     <a href="#!" class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg flex items-center space-x-2"><span class="dash-micon text-white text-[30px] shadow-none" style="background: none;"><i
@@ -552,21 +555,19 @@
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
                                 href="<?php echo e(route('setsalary.show', \Illuminate\Support\Facades\Crypt::encrypt(\Auth::user()->id))); ?>"><?php echo e(__('Salary')); ?></a>
                         </li>
+                        <?php if($empType == 'Payroll'): ?>
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('payslip.index')); ?>"><?php echo e(__('Payslip')); ?></a>
                         </li>
+                        <?php endif; ?>
+                        <?php if($empType == 'Contract'): ?>
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('invoice.index')); ?>"><?php echo e(__('Invoice')); ?></a>
                         </li>
-                        <li class="dash-item">
-                            <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('deduction.index')); ?>"><?php echo e(__('Deduction')); ?></a>
-                        </li>
-                        <li class="dash-item">
-                            <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('allowance.index')); ?>"><?php echo e(__('Allowance')); ?></a>
-                        </li>
-                        <li class="dash-item">
+                        <?php endif; ?>
+                        <!-- <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('tds.index')); ?>"><?php echo e(__('TDS')); ?></a>
-                        </li>
+                        </li> -->
                     </ul>
                 </li>
             <?php endif; ?>

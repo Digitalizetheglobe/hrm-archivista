@@ -10,20 +10,32 @@
     @endsection
 
     @section('action-button')
-        @can('Create Employee')
-            <a href="{{ route('employee.create') }}" 
-            data-title="{{ __('Create New Employee') }}" 
-            class="btn btn-sm btn-primary flex items-center space-x-2">
-                <i class="ti ti-plus"></i>
-                <span>Create</span>
-            </a>
-        @endcan
+        <div class="d-flex align-items-center justify-content-end gap-2">
+            <!-- View Toggle Buttons -->
+            <div class="btn-group" role="group" aria-label="View Toggle">
+                <button type="button" class="btn btn-sm btn-primary active" id="btn-table-view" data-bs-toggle="tooltip" title="{{ __('Table View') }}">
+                    <i class="ti ti-list"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-card-view" data-bs-toggle="tooltip" title="{{ __('Card View') }}">
+                    <i class="ti ti-layout-grid"></i>
+                </button>
+            </div>
 
-        <a href="{{ route('employee.export') }}" 
-        class="btn btn-sm btn-primary flex items-center space-x-2">
-            <i class="ti ti-file-export"></i>
-            <span>Export</span> 
-        </a>
+            @can('Create Employee')
+                <a href="{{ route('employee.create') }}" 
+                data-title="{{ __('Create New Employee') }}" 
+                class="btn btn-sm btn-primary flex items-center space-x-2">
+                    <i class="ti ti-plus"></i>
+                    <span>Create</span>
+                </a>
+            @endcan
+
+            <a href="{{ route('employee.export') }}" 
+            class="btn btn-sm btn-primary flex items-center space-x-2">
+                <i class="ti ti-file-export"></i>
+                <span>Export</span> 
+            </a>
+        </div>
     @endsection
 
     @section('content')
@@ -87,6 +99,9 @@
                         </ul>
                     </div>
                     <div class="card-body table-border-style" style="padding:0px !important;">
+                        
+                        <!-- Table View Container -->
+                        <div id="table-view-container">
                         <table class="table" id="pc-dt-simple">
                                 <thead>
                                     <tr>
@@ -218,6 +233,138 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Card View Container -->
+                        <div id="card-view-container" style="display: none; padding: 25px; background: #f8f9fd;">
+                            <!-- Card View Controls -->
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-sm-12 col-md-6 d-flex align-items-center">
+                                    <select id="card-per-page" class="form-select form-select-sm w-auto me-2" style="padding: 0.25rem 2rem 0.25rem 0.5rem; display: inline-block;">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                    <span class="text-muted" style="font-size: 14px;">{{ __('entries per page') }}</span>
+                                </div>
+                                <div class="col-sm-12 col-md-6 d-flex justify-content-md-end mt-3 mt-md-0">
+                                    <input type="text" id="card-search" class="form-control form-control-sm" placeholder="{{ __('Search...') }}" style="max-width: 200px;">
+                                </div>
+                            </div>
+
+                            <div class="row" id="employee-card-list">
+                                @foreach ($employees as $employee)
+                                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4 employee-card-item" data-search="{{ strtolower(($employee->name ?? '') . ' ' . ($employee->email ?? '') . ' ' . \Auth::user()->employeeIdFormat($employee->employee_id) . ' ' . ($employee->department?->name ?? '') . ' ' . ($employee->designation?->name ?? '')) }}">
+                                        <div class="card shadow-sm border-0 h-100 employee-card hover-shadow transition-all">
+                                            <div class="card-body p-4 text-center">
+                                                <div class="mb-3 position-relative d-inline-block">
+                                                    <!-- Avatar Placeholder -->
+                                                    <div class="avatar-circle mx-auto d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px; border-radius: 50%; font-size: 28px; font-weight: bold; background: linear-gradient(135deg, var(--app-primary, #e8590c), #ff7b33); color: white;">
+                                                        {{ strtoupper(substr($employee->name ?? 'U', 0, 1)) }}
+                                                    </div>
+                                                    @if(($employee->user?->is_active ?? 0) == 1 && ($employee->user?->is_disable ?? 0) == 1)
+                                                        <span class="position-absolute bottom-0 end-0 p-2 bg-success border border-white rounded-circle" title="Active"></span>
+                                                    @else
+                                                        <span class="position-absolute bottom-0 end-0 p-2 bg-danger border border-white rounded-circle" title="Inactive"></span>
+                                                    @endif
+                                                </div>
+                                                
+                                                <h5 class="mb-1 font-weight-bold text-dark">{{ $employee->name ?? '-' }}</h5>
+                                                <p class="text-muted mb-2 font-14">{{ $employee->designation?->name ?? '-' }}</p>
+                                                
+                                                <div class="d-flex justify-content-center mb-3">
+                                                    @if($employee->employee_type)
+                                                        <span class="badge bg-{{ $employee->employee_type == 'Consultant' ? 'warning' : 'success' }} px-3 py-2 rounded-pill shadow-sm" style="font-size: 12px; font-weight: 600; letter-spacing: 0.5px;">
+                                                            {{ strtoupper($employee->employee_type) }}
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-secondary px-3 py-2 rounded-pill shadow-sm" style="font-size: 12px; font-weight: 600;">-</span>
+                                                    @endif
+                                                </div>
+
+                                                <div class="text-start mt-4 pt-3 border-top" style="font-size: 13px;">
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <span class="text-muted"><i class="ti ti-id me-2 text-primary"></i>EMP ID</span>
+                                                        <span class="font-weight-bold text-dark">{{ \Auth::user()->employeeIdFormat($employee->employee_id) }}</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <span class="text-muted"><i class="ti ti-mail me-2 text-primary"></i>Email</span>
+                                                        <span class="text-truncate ms-2 text-dark" title="{{ $employee->email }}" style="max-width: 150px;">{{ $employee->email ?? '-' }}</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <span class="text-muted"><i class="ti ti-building me-2 text-primary"></i>Department</span>
+                                                        <span class="text-dark">{{ $employee->department?->name ?? '-' }}</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <span class="text-muted"><i class="ti ti-map-pin me-2 text-primary"></i>Branch</span>
+                                                        <span class="text-dark">{{ $employee->branch?->name ?? '-' }}</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <span class="text-muted"><i class="ti ti-calendar me-2 text-primary"></i>Joined</span>
+                                                        <span class="text-dark">{{ \Auth::user()->dateFormat($employee->company_doj) }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Card Actions -->
+                                            <div class="card-footer bg-light border-0 p-3 d-flex justify-content-center gap-2" style="border-radius: 0 0 10px 10px;">
+                                                @can('Show Employee')
+                                                    <a href="{{ route('employee.show', \Illuminate\Support\Facades\Crypt::encrypt($employee->id)) }}" class="btn btn-sm btn-primary rounded-circle shadow-sm" data-bs-toggle="tooltip" title="{{ __('View Details') }}" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                                        <i class="ti ti-eye"></i>
+                                                    </a>
+                                                @endcan
+                                                @if (($employee->user?->is_active ?? 0) == 1 && ($employee->user?->is_disable ?? 0) == 1)
+                                                    @can('Edit Employee')
+                                                        <a href="{{ route('employee.edit', \Illuminate\Support\Facades\Crypt::encrypt($employee->id)) }}" class="btn btn-sm btn-info rounded-circle shadow-sm" data-bs-toggle="tooltip" title="{{ __('Edit') }}" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                                            <i class="ti ti-pencil text-white"></i>
+                                                        </a>
+                                                    @endcan
+                                                    @if($employee->employee_type == 'Consultant' || $employee->employee_type == 'Payroll')
+                                                        @if(!$employee->confirm_of_employment)
+                                                            <button type="button" class="btn btn-sm btn-success rounded-circle shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#confirmEmploymentModal" data-employee-id="{{ $employee->id }}" data-employee-name="{{ $employee->name }}" data-bs-toggle="tooltip" title="{{ __('Confirm Employment') }}" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="ti ti-check"></i>
+                                                            </button>
+                                                        @else
+                                                            <button type="button" class="btn btn-sm btn-warning rounded-circle shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#cancelEmploymentModal" data-employee-id="{{ $employee->id }}" data-employee-name="{{ $employee->name }}" data-bs-toggle="tooltip" title="{{ __('Cancel Confirmation') }}" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="ti ti-x"></i>
+                                                            </button>
+                                                        @endif
+                                                    @endif
+                                                    @can('Delete Employee')
+                                                        <a href="#" class="btn btn-sm btn-danger rounded-circle shadow-sm text-white" onclick="if(confirm('{{ __("Are you sure?") }}')) { document.getElementById('delete-form-card-{{ $employee->id }}').submit(); } return false;" data-bs-toggle="tooltip" title="{{ __('Delete') }}" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                                            <i class="ti ti-trash"></i>
+                                                        </a>
+                                                        {!! Form::open(['method' => 'DELETE', 'route' => ['employee.destroy', $employee->id], 'id' => 'delete-form-card-' . $employee->id, 'style' => 'display: none;']) !!}
+                                                        {!! Form::close() !!}
+                                                    @endcan
+                                                @else
+                                                    <span class="btn btn-sm btn-secondary rounded-circle shadow-sm" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;" data-bs-toggle="tooltip" title="{{ __('Locked') }}">
+                                                        <i class="ti ti-lock"></i>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            
+                            <!-- No Results Message -->
+                            <div id="card-no-results" class="text-center py-5" style="display: none;">
+                                <h5 class="text-muted">{{ __('No matching records found') }}</h5>
+                            </div>
+
+                            <!-- Card View Pagination -->
+                            <div class="row mt-4 align-items-center">
+                                <div class="col-sm-12 col-md-6">
+                                    <div class="text-muted" style="font-size: 14px;" id="card-info"></div>
+                                </div>
+                                <div class="col-sm-12 col-md-6 d-flex justify-content-md-end mt-3 mt-md-0">
+                                    <ul class="pagination pagination-sm m-0" id="card-pagination"></ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                     </div>
             </div>
 
@@ -271,6 +418,159 @@
     @push('scripts')
     <script>
         $(document).ready(function() {
+            // View Toggle Logic
+            const btnTableView = $('#btn-table-view');
+            const btnCardView = $('#btn-card-view');
+            const tableViewContainer = $('#table-view-container');
+            const cardViewContainer = $('#card-view-container');
+
+            // Restore view preference from localStorage if available
+            const savedView = localStorage.getItem('employeeViewPreference');
+            if(savedView === 'card') {
+                showCardView();
+            } else {
+                showTableView();
+            }
+
+            btnTableView.on('click', showTableView);
+            btnCardView.on('click', showCardView);
+
+            function showTableView() {
+                tableViewContainer.show();
+                cardViewContainer.hide();
+                btnTableView.removeClass('btn-outline-primary').addClass('btn-primary active');
+                btnCardView.removeClass('btn-primary active').addClass('btn-outline-primary');
+                localStorage.setItem('employeeViewPreference', 'table');
+            }
+
+            function showCardView() {
+                tableViewContainer.hide();
+                cardViewContainer.fadeIn();
+                btnCardView.removeClass('btn-outline-primary').addClass('btn-primary active');
+                btnTableView.removeClass('btn-primary active').addClass('btn-outline-primary');
+                localStorage.setItem('employeeViewPreference', 'card');
+            }
+
+            // Card View Pagination and Search Logic
+            const cardItems = $('.employee-card-item');
+            const cardSearch = $('#card-search');
+            const cardPerPage = $('#card-per-page');
+            const cardPagination = $('#card-pagination');
+            const cardInfo = $('#card-info');
+            const cardNoResults = $('#card-no-results');
+            
+            let currentPage = 1;
+            let rowsPerPage = parseInt(cardPerPage.val());
+            let filteredCards = cardItems.toArray();
+
+            function updateCardView() {
+                const totalRows = filteredCards.length;
+                const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
+                
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = Math.min(start + rowsPerPage, totalRows);
+
+                // Hide all cards first
+                cardItems.hide();
+
+                if (totalRows === 0) {
+                    cardNoResults.show();
+                    cardInfo.text('{{ __("Showing 0 to 0 of 0 entries") }}');
+                } else {
+                    cardNoResults.hide();
+                    // Show cards for current page
+                    for (let i = start; i < end; i++) {
+                        $(filteredCards[i]).show();
+                    }
+                    cardInfo.text(`Showing ${start + 1} to ${end} of ${totalRows} entries`);
+                }
+
+                renderCardPagination(totalPages);
+            }
+
+            function renderCardPagination(totalPages) {
+                cardPagination.empty();
+                
+                if (totalPages <= 1) return;
+
+                // Previous Button
+                const prevDisabled = currentPage === 1 ? 'disabled' : '';
+                cardPagination.append(`
+                    <li class="page-item ${prevDisabled}">
+                        <a class="page-link" href="#" data-page="${currentPage - 1}">&lsaquo;</a>
+                    </li>
+                `);
+
+                // Page Numbers
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, currentPage + 2);
+                
+                if (startPage > 1) {
+                    cardPagination.append(`<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`);
+                    if (startPage > 2) {
+                        cardPagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const active = i === currentPage ? 'active' : '';
+                    cardPagination.append(`
+                        <li class="page-item ${active}">
+                            <a class="page-link" href="#" data-page="${i}">${i}</a>
+                        </li>
+                    `);
+                }
+                
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        cardPagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                    cardPagination.append(`<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`);
+                }
+
+                // Next Button
+                const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+                cardPagination.append(`
+                    <li class="page-item ${nextDisabled}">
+                        <a class="page-link" href="#" data-page="${currentPage + 1}">&rsaquo;</a>
+                    </li>
+                `);
+            }
+
+            cardSearch.on('input', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                filteredCards = cardItems.filter(function() {
+                    return $(this).data('search').indexOf(searchTerm) > -1;
+                }).toArray();
+                currentPage = 1; // Reset to first page on search
+                updateCardView();
+            });
+
+            cardPerPage.on('change', function() {
+                rowsPerPage = parseInt($(this).val());
+                currentPage = 1;
+                updateCardView();
+            });
+
+            cardPagination.on('click', '.page-link', function(e) {
+                e.preventDefault();
+                const parent = $(this).parent();
+                if (parent.hasClass('disabled') || parent.hasClass('active')) return;
+                
+                const newPage = $(this).data('page');
+                if (newPage) {
+                    currentPage = parseInt(newPage);
+                    updateCardView();
+                }
+            });
+
+            // Initialize Card View pagination
+            updateCardView();
+
+
             // Show/hide confirmation filter based on employee type selection
             function toggleConfirmationFilter() {
                 var employeeType = $('#employee_type_filter').val();
@@ -491,6 +791,32 @@
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
             line-height: 1;
+        }
+
+        /* Card View Styles */
+        .employee-card {
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05) !important;
+        }
+        .employee-card .card-body {
+            background: #fff;
+        }
+        .employee-card .avatar-circle {
+            border: 3px solid #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .hover-shadow:hover {
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+            transform: translateY(-5px);
+        }
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+        
+        /* Ensure table wrapper fits correctly when hidden/shown */
+        .dataTable-wrapper {
+            width: 100%;
         }
     </style>
     @endpush

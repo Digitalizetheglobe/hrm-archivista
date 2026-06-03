@@ -186,6 +186,90 @@
         .table-responsive {
             overflow-x: visible !important;
         }
+
+        /* --- GLOBAL TABLE REDESIGN (Matches Dashboard) --- */
+        :root {
+            --app-primary: #e8590c;
+            --app-primary-hover-bg: rgba(232, 89, 12, 0.05);
+            --app-table-header-bg: #f8f9fa;
+            --app-table-text-muted: #8492a6;
+            --app-table-border: #f1f3f5;
+            --app-table-text-main: #3c4b64;
+        }
+
+        .table, .dataTable-table {
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            border: none !important;
+            margin-bottom: 0 !important;
+        }
+        
+        .table thead th, .dataTable-table thead th {
+            background-color: var(--app-table-header-bg) !important;
+            color: var(--app-table-text-muted) !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.6px !important;
+            padding: 12px 16px !important;
+            border-bottom: 1px solid var(--app-table-border) !important;
+            border-top: none !important;
+            border-left: none !important;
+            border-right: none !important;
+            white-space: nowrap !important;
+            vertical-align: middle !important;
+        }
+        
+        .table tbody td, .dataTable-table tbody td {
+            padding: 14px 16px !important;
+            font-size: 13.5px !important;
+            color: var(--app-table-text-main) !important;
+            border-bottom: 1px solid var(--app-table-border) !important;
+            border-top: none !important;
+            border-left: none !important;
+            border-right: none !important;
+            vertical-align: middle !important;
+        }
+
+        /* Hide bottom border for the last row to keep it clean */
+        .table tbody tr:last-child td, .dataTable-table tbody tr:last-child td {
+            border-bottom: none !important;
+        }
+        
+        /* Primary color hover effect on rows */
+        .table tbody tr:hover td, .dataTable-table tbody tr:hover td {
+            background-color: var(--app-primary-hover-bg) !important;
+            color: var(--app-primary) !important;
+        }
+
+        /* Ensure links/actions inside hovered row stay clean */
+        .table tbody tr:hover td a:not(.btn), .dataTable-table tbody tr:hover td a:not(.btn) {
+            color: var(--app-primary) !important;
+        }
+
+        /* Clean up datatable controls */
+        .dataTable-top {
+            padding: 15px 20px !important;
+            border-bottom: 1px solid var(--app-table-border) !important;
+        }
+        .dataTable-bottom {
+            padding: 15px 20px !important;
+            border-top: 1px solid var(--app-table-border) !important;
+        }
+
+        /* Hide all sorting icons from tables globally */
+        .dataTable-sorter::before,
+        .dataTable-sorter::after,
+        th.sorting::before,
+        th.sorting::after,
+        th.sorting_asc::before,
+        th.sorting_asc::after,
+        th.sorting_desc::before,
+        th.sorting_desc::after {
+            display: none !important;
+            content: none !important;
+            background-image: none !important;
+        }
     </style>
 
     <?php echo $__env->yieldPushContent('css-page'); ?>

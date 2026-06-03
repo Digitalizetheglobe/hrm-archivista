@@ -436,8 +436,53 @@ class HomeController extends Controller
                     ->whereDate('end_date', '>=', $currentDate)
                     ->get();
 
+                // Get current month's employee events (birthdays and work anniversaries)
+                $currentMonth = Carbon::now()->month;
+                $currentYear = Carbon::now()->year;
+                
+                // Get birthdays for current month
+                $birthdays = Employee::whereMonth('dob', $currentMonth)
+                    ->where('created_by', '=', \Auth::user()->creatorId())
+                    ->get();
+                
+                // Get work anniversaries for current month
+                $anniversaries = Employee::whereMonth('company_doj', $currentMonth)
+                    ->where('created_by', '=', \Auth::user()->creatorId())
+                    ->get();
+                
+                $monthlyEvents = [];
+                
+                // Process birthdays
+                foreach ($birthdays as $employee) {
+                    $monthlyEvents[] = [
+                        'type' => 'birthday',
+                        'employee_name' => $employee->name,
+                        'message' => 'Happy Birthday!',
+                        'date' => Carbon::parse($employee->dob)->format('F j'),
+                        'department' => $employee->department->name ?? 'N/A',
+                        'avatar' => $employee->user->avatar ?? 'default-avatar.png'
+                    ];
+                }
+                
+                // Process work anniversaries
+                foreach ($anniversaries as $employee) {
+                    $years = $currentYear - Carbon::parse($employee->company_doj)->year;
+                    $monthlyEvents[] = [
+                        'type' => 'anniversary',
+                        'employee_name' => $employee->name,
+                        'message' => $years . ' Year' . ($years > 1 ? 's' : '') . ' Work Anniversary',
+                        'date' => Carbon::parse($employee->company_doj)->format('F j'),
+                        'department' => $employee->department->name ?? 'N/A',
+                        'avatar' => $employee->user->avatar ?? 'default-avatar.png'
+                    ];
+                }
+                
+                // Sort events by date
+                usort($monthlyEvents, function($a, $b) {
+                    return strtotime($a['date']) - strtotime($b['date']);
+                });
 
-                return view('dashboard.company', compact('siteVisitPresentCount', 'totalSiteVisitsCount', 'siteVisitAttendancePercentage', 'hasTodaySiteVisits', 'siteAttendanceEmployees', 'todaytimesheet', 'todayEnquiryCount', 'notices', 'totalHolidays', 'arrEvents', 'announcements', 'employees', 'activeJob', 'inActiveJOb', 'meetings', 'countEmployee', 'countUser', 'countTicket', 'countOpenTicket', 'countCloseTicket', 'notClockIns', 'accountBalance', 'totalPayee', 'totalPayer', 'users', 'plan', 'storage_limit', 'quote', 'attendancePercentage', 'presentEmployeesWithClockIn', 'totalEmployees', 'totalDepartment', 'todayLeaves', 'todos', 'chartData', 'totalProjects', 'todayLeaveEmployees'));
+                return view('dashboard.company', compact('siteVisitPresentCount', 'totalSiteVisitsCount', 'siteVisitAttendancePercentage', 'hasTodaySiteVisits', 'siteAttendanceEmployees', 'todaytimesheet', 'todayEnquiryCount', 'notices', 'totalHolidays', 'arrEvents', 'announcements', 'employees', 'activeJob', 'inActiveJOb', 'meetings', 'countEmployee', 'countUser', 'countTicket', 'countOpenTicket', 'countCloseTicket', 'notClockIns', 'accountBalance', 'totalPayee', 'totalPayer', 'users', 'plan', 'storage_limit', 'quote', 'attendancePercentage', 'presentEmployeesWithClockIn', 'totalEmployees', 'totalDepartment', 'todayLeaves', 'todos', 'chartData', 'totalProjects', 'todayLeaveEmployees', 'monthlyEvents'));
             }
         } else {
             return view('landingpage::layouts.home');
