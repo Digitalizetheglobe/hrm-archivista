@@ -2207,3 +2207,12 @@ Route::middleware(['auth'])->group(function() {
     Route::get('/get-departments-by-branch', [\App\Http\Controllers\CompOffController::class, 'getDepartmentsByBranch'])->name('compoff.get_departments');
     Route::get('/get-employees-by-departments', [\App\Http\Controllers\CompOffController::class, 'getEmployeesByDepartments'])->name('compoff.get_employees');
 });
+
+// Fallback route for storage files when symlink is missing (fixes broken images on server deployments)
+Route::get('storage/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    return response()->file($filePath);
+})->where('path', '.*');

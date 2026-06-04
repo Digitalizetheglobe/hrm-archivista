@@ -1351,7 +1351,7 @@ class Utility extends Model
 
                         $request->$key_name->move(storage_path('app/public/' . $path), $name);
 
-                        $path = $path . $name;
+                        $path = $path . '/' . $name;
                     } else if ($settings['storage_setting'] == 'wasabi') {
 
                         $path = \Storage::disk('wasabi')->putFileAs(
