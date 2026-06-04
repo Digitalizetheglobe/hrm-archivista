@@ -560,7 +560,7 @@
                                         <?php $avatarFile = $event['avatar'] ?? 'avatar.png'; ?>
                                         <img src="<?php echo e(asset('storage/uploads/avatar/' . $avatarFile)); ?>"
                                              alt="<?php echo e($event['employee_name']); ?>"
-                                             onerror="this.src='<?php echo e(asset('storage/avatars/avatar.png')); ?>'">
+                                             onerror="this.onerror=null; this.src='<?php echo e(asset('storage/uploads/avatar/avatar.png')); ?>'">
                                     </div>
                                     <div style="flex:1;min-width:0;">
                                         <div class="event-name"><?php echo e($event['employee_name']); ?></div>

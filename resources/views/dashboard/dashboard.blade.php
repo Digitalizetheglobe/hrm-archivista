@@ -836,7 +836,7 @@
                                     <div class="event-avatar-new">
                                         <img src="{{ asset('storage/uploads/avatar/' . $event['avatar']) }}"
                                              alt="{{ $event['employee_name'] }}"
-                                             onerror="this.src='{{ asset('storage/avatars/avatar.png') }}'">
+                                             onerror="this.onerror=null; this.src='{{ asset('storage/uploads/avatar/avatar.png') }}'">
                                     </div>
                                     <div class="flex-grow-1" style="min-width:0;">
                                         <div class="event-name">{{ $event['employee_name'] }}</div>

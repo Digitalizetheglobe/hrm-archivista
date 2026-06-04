@@ -29,8 +29,8 @@ class AttendanceEmployeeController extends Controller
     {
         // Company rules
         $workingHours = 8; // 8 hours
-        $halfDayHours = 4; // Minimum 4 hours for full day
-        $lateMarkTime = '10:10:00'; // Late after 10:10 AM
+        $halfDayHours = 6.5; // Minimum 6.5 hours for full day (less than 6.5 hrs = Half Day)
+        $lateMarkTime = '09:50:00'; // Late after 9:50 AM
         
         $status = 'Present';
         $late = '00:00:00';
@@ -87,7 +87,7 @@ class AttendanceEmployeeController extends Controller
                 }
             } else {
                 $status = 'Half Day'; // Still same day, mark as half day
-                $clockOut = date('H:i:s', strtotime($clockIn) + (4 * 3600)); // 4 hours after punch-in
+                $clockOut = date('H:i:s', strtotime($clockIn) + (6.5 * 3600)); // 6.5 hours after punch-in
             }
         } else {
             // Calculate total worked hours
@@ -1137,7 +1137,7 @@ class AttendanceEmployeeController extends Controller
             // Total hours is just Session 1.
             $totalSec = max($s1_end - $s1_start, 0);
             
-            $attendance->status = ($totalSec >= 4.5 * 3600) ? 'Present' : 'Half Day';
+            $attendance->status = ($totalSec >= 6.5 * 3600) ? 'Present' : 'Half Day';
             
             // Overtime (after 8.5 hours)
             $otSec = $totalSec - (8.5 * 3600);
@@ -1190,13 +1190,9 @@ class AttendanceEmployeeController extends Controller
     protected function calculateLateMark($clockIn, $date)
     {
         if (empty($clockIn) || $clockIn == '00:00:00') return '00:00:00';
-        $dayOfWeek = \Carbon\Carbon::parse($date)->dayOfWeek;
         $clockInTime = \Carbon\Carbon::parse($date . ' ' . $clockIn);
         
-        // Mon-Fri: 10:40 AM, Sat-Sun: 10:10 AM
-        $threshold = ($dayOfWeek >= 1 && $dayOfWeek <= 5) 
-            ? \Carbon\Carbon::parse($date . ' 10:40:00')
-            : \Carbon\Carbon::parse($date . ' 10:10:00');
+        $threshold = \Carbon\Carbon::parse($date . ' 09:50:00');
             
         if ($clockInTime->gt($threshold)) {
             return gmdate('H:i:s', $clockInTime->diffInSeconds($threshold));
