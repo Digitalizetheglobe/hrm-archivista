@@ -1557,6 +1557,8 @@ class Utility extends Model
         }
     }
 
+    // new code
+
     public static function colorCodeData($type)
     {
         if ($type == 'event') {
