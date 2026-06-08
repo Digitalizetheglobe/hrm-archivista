@@ -424,10 +424,10 @@ class LeaveAllocationService
             
             $balanceData = [
                 'title' => $leaveType->title,
-                'total_allocated' => $totalAllocatedThisMonth,
+                'total_allocated' => $leaveType->type === 'monthly' ? $totalAllocatedThisMonth : $realTimeAllocatedDays,
                 'carried_forward' => $carriedForwardDays,
                 'used_this_month' => $usedThisMonth,
-                'total_used' => $totalUsed,
+                'total_used' => $leaveType->type === 'monthly' ? $usedThisMonth : $totalUsed,
                 'available' => max(0, $availableDays),
                 'type' => $leaveType->type,
                 'days_per_period' => $realTimeAllocatedDays,

@@ -706,15 +706,12 @@
                             <?php if(isset($todayLeaveEmployees) && $todayLeaveEmployees->count() > 0): ?>
                                 <table class="db-table">
                                     <thead>
-                                        <tr><th>Employee</th><th>Leave Type</th></tr>
+                                        <tr><th>Employee</th></tr>
                                     </thead>
                                     <tbody>
                                         <?php $__currentLoopData = $todayLeaveEmployees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <tr>
                                             <td><i class="fas fa-user-circle text-muted me-1"></i><?php echo e($leave->employees->name ?? 'N/A'); ?></td>
-                                            <td style="font-size:12px;">
-                                                <span class="prio-high"><?php echo e($leave->leaveType->title ?? 'N/A'); ?></span>
-                                            </td>
                                         </tr>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </tbody>
@@ -846,7 +843,7 @@
                                     <div class="event-avatar-new">
                                         <img src="<?php echo e(asset('storage/uploads/avatar/' . $event['avatar'])); ?>"
                                              alt="<?php echo e($event['employee_name']); ?>"
-                                             onerror="this.src='<?php echo e(asset('storage/avatars/avatar.png')); ?>'">
+                                             onerror="this.onerror=null; this.src='<?php echo e(asset('storage/uploads/avatar/avatar.png')); ?>'">
                                     </div>
                                     <div class="flex-grow-1" style="min-width:0;">
                                         <div class="event-name"><?php echo e($event['employee_name']); ?></div>

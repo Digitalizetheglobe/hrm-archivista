@@ -1256,6 +1256,7 @@ Route::group(['middleware' => ['verified']], function () {
     Route::get('leave/get-leave-balance/{employeeId}/{leaveTypeId}', [LeaveController::class, 'getLeaveBalanceForEmployee'])->middleware(['auth', 'XSS']);
     Route::get('leave-details', [LeaveController::class, 'leaveDetails'])->name('leave.details')->middleware(['auth', 'XSS']);
     Route::post('leave/bulk-delete', [LeaveController::class, 'bulkDelete'])->name('leave.bulk_delete')->middleware(['auth', 'XSS']);
+    Route::post('leave/save-custom-email', [LeaveController::class, 'saveCustomEmail'])->name('leave.save_custom_email')->middleware(['auth', 'XSS']);
     Route::get('employee-leave-allocations', [\App\Http\Controllers\EmployeeLeaveAllocationController::class, 'index'])->name('employee-leave-allocations.index')->middleware(['auth', 'XSS']);
     Route::get('employee-leave-allocations/{employee_id}/edit', [\App\Http\Controllers\EmployeeLeaveAllocationController::class, 'edit'])->name('employee-leave-allocations.edit')->middleware(['auth', 'XSS']);
     Route::post('employee-leave-allocations/{employee_id}', [\App\Http\Controllers\EmployeeLeaveAllocationController::class, 'update'])->name('employee-leave-allocations.update')->middleware(['auth', 'XSS']);
@@ -1300,6 +1301,9 @@ Route::group(['middleware' => ['verified']], function () {
     );
 
     Route::get('attendanceemployee/sitevisit', [AttendanceEmployeeController::class, 'siteVisitIndex'])->name('attendanceemployee.sitevisit')->middleware(['auth', 'XSS']);
+
+    Route::get('attendance-calendar', [AttendanceEmployeeController::class, 'calendar'])->name('attendance.calendar')->middleware(['auth', 'XSS']);
+    Route::post('attendance-calendar/update', [AttendanceEmployeeController::class, 'updateCalendarAttendance'])->name('attendance.calendar.update')->middleware(['auth', 'XSS']);
 
     Route::resource('attendanceemployee', AttendanceEmployeeController::class)->middleware(
         [
@@ -1602,6 +1606,7 @@ Route::group(['middleware' => ['verified']], function () {
 
 
     // Site Visit Routes
+    Route::post('site-visit/save-custom-email', [SiteVisitController::class, 'saveCustomEmail'])->name('site-visit.save_custom_email');
     Route::post('site-visit/approve/{id}', [SiteVisitController::class, 'approve'])->name('site-visit.approve');
     Route::post('site-visit/reject/{id}', [SiteVisitController::class, 'reject'])->name('site-visit.reject');
     Route::resource('site-visit', SiteVisitController::class);

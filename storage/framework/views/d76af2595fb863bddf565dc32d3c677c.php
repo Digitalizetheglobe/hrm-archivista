@@ -17,6 +17,11 @@
             <i class="ti ti-trash"></i>
         </button>
     <?php endif; ?>
+    <?php if(\Auth::user()->type == 'company'): ?>
+        <a href="#" data-bs-toggle="modal" data-bs-target="#customEmailModal" class="btn btn-sm btn-info" data-bs-toggle="tooltip" data-bs-original-title="<?php echo e(__('Custom Approval Email')); ?>">
+            <i class="ti ti-mail"></i>
+        </a>
+    <?php endif; ?>
     <a href="<?php echo e(route('leave.export')); ?>" class="btn btn-sm btn-primary" data-bs-toggle="tooltip"
         data-bs-original-title="<?php echo e(__('Export')); ?>">
         <i class="ti ti-file-export"></i>
@@ -586,6 +591,56 @@
         </div>
     </div>
     </div>
+    
+    <?php if(\Auth::user()->type == 'company'): ?>
+    <!-- Custom Email Modal -->
+    <div class="modal fade" id="customEmailModal" tabindex="-1" aria-labelledby="customEmailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customEmailModalLabel"><?php echo e(__('Custom Leave Approval Email')); ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <?php echo e(Form::open(['route' => ['leave.save_custom_email'], 'method' => 'POST'])); ?>
+
+                <div class="modal-body">
+                    <?php
+                        $settings = \App\Models\Utility::settings();
+                    ?>
+                    <div class="alert alert-info">
+                        <strong><?php echo e(__('Available Placeholders:')); ?></strong><br>
+                        <code>{leave_status_name}</code> - Employee Name<br>
+                        <code>{leave_status}</code> - Leave Status (Approved)<br>
+                        <code>{leave_reason}</code> - Reason for leave<br>
+                        <code>{leave_type}</code> - Leave Type<br>
+                        <code>{leave_start_date}</code> - Leave Start Date<br>
+                        <code>{leave_end_date}</code> - Leave End Date<br>
+                        <code>{total_days}</code> - Total Days<br>
+                        <code>{app_name}</code> - App Name
+                    </div>
+                    <div class="form-group">
+                        <?php echo e(Form::label('subject', __('Email Subject'), ['class' => 'col-form-label'])); ?>
+
+                        <?php echo e(Form::text('subject', $settings['custom_leave_approve_subject'] ?? '', ['class' => 'form-control', 'required' => 'required', 'placeholder' => 'Leave Approved: {leave_start_date} to {leave_end_date}'])); ?>
+
+                    </div>
+                    <div class="form-group">
+                        <?php echo e(Form::label('body', __('Email Body (HTML supported)'), ['class' => 'col-form-label'])); ?>
+
+                        <?php echo e(Form::textarea('body', $settings['custom_leave_approve_body'] ?? '', ['class' => 'form-control', 'rows' => '8', 'required' => 'required', 'placeholder' => 'Hello {leave_status_name}, your leave has been {leave_status}.'])); ?>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo e(__('Close')); ?></button>
+                    <button type="submit" class="btn btn-primary"><?php echo e(__('Save Template')); ?></button>
+                </div>
+                <?php echo e(Form::close()); ?>
+
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('script-page'); ?>

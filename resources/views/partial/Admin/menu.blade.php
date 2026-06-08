@@ -240,6 +240,10 @@
                             <li class="dash-item dash-hasmenu">
                                     <li class="dash-item">
                                         <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
+                                            href="{{ route('attendance.calendar') }}">{{ __('Calendar') }}</a>
+                                    </li>
+                                    <li class="dash-item">
+                                        <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
                                             href="{{ route('attendanceemployee.index') }}">{{ __('Marked Attendance') }}</a>
                                     </li>
                                     <li class="dash-item">

@@ -1,4 +1,4 @@
-<?php echo e(Form::model($leavetype, ['route' => ['leavetype.update', $leavetype->id], 'method' => 'PUT'])); ?>
+<?php echo e(Form::open(['url' => 'leavetype', 'method' => 'post'])); ?>
 
 <div class="modal-body">
 
@@ -32,7 +32,7 @@ unset($__errorArgs, $__bag); ?>
                 <?php echo e(Form::label('type', __('Leave Type Period'), ['class' => 'form-label'])); ?>
 
                 <div class="form-icon-user">
-                    <?php echo e(Form::select('type', ['monthly' => __('Monthly'), 'yearly' => __('Yearly')], $leavetype->type, ['class' => 'form-control', 'required'=>'required'])); ?>
+                    <?php echo e(Form::select('type', ['monthly' => __('Monthly'), 'yearly' => __('Yearly')], 'yearly', ['class' => 'form-control', 'required'=>'required'])); ?>
 
                 </div>
                 <?php $__errorArgs = ['type'];
@@ -55,7 +55,7 @@ unset($__errorArgs, $__bag); ?>
                 <?php echo e(Form::label('is_unlimited', __('Unlimited Leave'), ['class' => 'form-label'])); ?>
 
                 <div class="form-check">
-                    <?php echo e(Form::checkbox('is_unlimited', 1, $leavetype->is_unlimited, ['class' => 'form-check-input', 'id' => 'is_unlimited'])); ?>
+                    <?php echo e(Form::checkbox('is_unlimited', 1, false, ['class' => 'form-check-input', 'id' => 'is_unlimited'])); ?>
 
                     <?php echo e(Form::label('is_unlimited', __('Check if this leave type has unlimited days'), ['class' => 'form-check-label'])); ?>
 
@@ -80,7 +80,7 @@ unset($__errorArgs, $__bag); ?>
                 <?php echo e(Form::label('is_lwp', __('Leave Without Pay (LWP)'), ['class' => 'form-label'])); ?>
 
                 <div class="form-check">
-                    <?php echo e(Form::checkbox('is_lwp', 1, $leavetype->is_lwp, ['class' => 'form-check-input', 'id' => 'is_lwp'])); ?>
+                    <?php echo e(Form::checkbox('is_lwp', 1, false, ['class' => 'form-check-input', 'id' => 'is_lwp'])); ?>
 
                     <?php echo e(Form::label('is_lwp', __('This leave is LWP (for all employees, unlimited days, no carry forward)'), ['class' => 'form-check-label text-danger'])); ?>
 
@@ -105,7 +105,7 @@ unset($__errorArgs, $__bag); ?>
                 <?php echo e(Form::label('carry_forward_enabled', __('Carry Forward'), ['class' => 'form-label'])); ?>
 
                 <div class="form-check">
-                    <?php echo e(Form::checkbox('carry_forward_enabled', 1, $leavetype->carry_forward_enabled ?? false, ['class' => 'form-check-input', 'id' => 'carry_forward_enabled'])); ?>
+                    <?php echo e(Form::checkbox('carry_forward_enabled', 1, false, ['class' => 'form-check-input', 'id' => 'carry_forward_enabled'])); ?>
 
                     <?php echo e(Form::label('carry_forward_enabled', __('Enable carry forward for this leave type'), ['class' => 'form-check-label'])); ?>
 
@@ -132,7 +132,7 @@ unset($__errorArgs, $__bag); ?>
                 <?php echo e(Form::label('days', __('Days Per Period'), ['class' => 'form-label'])); ?>
 
                 <div class="form-icon-user">
-                    <?php echo e(Form::number('days', null, ['class' => 'form-control', 'placeholder' => __('Enter Days per Period'), 'min'=>'0', 'step'=>'0.01', 'id' => 'days_input'])); ?>
+                    <?php echo e(Form::number('days', null, ['class' => 'form-control', 'placeholder' => __('Enter Days per Period'),'min'=>'0', 'step'=>'0.01', 'id' => 'days_input'])); ?>
 
                 </div>
                 <?php $__errorArgs = ['days'];
@@ -163,13 +163,12 @@ unset($__errorArgs, $__bag); ?>
                                 'contract_confirm' => 'Contract/Consultant - Confirm',
                                 'contract_not_confirm' => 'Contract/Consultant - Not Confirm'
                             ];
-                            $selectedTypes = $leavetype->eligible_employee_types ?? [];
                         ?>
                         <?php $__currentLoopData = $employeeTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $value => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <div class="form-check">
-                                <?php echo e(Form::checkbox('eligible_employee_types[]', $value, in_array($value, $selectedTypes), ['class' => 'form-check-input', 'id' => 'edit_employee_type_' . $value])); ?>
+                                <?php echo e(Form::checkbox('eligible_employee_types[]', $value, false, ['class' => 'form-check-input', 'id' => 'employee_type_' . $value])); ?>
 
-                                <?php echo e(Form::label('edit_employee_type_' . $value, $label, ['class' => 'form-check-label'])); ?>
+                                <?php echo e(Form::label('employee_type_' . $value, $label, ['class' => 'form-check-label'])); ?>
 
                             </div>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -194,8 +193,8 @@ unset($__errorArgs, $__bag); ?>
     </div>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-    <button type="submit" class="btn btn-primary"><?php echo e(__('Update')); ?></button>
+    <input type="button" value="Cancel" class="btn btn-light" data-bs-dismiss="modal">
+    <input type="submit" value="<?php echo e(__('Create')); ?>" class="btn btn-primary">
 </div>
 <?php echo e(Form::close()); ?>
 
@@ -285,4 +284,4 @@ unset($__errorArgs, $__bag); ?>
 
 
 
-<?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/leavetype/edit.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/leavetype/create.blade.php ENDPATH**/ ?>

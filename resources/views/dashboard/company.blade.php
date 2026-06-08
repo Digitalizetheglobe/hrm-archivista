@@ -424,7 +424,6 @@
                                     <thead>
                                         <tr>
                                             <th>Employee Name</th>
-                                            <th>Leave Type</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -436,10 +435,9 @@
                                                         {{ $leave->employees->name ?? 'N/A' }}
                                                     </div>
                                                 </td>
-                                                <td><span class="badge-leave">{{ $leave->leaveType->title ?? 'N/A' }}</span></td>
                                             </tr>
                                         @empty
-                                            <tr><td colspan="2" class="text-center" style="color:var(--text-muted);padding:24px;">No employees on leave today</td></tr>
+                                            <tr><td class="text-center" style="color:var(--text-muted);padding:24px;">No employees on leave today</td></tr>
                                         @endforelse
                                     </tbody>
                                 </table>

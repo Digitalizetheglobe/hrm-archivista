@@ -1,0 +1,394 @@
+        public function calendar(Request $request)
+        {
+            if (\Auth::user()->can('Manage Attendance')) {
+                $employees = [];
+                $selectedEmployee = null;
+                
+                // Get terminated employee IDs
+                $terminatedEmployeeIds = Termination::pluck('employee_id')->toArray();
+                
+                // Exclude terminated employees and non-employee users (Director, Hr) from the list
+                $allEmployees = Employee::where('created_by', \Auth::user()->creatorId())
+                    ->whereNotIn('id', $terminatedEmployeeIds)
+                    ->whereHas('user', function($query) {
+                        $query->where('type', 'employee');
+                    })
+                    ->orderBy('employee_id', 'asc')
+                    ->get();
+
+                // For employee users - automatically select their own record
+                if (\Auth::user()->type == 'employee') {
+                    $selectedEmployee = Employee::where('user_id', \Auth::user()->id)->first();
+                    if ($selectedEmployee) {
+                        $employees = [$selectedEmployee];
+                    }
+                } 
+                // For company users - check if employee is selected
+                else {
+                    if ($request->has('employee_id') && $request->employee_id) {
+                        $selectedEmployee = Employee::find($request->employee_id);
+                        if ($selectedEmployee) {
+                            $employees = [$selectedEmployee];
+                        }
+                    }
+                }
+
+                // Get current month and year
+                $currentMonth = request()->input('month', date('m'));
+                $currentYear = request()->input('year', date('Y'));
+
+                $currentDate = \Carbon\Carbon::create($currentYear, $currentMonth, 1);
+                $previousMonth = $currentDate->copy()->subMonth();
+                $nextMonth = $currentDate->copy()->addMonth();
+
+                $attendanceData = [];
+
+                // Only process data if we have a selected employee
+                if ($selectedEmployee) {
+                    foreach ($employees as $employee) {
+                        // Get all attendance records (no month filter)
+                        $attendances = DB::table('attendance_employees')
+                            ->where('employee_id', $employee->id)
+                            ->get()
+                            ->map(function ($item) {
+                                $date = \Carbon\Carbon::parse($item->date)->format('Y-m-d');
+                                return [
+                                    'date' => $date,
+                                    'clock_in' => $item->clock_in,
+                                    'clock_out' => $item->clock_out,
+                                    'status' => $item->status
+                                ];
+                            });
+
+                        // Get all approved leaves (no month filter)
+                        $leaves = LocalLeave::where('employee_id', $employee->id)
+                            ->where('status', 'Approved')
+                            ->with('leaveType')
+                            ->get()
+                            ->map(function ($item) {
+                                return [
+                                    'start_date' => \Carbon\Carbon::parse($item->start_date)->format('Y-m-d'),
+                                    'end_date' => \Carbon\Carbon::parse($item->end_date)->format('Y-m-d'),
+                                    'leave_reason' => $item->leave_reason,
+                                    'leave_type' => $item->leaveType ? $item->leaveType->title : 'Unknown'
+                                ];
+                            });
+
+                        $weekOffDay = strtolower($employee->week_off_day); // e.g. 'sunday'
+
+                        $employeeData = [];
+
+                        // Mark 'present' or 'single_punch' from attendance records
+                        foreach ($attendances as $attendance) {
+                            $isSinglePunch = empty($attendance['clock_out']) || 
+                                            $attendance['clock_out'] == '00:00:00' || 
+                                            $attendance['clock_out'] == null;
+                            
+                            // Calculate late mark dynamically for existing data
+                            $lateTime = $this->calculateLateMark($attendance['clock_in'], $attendance['date']);
+                            $isLate = $lateTime !== '00:00:00';
+
+                            // Calculate early leaving dynamically for existing data
+                            $earlyLeavingTime = $this->calculateEarlyLeaving($attendance['clock_out'], $attendance['date']);
+                            $isEarlyLeaving = $earlyLeavingTime !== '00:00:00';
+
+                            $type = $isSinglePunch ? 'single_punch' : 'present';
+                            if ($attendance['status'] === 'Half Day') {
+                                $type = 'half_day';
+                            }
+
+                            $employeeData[$attendance['date']] = [
+                                'type' => $type,
+                                'clock_in' => $attendance['clock_in'],
+                                'clock_out' => $attendance['clock_out'],
+                                'is_late' => $isLate,
+                                'late_time' => $lateTime,
+                                'is_early_leaving' => $isEarlyLeaving,
+                                'early_leaving_time' => $earlyLeavingTime,
+                                'raw_status' => $attendance['status']
+                            ];
+                        }
+
+                        // Mark 'leave' days
+                        foreach ($leaves as $leave) {
+                            $start = \Carbon\Carbon::parse($leave['start_date']);
+                            $end = \Carbon\Carbon::parse($leave['end_date']);
+
+                            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                                $formattedDate = $date->format('Y-m-d');
+
+                                if (!isset($employeeData[$formattedDate])) {
+                                    $employeeData[$formattedDate] = [
+                                        'type' => 'leave',
+                                        'reason' => $leave['leave_reason'],
+                                        'leave_type' => $leave['leave_type']
+                                    ];
+                                }
+                            }
+                        }
+
+                        // Get all earned comp-offs
+                        $earnedCompOffs = \App\Models\CompOffLeave::where('employees_id', $employee->id)
+                            ->pluck('comp_off_date')
+                            ->toArray();
+                            
+                        sort($earnedCompOffs); // Sort chronologically
+
+                        $compOffLeaveTypeId = \App\Models\LeaveType::where('title', 'Comp-Off')->value('id') ?? 0;
+                        $totalUsedCompOffs = \App\Models\Leave::where('employee_id', $employee->id)
+                            ->where('leave_type_id', $compOffLeaveTypeId)
+                            ->where('status', 'Approved')
+                            ->sum('total_leave_days');
+                        
+                        $usedCount = $totalUsedCompOffs;
+                        
+                        $totalEarned = count($earnedCompOffs);
+                        $totalRemaining = $totalEarned - $totalUsedCompOffs;
+
+                        foreach ($earnedCompOffs as $eoDate) {
+                            if (!isset($employeeData[$eoDate])) {
+                                $employeeData[$eoDate] = ['type' => 'present']; // Default base type if missing
+                            }
+                            
+                            $employeeData[$eoDate]['earned_comp_off'] = true;
+                            
+                            if ($usedCount > 0) {
+                                $employeeData[$eoDate]['used_comp_off'] = true;
+                                $usedCount--;
+                            } else {
+                                $employeeData[$eoDate]['used_comp_off'] = false;
+                            }
+                        }
+
+                        // Fill in 'week_off' and 'absent' for all dates in the calendar view
+                        // We'll process 3 months to ensure smooth navigation
+                        $startRange = $currentDate->copy()->subMonth(); // Show previous month
+                        $endRange = $currentDate->copy()->addMonth(); // Show next month
+                        
+                        for ($date = $startRange->copy(); $date->lte($endRange); $date->addDay()) {
+                            $dateFormatted = $date->format('Y-m-d');
+                            $dayName = strtolower($date->format('l')); // e.g. 'sunday'
+
+                            if (!isset($employeeData[$dateFormatted])) {
+                                if ($weekOffDay && $dayName === $weekOffDay) {
+                                    $employeeData[$dateFormatted] = ['type' => 'week_off'];
+                                } elseif (!$weekOffDay && in_array($dayName, ['saturday', 'sunday'])) {
+                                    $employeeData[$dateFormatted] = ['type' => 'week_off'];
+                                } elseif ($date->lte(\Carbon\Carbon::today())) {
+                                    $employeeData[$dateFormatted] = ['type' => 'absent'];
+                                }
+                                // else: future dates remain unmarked
+                            }
+                        }
+
+                        // Sort data by date
+                        ksort($employeeData);
+
+                        $elType = \App\Models\LeaveType::where('title', 'Earned Leave')->first();
+                        $slType = \App\Models\LeaveType::where('title', 'Sick Leave')->first();
+                        
+                        $elTotalEarned = 0; $elTotalUsed = 0; $elTotalRemaining = 0;
+                        $slTotalEarned = 0; $slTotalUsed = 0; $slTotalRemaining = 0;
+
+                        if ($elType) {
+                            $elBalance = \App\Models\EmployeeLeaveBalance::where('employee_id', $employee->id)
+                                ->where('leave_type_id', $elType->id)
+                                ->where('year', $currentYear)
+                                ->where('month', $currentMonth)
+                                ->first();
+                            if ($elBalance) {
+                                $elTotalEarned = $elBalance->allocated_days + $elBalance->carry_forward_days;
+                                $elTotalUsed = $elBalance->used_days;
+                                $elTotalRemaining = $elTotalEarned - $elTotalUsed;
+                            }
+                        }
+
+                        if ($slType) {
+                            $slBalance = \App\Models\EmployeeLeaveBalance::where('employee_id', $employee->id)
+                                ->where('leave_type_id', $slType->id)
+                                ->where('year', $currentYear)
+                                ->where('month', $currentMonth)
+                                ->first();
+                            if ($slBalance) {
+                                $slTotalEarned = $slBalance->allocated_days + $slBalance->carry_forward_days;
+                                $slTotalUsed = $slBalance->used_days;
+                                $slTotalRemaining = $slTotalEarned - $slTotalUsed;
+                            }
+                        }
+
+                        $attendanceData[$employee->id] = [
+                            'name' => $employee->full_name,
+                            'week_off' => $weekOffDay,
+                            'total_earned_comp_offs' => $totalEarned,
+                            'total_used_comp_offs' => $totalUsedCompOffs,
+                            'total_remaining_comp_offs' => $totalRemaining,
+                            'el_earned' => $elTotalEarned,
+                            'el_used' => $elTotalUsed,
+                            'el_remaining' => $elTotalRemaining,
+                            'sl_earned' => $slTotalEarned,
+                            'sl_used' => $slTotalUsed,
+                            'sl_remaining' => $slTotalRemaining,
+                            'data' => $employeeData
+                        ];
+                    }
+                }
+
+                return view('attendance.calendar', [
+                    'attendanceData' => $attendanceData,
+                    'currentMonth' => $currentMonth,
+                    'currentYear' => $currentYear,
+                    'previousMonth' => $previousMonth->format('m'),
+                    'previousYear' => $previousMonth->format('Y'),
+                    'nextMonth' => $nextMonth->format('m'),
+                    'nextYear' => $nextMonth->format('Y'),
+                    'allEmployees' => $allEmployees,
+                    'selectedEmployee' => $selectedEmployee
+                ]);
+            } else {
+                return redirect()->back()->with('error', __('Permission denied.'));
+            }
+        }
+
+
+        public function updateCalendarAttendance(Request $request)
+        {
+            if (\Auth::user()->can('Manage Attendance') && \Auth::user()->type != 'employee') {
+                $validator = \Validator::make(
+                    $request->all(),
+                    [
+                        'employee_id' => 'required',
+                        'date' => 'required|date',
+                        'status' => 'required',
+                    ]
+                );
+
+                if ($validator->fails()) {
+                    return response()->json(['error' => $validator->errors()->first()]);
+                }
+
+                $employee = Employee::find($request->employee_id);
+                if (!$employee) {
+                    return response()->json(['error' => __('Employee not found.')]);
+                }
+
+                $date = $request->date;
+                $newStatus = $request->status;
+                $in = $request->clock_in ?? '10:00:00';
+                $out = $request->clock_out ?? '19:00:00';
+
+                // Determine current status for audit
+                $currentAtt = AttendanceEmployee::where('employee_id', $employee->id)->where('date', $date)->first();
+                $currentLeaveCode = $this->getLeaveStatus($employee->id, $date);
+                $previousStatus = 'Absent';
+                
+                if ($currentAtt) {
+                    $previousStatus = $currentAtt->status;
+                } elseif ($currentLeaveCode) {
+                    $previousStatus = $currentLeaveCode; // EL, SL, CO
+                } else {
+                    $dayName = \Carbon\Carbon::parse($date)->format('l');
+                    if (strtolower($employee->week_off_day) === strtolower($dayName)) {
+                        $previousStatus = 'Week Off';
+                    }
+                }
+
+                // Map UI status to core logic codes
+                $statusCode = 'P'; // Default
+                if ($newStatus === 'Present') $statusCode = 'P';
+                if ($newStatus === 'Half Day') $statusCode = 'HD';
+                if ($newStatus === 'Absent') $statusCode = 'LOP';
+                if ($newStatus === 'Paid Leave') $statusCode = 'EL';
+                if ($newStatus === 'Sick Leave') $statusCode = 'SL';
+                if ($newStatus === 'Comp-Off') $statusCode = 'CO';
+
+                // --- NEW BALANCE ENFORCEMENT LOGIC ---
+                // If transitioning to a Leave (from Present/Absent)
+                $isNewLeave = in_array($statusCode, ['EL', 'SL', 'CO']);
+                $isOldLeave = in_array($currentLeaveCode, ['EL', 'SL', 'CO']);
+
+                // If applying a new leave that wasn't there before
+                if ($isNewLeave && $currentLeaveCode !== $statusCode) {
+                    $leaveTypeId = 6; 
+                    if ($statusCode === 'EL') $leaveTypeId = 2;
+                    elseif ($statusCode === 'SL') $leaveTypeId = 1;
+                    elseif ($statusCode === 'CO') $leaveTypeId = 4;
+
+                    if ($statusCode === 'CO') {
+                        // Check Comp-Off balance
+                        $earnedCompOffs = \App\Models\CompOffLeave::where('employees_id', $employee->id)->count();
+                        $usedCompOffs = \App\Models\Leave::where('employee_id', $employee->id)
+                            ->where('leave_type_id', $leaveTypeId)
+                            ->where('status', 'Approved')
+                            ->sum('total_leave_days');
+                            
+                        if (($earnedCompOffs - $usedCompOffs) < 1) {
+                            return response()->json(['error' => __('Insufficient Comp-Off balance.')]);
+                        }
+                    } else {
+                        // Check regular leave balance
+                        $now = now();
+                        $balance = \App\Models\EmployeeLeaveBalance::where('employee_id', $employee->id)
+                            ->where('leave_type_id', $leaveTypeId)
+                            ->where('year', $now->year)
+                            ->where('month', $now->month)
+                            ->first();
+
+                        $available = 0;
+                        if ($balance) {
+                            $available = ($balance->allocated_days + $balance->carry_forward_days) - $balance->used_days;
+                        }
+                        
+                        if ($available < 1) {
+                            return response()->json(['error' => __('Insufficient balance for this Leave type.')]);
+                        }
+                        
+                        // Deduct regular leave
+                        \App\Services\LeaveLedgerService::applyRegularLeaveBalanceDeduction($employee->id, $leaveTypeId, 1.0);
+                    }
+                }
+
+                // If removing a leave (transitioning to Present/Absent or a DIFFERENT leave)
+                if ($isOldLeave && $currentLeaveCode !== $statusCode) {
+                    $oldLeaveTypeId = 6;
+                    if ($currentLeaveCode === 'EL') $oldLeaveTypeId = 2;
+                    elseif ($currentLeaveCode === 'SL') $oldLeaveTypeId = 1;
+                    elseif ($currentLeaveCode === 'CO') $oldLeaveTypeId = 4;
+
+                    // Find the single-day leave block to restore (if it's multi-day, this might be tricky, but calendar edits typically only affect single days)
+                    $oldLeave = \App\Models\Leave::where('employee_id', $employee->id)
+                        ->where('start_date', '<=', $date)
+                        ->where('end_date', '>=', $date)
+                        ->where('status', 'Approved')
+                        ->first();
+                        
+                    if ($oldLeave) {
+                        // Restore balance (only for regular leaves, CO is virtual based on rows)
+                        if ($oldLeaveTypeId !== 4) {
+                            \App\Services\LeaveLedgerService::restoreRegularLeaveBalance($employee->id, $oldLeaveTypeId, 1.0);
+                        }
+                        // Delete it here to prevent applyAttendanceTransition from indiscriminately deleting a multi-day block without restoration
+                        $oldLeave->delete();
+                    }
+                }
+                // --- END BALANCE ENFORCEMENT LOGIC ---
+
+                $startTime = '10:00:00';
+                $endTime = '19:00:00';
+
+                // Core Transition Logic
+                $this->applyAttendanceTransition($employee, $date, $statusCode, $in, $out, $startTime, $endTime);
+
+                // Log audit
+                \App\Models\AttendanceAudit::create([
+                    'employee_id' => $employee->id,
+                    'date' => $date,
+                    'previous_status' => $previousStatus,
+                    'new_status' => $newStatus,
+                    'modified_by' => \Auth::user()->id
+                ]);
+
+                return response()->json(['success' => __('Attendance successfully updated.')]);
+            }
+            return response()->json(['error' => __('Permission denied.')]);
+        }
+    

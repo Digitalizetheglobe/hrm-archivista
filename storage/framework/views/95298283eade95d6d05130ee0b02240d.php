@@ -118,6 +118,9 @@
     <?php $__env->stopPush(); ?>
 
     <?php $__env->startSection('action-button'); ?>
+        <a href="<?php echo e(route('attendance.calendar')); ?>" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="<?php echo e(__('Calendar View')); ?>">
+            <i class="ti ti-calendar"></i>
+        </a>
     <?php $__env->stopSection(); ?>
     <?php $__env->startSection('content'); ?>
         <?php if(session('status')): ?>

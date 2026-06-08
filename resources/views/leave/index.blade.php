@@ -16,6 +16,11 @@
             <i class="ti ti-trash"></i>
         </button>
     @endcan
+    @if(\Auth::user()->type == 'company')
+        <a href="#" data-bs-toggle="modal" data-bs-target="#customEmailModal" class="btn btn-sm btn-info" data-bs-toggle="tooltip" data-bs-original-title="{{ __('Custom Approval Email') }}">
+            <i class="ti ti-mail"></i>
+        </a>
+    @endif
     <a href="{{ route('leave.export') }}" class="btn btn-sm btn-primary" data-bs-toggle="tooltip"
         data-bs-original-title="{{ __('Export') }}">
         <i class="ti ti-file-export"></i>
@@ -569,6 +574,50 @@
         </div>
     </div>
     </div>
+    
+    @if(\Auth::user()->type == 'company')
+    <!-- Custom Email Modal -->
+    <div class="modal fade" id="customEmailModal" tabindex="-1" aria-labelledby="customEmailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customEmailModalLabel">{{ __('Custom Leave Approval Email') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                {{ Form::open(['route' => ['leave.save_custom_email'], 'method' => 'POST']) }}
+                <div class="modal-body">
+                    @php
+                        $settings = \App\Models\Utility::settings();
+                    @endphp
+                    <div class="alert alert-info">
+                        <strong>{{ __('Available Placeholders:') }}</strong><br>
+                        <code>{leave_status_name}</code> - Employee Name<br>
+                        <code>{leave_status}</code> - Leave Status (Approved)<br>
+                        <code>{leave_reason}</code> - Reason for leave<br>
+                        <code>{leave_type}</code> - Leave Type<br>
+                        <code>{leave_start_date}</code> - Leave Start Date<br>
+                        <code>{leave_end_date}</code> - Leave End Date<br>
+                        <code>{total_days}</code> - Total Days<br>
+                        <code>{app_name}</code> - App Name
+                    </div>
+                    <div class="form-group">
+                        {{ Form::label('subject', __('Email Subject'), ['class' => 'col-form-label']) }}
+                        {{ Form::text('subject', $settings['custom_leave_approve_subject'] ?? '', ['class' => 'form-control', 'required' => 'required', 'placeholder' => 'Leave Approved: {leave_start_date} to {leave_end_date}']) }}
+                    </div>
+                    <div class="form-group">
+                        {{ Form::label('body', __('Email Body (HTML supported)'), ['class' => 'col-form-label']) }}
+                        {{ Form::textarea('body', $settings['custom_leave_approve_body'] ?? '', ['class' => 'form-control', 'rows' => '8', 'required' => 'required', 'placeholder' => 'Hello {leave_status_name}, your leave has been {leave_status}.']) }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ __('Save Template') }}</button>
+                </div>
+                {{ Form::close() }}
+            </div>
+        </div>
+    </div>
+    @endif
 @endsection
 
 @push('script-page')

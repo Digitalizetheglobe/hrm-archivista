@@ -78,35 +78,7 @@ php artisan migrate --force
 systemctl restart lsws
 ```
 
----
 
-# 🎯 FINAL RESULT
-
-👉 Website updated successfully
-👉 No 500 errors
-👉 Latest code live 🚀
-
----
-
-# ⚠️ Important Notes
-
-* `git reset --hard` → local changes delete करतो (safe for production)
-* `storage/` आणि `bootstrap/cache/` writable असायला हवेत
-* Composer नेहमी PHP 8.2 वर run कर
-
----
-
-# 💡 Quick One-Line Update (Fast तरीका)
-
-```bash
-cd /home/hrma.archivistaindia.com/public_html && git reset --hard && git pull origin main && /usr/local/lsws/lsphp82/bin/php /usr/bin/composer install --no-dev --optimize-autoloader && php artisan optimize:clear && php artisan migrate --force && chown -R nobody:nobody storage bootstrap/cache && chmod -R 775 storage bootstrap/cache && systemctl restart lsws
-```
-
----
-
-# ✅ DONE
-
-Production update complete 🎉
 
 
 

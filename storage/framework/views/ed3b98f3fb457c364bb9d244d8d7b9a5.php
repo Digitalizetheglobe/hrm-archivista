@@ -249,6 +249,10 @@
                             <li class="dash-item dash-hasmenu">
                                     <li class="dash-item">
                                         <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
+                                            href="<?php echo e(route('attendance.calendar')); ?>"><?php echo e(__('Calendar')); ?></a>
+                                    </li>
+                                    <li class="dash-item">
+                                        <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
                                             href="<?php echo e(route('attendanceemployee.index')); ?>"><?php echo e(__('Marked Attendance')); ?></a>
                                     </li>
                                     <li class="dash-item">

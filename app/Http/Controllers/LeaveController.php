@@ -228,13 +228,6 @@ class LeaveController extends Controller
 
             if (Auth::user()->type == 'employee') {
                 $employees = Employee::where('user_id', '=', \Auth::user()->id)->first();
-                if ($employees && !empty($employees->company_doj)) {
-                    $doj = \Carbon\Carbon::parse($employees->company_doj);
-                    $oneMonthAfterJoining = $doj->copy()->addMonth();
-                    if (\Carbon\Carbon::now()->lt($oneMonthAfterJoining)) {
-                        return response()->json(['error' => __('You cannot apply for leave during your first month of joining (allowed from ' . $oneMonthAfterJoining->format('Y-m-d') . ').')], 400);
-                    }
-                }
             } else {
                 $employees = Employee::where('created_by', '=', \Auth::user()->creatorId())->get()->pluck('name', 'id');
             }
@@ -262,8 +255,20 @@ class LeaveController extends Controller
                     $compOffBalance = self::getCompOffBalance($employee->id);
                     $leaveBalances = $this->leaveAllocationService->getCurrentLeaveBalances($employee->id);
 
-                    $leavetypes = $leavetypes->filter(function($leaveType) use ($compOffBalance) {
-                        if (strtolower(trim($leaveType->title)) === 'comp-off') {
+                    $isFirstMonth = false;
+                    if (!empty($employee->company_doj)) {
+                        $doj = \Carbon\Carbon::parse($employee->company_doj);
+                        if (\Carbon\Carbon::now()->lt($doj->copy()->addMonth())) {
+                            $isFirstMonth = true;
+                        }
+                    }
+
+                    $leavetypes = $leavetypes->filter(function($leaveType) use ($compOffBalance, $isFirstMonth) {
+                        $leaveTypeName = strtolower(trim($leaveType->title));
+                        if ($isFirstMonth && $leaveTypeName !== 'lwp') {
+                            return false;
+                        }
+                        if ($leaveTypeName === 'comp-off') {
                             return $compOffBalance > 0;
                         }
                         return true;
@@ -328,17 +333,20 @@ class LeaveController extends Controller
 
             // Check if employee is in their first month after joining
             if (\Auth::user()->type == 'employee' && $employee && !empty($employee->company_doj)) {
-                $doj = \Carbon\Carbon::parse($employee->company_doj);
-                $oneMonthAfterJoining = $doj->copy()->addMonth();
-                $now = \Carbon\Carbon::now();
-                $leaveStartDate = \Carbon\Carbon::parse($request->start_date);
+                $leaveTypeName = strtolower(trim($leave_type->title));
+                if ($leaveTypeName !== 'lwp') {
+                    $doj = \Carbon\Carbon::parse($employee->company_doj);
+                    $oneMonthAfterJoining = $doj->copy()->addMonth();
+                    $now = \Carbon\Carbon::now();
+                    $leaveStartDate = \Carbon\Carbon::parse($request->start_date);
 
-                if ($now->lt($oneMonthAfterJoining)) {
-                    return redirect()->back()->with('error', __('You cannot apply for leave during your first month of joining (allowed from ' . $oneMonthAfterJoining->format('Y-m-d') . ').'));
-                }
+                    if ($now->lt($oneMonthAfterJoining)) {
+                        return redirect()->back()->with('error', __('You cannot apply for leave during your first month of joining (allowed from ' . $oneMonthAfterJoining->format('Y-m-d') . '). Only LWP is allowed.'));
+                    }
 
-                if ($leaveStartDate->lt($oneMonthAfterJoining)) {
-                    return redirect()->back()->with('error', __('You cannot take leave during your first month of joining (allowed from ' . $oneMonthAfterJoining->format('Y-m-d') . ').'));
+                    if ($leaveStartDate->lt($oneMonthAfterJoining)) {
+                        return redirect()->back()->with('error', __('You cannot take leave during your first month of joining (allowed from ' . $oneMonthAfterJoining->format('Y-m-d') . '). Only LWP is allowed.'));
+                    }
                 }
             }
 
@@ -813,11 +821,77 @@ class LeaveController extends Controller
                 'total_leave_days' => $leave->total_leave_days,
 
             ];
-            $resp = Utility::sendEmailTemplate('leave_status', [$employee->email], $uArr);
+            $resp = null;
+            if ($request->status == 'Approved' && !empty($setings['custom_leave_approve_subject']) && !empty($setings['custom_leave_approve_body'])) {
+                $subject = $setings['custom_leave_approve_subject'];
+                $body = $setings['custom_leave_approve_body'];
+
+                $leaveTypeName = !empty($leave->leaveType) ? $leave->leaveType->title : '';
+
+                // Replace placeholders in Body
+                $body = str_replace('{leave_status_name}', $employee->name, $body);
+                $body = str_replace('{leave_status}', $request->status, $body);
+                $body = str_replace('{leave_reason}', $leave->leave_reason, $body);
+                $body = str_replace('{leave_type}', $leaveTypeName, $body);
+                $body = str_replace('{leave_start_date}', $leave->start_date, $body);
+                $body = str_replace('{leave_end_date}', $leave->end_date, $body);
+                $body = str_replace('{total_days}', $leave->total_leave_days, $body);
+                $body = str_replace('{app_name}', env('APP_NAME'), $body);
+
+                // Replace placeholders in Subject
+                $subject = str_replace('{leave_status_name}', $employee->name, $subject);
+                $subject = str_replace('{leave_status}', $request->status, $subject);
+                $subject = str_replace('{leave_reason}', $leave->leave_reason, $subject);
+                $subject = str_replace('{leave_type}', $leaveTypeName, $subject);
+                $subject = str_replace('{leave_start_date}', $leave->start_date, $subject);
+                $subject = str_replace('{leave_end_date}', $leave->end_date, $subject);
+                $subject = str_replace('{total_days}', $leave->total_leave_days, $subject);
+                $subject = str_replace('{app_name}', env('APP_NAME'), $subject);
+
+                // We can construct a dummy object to pass to CommonEmailTemplate
+                $dummyTemplate = new \stdClass();
+                $dummyTemplate->subject = $subject;
+                $dummyTemplate->content = '<div style="font-size: 14px; font-family: \'Open Sans\', sans-serif; color: #333; line-height: 1.6;">' . nl2br($body) . '</div>';
+
+                try {
+                    $mailSettings = Utility::getSMTPDetails(\Auth::user()->creatorId());
+                    if ($mailSettings) {
+                        \Mail::to([$employee->email])->send(new \App\Mail\CommonEmailTemplate($dummyTemplate, $mailSettings, $employee->email));
+                        $resp = ['is_success' => true];
+                    } else {
+                        $resp = ['is_success' => false, 'error' => 'SMTP details not found'];
+                    }
+                } catch (\Exception $e) {
+                    $resp = ['is_success' => false, 'error' => $e->getMessage()];
+                }
+            } else {
+                $resp = Utility::sendEmailTemplate('leave_status', [$employee->email], $uArr);
+            }
             return redirect()->route('leave.index')->with('success', __('Leave status successfully updated.') . ((!empty($resp) && $resp['is_success'] == false && !empty($resp['error'])) ? '<br> <span class="text-danger">' . $resp['error'] . '</span>' : ''));
         }
 
         return redirect()->route('leave.index')->with('success', __('Leave status successfully updated.'));
+    }
+    public function saveCustomEmail(Request $request)
+    {
+        $user = \Auth::user();
+        if ($user->type == 'company') {
+            $post = [
+                'custom_leave_approve_subject' => $request->subject,
+                'custom_leave_approve_body' => $request->body,
+            ];
+            foreach ($post as $key => $data) {
+                \DB::insert(
+                    'insert into settings (`value`, `name`,`created_by`) values (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`) ', [
+                        $data,
+                        $key,
+                        $user->creatorId(),
+                    ]
+                );
+            }
+            return redirect()->back()->with('success', __('Custom email template saved successfully.'));
+        }
+        return redirect()->back()->with('error', __('Permission denied.'));
     }
 
     public function getLeaveBalanceForEmployee($employeeId, $leaveTypeId)
@@ -1084,8 +1158,13 @@ class LeaveController extends Controller
             // Check if it is the 4th week of the month (dates 22 to 28)
             $isFourthWeek = ($dayOfMonth >= 22 && $dayOfMonth <= 28);
 
-            // Skip 2nd and 4th Saturday & Sunday
-            if (($dayOfWeek === 6 || $dayOfWeek === 7) && ($isSecondWeek || $isFourthWeek)) {
+            // All Sundays are week-offs
+            if ($dayOfWeek === 7) {
+                continue;
+            }
+
+            // 2nd and 4th Saturdays are week-offs
+            if ($dayOfWeek === 6 && ($isSecondWeek || $isFourthWeek)) {
                 continue;
             }
 

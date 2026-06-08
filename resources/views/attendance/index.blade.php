@@ -117,6 +117,9 @@
     @endpush
 
     @section('action-button')
+        <a href="{{ route('attendance.calendar') }}" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="{{ __('Calendar View') }}">
+            <i class="ti ti-calendar"></i>
+        </a>
     @endsection
     @section('content')
         @if (session('status'))

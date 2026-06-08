@@ -1,65 +1,69 @@
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('Attendance Calendar')); ?>
 
-@extends('layouts.admin')
-@section('page-title')
-    {{ __('Attendance Calendar') }}
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ __('Home') }}</a></li>
-    <li class="breadcrumb-item"><a href="{{ route('attendanceemployee.index') }}">{{ __('Attendance List') }}</a></li>
-    <li class="breadcrumb-item">{{ __('Calendar') }}</li>
-@endsection
+<?php $__env->startSection('breadcrumb'); ?>
+    <li class="breadcrumb-item"><a href="<?php echo e(route('dashboard')); ?>"><?php echo e(__('Home')); ?></a></li>
+    <li class="breadcrumb-item"><a href="<?php echo e(route('attendanceemployee.index')); ?>"><?php echo e(__('Attendance List')); ?></a></li>
+    <li class="breadcrumb-item"><?php echo e(__('Calendar')); ?></li>
+<?php $__env->stopSection(); ?>
 
-@php
+<?php
     $months = [
         '01' => 'January', '02' => 'February', '03' => 'March', '04' => 'April',
         '05' => 'May', '06' => 'June', '07' => 'July', '08' => 'August',
         '09' => 'September', '10' => 'October', '11' => 'November', '12' => 'December'
     ];
     $years = range(date('Y') - 5, date('Y') + 5);
-@endphp
+?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="row">
         <div class="col-sm-12">
             <div class="card">
                 <div class="card-body">
-                    {{ Form::open(['route' => ['attendance.calendar'], 'method' => 'get', 'id' => 'attendance_calendar_filter']) }}
+                    <?php echo e(Form::open(['route' => ['attendance.calendar'], 'method' => 'get', 'id' => 'attendance_calendar_filter'])); ?>
+
                     <div class="row align-items-center justify-content-end">
                         <div class="col-xl-10">
                             <div class="row">
-                                @if(\Auth::user()->type != 'employee')
+                                <?php if(\Auth::user()->type != 'employee'): ?>
                                     <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-12">
                                         <div class="btn-box">
-                                            {{ Form::label('employee_id', __('Employee'), ['class' => 'form-label']) }}
+                                            <?php echo e(Form::label('employee_id', __('Employee'), ['class' => 'form-label'])); ?>
+
                                             <select name="employee_id" class="form-control select2" id="employee_id">
-                                                <option value="">{{ __('Select Employee') }}</option>
-                                                @foreach($allEmployees as $employee)
-                                                    <option value="{{ $employee->id }}" {{ ($selectedEmployee && $selectedEmployee->id == $employee->id) ? 'selected' : '' }}>
-                                                        {{ $employee->name }}
+                                                <option value=""><?php echo e(__('Select Employee')); ?></option>
+                                                <?php $__currentLoopData = $allEmployees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $employee): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                    <option value="<?php echo e($employee->id); ?>" <?php echo e(($selectedEmployee && $selectedEmployee->id == $employee->id) ? 'selected' : ''); ?>>
+                                                        <?php echo e($employee->name); ?>
+
                                                     </option>
-                                                @endforeach
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                             </select>
                                         </div>
                                     </div>
-                                @endif
+                                <?php endif; ?>
                                 <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
                                     <div class="btn-box">
-                                        {{ Form::label('month', __('Month'), ['class' => 'form-label']) }}
+                                        <?php echo e(Form::label('month', __('Month'), ['class' => 'form-label'])); ?>
+
                                         <select name="month" class="form-control select" id="month">
-                                            @foreach($months as $key => $name)
-                                                <option value="{{ $key }}" {{ $currentMonth == $key ? 'selected' : '' }}>{{ __($name) }}</option>
-                                            @endforeach
+                                            <?php $__currentLoopData = $months; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $name): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <option value="<?php echo e($key); ?>" <?php echo e($currentMonth == $key ? 'selected' : ''); ?>><?php echo e(__($name)); ?></option>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
                                     <div class="btn-box">
-                                        {{ Form::label('year', __('Year'), ['class' => 'form-label']) }}
+                                        <?php echo e(Form::label('year', __('Year'), ['class' => 'form-label'])); ?>
+
                                         <select name="year" class="form-control select" id="year">
-                                            @foreach($years as $year)
-                                                <option value="{{ $year }}" {{ $currentYear == $year ? 'selected' : '' }}>{{ $year }}</option>
-                                            @endforeach
+                                            <?php $__currentLoopData = $years; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $year): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <option value="<?php echo e($year); ?>" <?php echo e($currentYear == $year ? 'selected' : ''); ?>><?php echo e($year); ?></option>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         </select>
                                     </div>
                                 </div>
@@ -67,33 +71,35 @@
                                     <a href="#" class="btn btn-sm btn-primary" onclick="document.getElementById('attendance_calendar_filter').submit(); return false;">
                                         <span class="btn-inner--icon"><i class="ti ti-search"></i></span>
                                     </a>
-                                    <a href="{{ route('attendance.calendar') }}" class="btn btn-sm btn-danger">
+                                    <a href="<?php echo e(route('attendance.calendar')); ?>" class="btn btn-sm btn-danger">
                                         <span class="btn-inner--icon"><i class="ti ti-trash-off text-white-off"></i></span>
                                     </a>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {{ Form::close() }}
+                    <?php echo e(Form::close()); ?>
+
                 </div>
             </div>
         </div>
 
-        @if($selectedEmployee)
+        <?php if($selectedEmployee): ?>
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
                         <div class="row text-center">
                             <div class="col-md-6">
-                                <h5>{{ $selectedEmployee->name }} - {{ __($months[$currentMonth]) }} {{ $currentYear }}</h5>
+                                <h5><?php echo e($selectedEmployee->name); ?> - <?php echo e(__($months[$currentMonth])); ?> <?php echo e($currentYear); ?></h5>
                             </div>
                             <div class="col-md-6 mt-2">
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('attendance.calendar', ['employee_id' => $selectedEmployee->id, 'month' => $previousMonth, 'year' => $previousYear]) }}" class="btn btn-primary d-inline-flex align-items-center">
-                                        <i class="ti ti-chevron-left me-1"></i> {{ __('Previous') }}
+                                    <a href="<?php echo e(route('attendance.calendar', ['employee_id' => $selectedEmployee->id, 'month' => $previousMonth, 'year' => $previousYear])); ?>" class="btn btn-primary d-inline-flex align-items-center">
+                                        <i class="ti ti-chevron-left me-1"></i> <?php echo e(__('Previous')); ?>
+
                                     </a>
-                                    <a href="{{ route('attendance.calendar', ['employee_id' => $selectedEmployee->id, 'month' => $nextMonth, 'year' => $nextYear]) }}" class="btn btn-primary d-inline-flex align-items-center">
-                                        {{ __('Next') }} <i class="ti ti-chevron-right ms-1"></i>
+                                    <a href="<?php echo e(route('attendance.calendar', ['employee_id' => $selectedEmployee->id, 'month' => $nextMonth, 'year' => $nextYear])); ?>" class="btn btn-primary d-inline-flex align-items-center">
+                                        <?php echo e(__('Next')); ?> <i class="ti ti-chevron-right ms-1"></i>
                                     </a>
                                 </div>
                             </div>
@@ -102,41 +108,41 @@
                     <div class="card-body">
                         <div class="row mb-4">
                             <div class="col-md-12 d-flex flex-wrap gap-3">
-                                <div class="d-flex align-items-center"><span class="badge bg-success-light me-2 border border-success" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> {{ __('Present') }}</div>
-                                <div class="d-flex align-items-center"><span class="badge bg-danger-light me-2 border border-danger" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> {{ __('Absent') }}</div>
-                                <div class="d-flex align-items-center"><span class="badge bg-warning-light me-2 border border-warning" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> {{ __('Late') }}</div>
-                                <div class="d-flex align-items-center"><span class="badge bg-info-light me-2 border border-info" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> {{ __('Leave') }}</div>
-                                <div class="d-flex align-items-center"><span class="badge bg-secondary-light me-2 border border-secondary" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> {{ __('Week Off') }}</div>
-                                <div class="d-flex align-items-center"><span class="badge bg-primary-light me-2 border border-primary" style="width:15px;height:15px;display:inline-block;border-radius:3px;border-color:#5c59e8 !important;">&nbsp;</span> {{ __('Half Day / Single Punch') }}</div>
+                                <div class="d-flex align-items-center"><span class="badge bg-success-light me-2 border border-success" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> <?php echo e(__('Present')); ?></div>
+                                <div class="d-flex align-items-center"><span class="badge bg-danger-light me-2 border border-danger" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> <?php echo e(__('Absent')); ?></div>
+                                <div class="d-flex align-items-center"><span class="badge bg-warning-light me-2 border border-warning" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> <?php echo e(__('Late')); ?></div>
+                                <div class="d-flex align-items-center"><span class="badge bg-info-light me-2 border border-info" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> <?php echo e(__('Leave')); ?></div>
+                                <div class="d-flex align-items-center"><span class="badge bg-secondary-light me-2 border border-secondary" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> <?php echo e(__('Week Off')); ?></div>
+                                <div class="d-flex align-items-center"><span class="badge bg-primary-light me-2 border border-primary" style="width:15px;height:15px;display:inline-block;border-radius:3px;border-color:#5c59e8 !important;">&nbsp;</span> <?php echo e(__('Half Day / Single Punch')); ?></div>
                             </div>
                         </div>
 
 
 
                         <div class="calendar-grid">
-                            @php
+                            <?php
                                 $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $currentMonth, $currentYear);
                                 $firstDay = date('N', strtotime("$currentYear-$currentMonth-01"));
                                 $attendance = $attendanceData[$selectedEmployee->id]['data'] ?? [];
-                            @endphp
+                            ?>
 
                             <div class="calendar-header-row">
-                                <div class="calendar-day-head">{{ __('Mon') }}</div>
-                                <div class="calendar-day-head">{{ __('Tue') }}</div>
-                                <div class="calendar-day-head">{{ __('Wed') }}</div>
-                                <div class="calendar-day-head">{{ __('Thu') }}</div>
-                                <div class="calendar-day-head">{{ __('Fri') }}</div>
-                                <div class="calendar-day-head">{{ __('Sat') }}</div>
-                                <div class="calendar-day-head">{{ __('Sun') }}</div>
+                                <div class="calendar-day-head"><?php echo e(__('Mon')); ?></div>
+                                <div class="calendar-day-head"><?php echo e(__('Tue')); ?></div>
+                                <div class="calendar-day-head"><?php echo e(__('Wed')); ?></div>
+                                <div class="calendar-day-head"><?php echo e(__('Thu')); ?></div>
+                                <div class="calendar-day-head"><?php echo e(__('Fri')); ?></div>
+                                <div class="calendar-day-head"><?php echo e(__('Sat')); ?></div>
+                                <div class="calendar-day-head"><?php echo e(__('Sun')); ?></div>
                             </div>
 
                             <div class="calendar-days-row">
-                                @for($i = 1; $i < $firstDay; $i++)
+                                <?php for($i = 1; $i < $firstDay; $i++): ?>
                                     <div class="calendar-day empty"></div>
-                                @endfor
+                                <?php endfor; ?>
 
-                                @for($day = 1; $day <= $daysInMonth; $day++)
-                                    @php
+                                <?php for($day = 1; $day <= $daysInMonth; $day++): ?>
+                                    <?php
                                         $dateString = sprintf('%04d-%02d-%02d', $currentYear, $currentMonth, $day);
                                         $dayData = $attendance[$dateString] ?? null;
                                         $class = '';
@@ -173,50 +179,50 @@
                                         
                                         $isToday = $dateString == date('Y-m-d');
                                         
-                                    @endphp
-                                    <div class="calendar-day {{ $class }} {{ $isToday ? 'today' : '' }}">
-                                        <div class="day-number">{{ $day }}</div>
-                                        @if($dayData && !empty($dayData['earned_comp_off']))
-                                            @if(!empty($dayData['used_comp_off']))
+                                    ?>
+                                    <div class="calendar-day <?php echo e($class); ?> <?php echo e($isToday ? 'today' : ''); ?>">
+                                        <div class="day-number"><?php echo e($day); ?></div>
+                                        <?php if($dayData && !empty($dayData['earned_comp_off'])): ?>
+                                            <?php if(!empty($dayData['used_comp_off'])): ?>
                                                 <div class="comp-off-badge" title="Used Comp-Off" style="position: absolute; top: 5px; right: 5px; background: #e9ecef; color: #6c757d; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold; border: 1px solid #ced4da; text-decoration: line-through;">
                                                     C
                                                 </div>
-                                            @else
+                                            <?php else: ?>
                                                 <div class="comp-off-badge" title="Available Comp-Off" style="position: absolute; top: 5px; right: 5px; background: #ffc107; color: #000; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold; border: 1px solid #d39e00;">
                                                     C
                                                 </div>
-                                            @endif
-                                        @endif
-                                        @if($dayData)
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                        <?php if($dayData): ?>
                                             <div class="day-info">
-                                                @if($dayData['type'] == 'present' || $dayData['type'] == 'half_day' || $dayData['type'] == 'single_punch')
-                                                    <small class="d-block text-center">{{ $dayData['clock_in'] != '00:00:00' ? date('H:i', strtotime($dayData['clock_in'])) : '' }}</small>
-                                                    @if($dayData['type'] == 'present' || $dayData['type'] == 'half_day')
-                                                        <small class="d-block text-center">{{ $dayData['clock_out'] != '00:00:00' ? date('H:i', strtotime($dayData['clock_out'])) : '' }}</small>
-                                                    @endif
-                                                @elseif($dayData['type'] == 'leave')
-                                                    <small class="d-block text-center text-truncate">{{ $dayData['leave_type'] }}</small>
-                                                @else
-                                                    <small class="d-block text-center">{{ __(ucfirst(str_replace('_', ' ', $dayData['type']))) }}</small>
-                                                @endif
+                                                <?php if($dayData['type'] == 'present' || $dayData['type'] == 'half_day' || $dayData['type'] == 'single_punch'): ?>
+                                                    <small class="d-block text-center"><?php echo e($dayData['clock_in'] != '00:00:00' ? date('H:i', strtotime($dayData['clock_in'])) : ''); ?></small>
+                                                    <?php if($dayData['type'] == 'present' || $dayData['type'] == 'half_day'): ?>
+                                                        <small class="d-block text-center"><?php echo e($dayData['clock_out'] != '00:00:00' ? date('H:i', strtotime($dayData['clock_out'])) : ''); ?></small>
+                                                    <?php endif; ?>
+                                                <?php elseif($dayData['type'] == 'leave'): ?>
+                                                    <small class="d-block text-center text-truncate"><?php echo e($dayData['leave_type']); ?></small>
+                                                <?php else: ?>
+                                                    <small class="d-block text-center"><?php echo e(__(ucfirst(str_replace('_', ' ', $dayData['type'])))); ?></small>
+                                                <?php endif; ?>
                                             </div>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
-                                @endfor
+                                <?php endfor; ?>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        @else
+        <?php else: ?>
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-body text-center">
-                        <h5>{{ __('Please select an employee to view their attendance calendar.') }}</h5>
+                        <h5><?php echo e(__('Please select an employee to view their attendance calendar.')); ?></h5>
                     </div>
                 </div>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
 
@@ -293,6 +299,8 @@
             .day-info { font-size: 0.7rem; }
         }
     </style>
-@endsection
+<?php $__env->stopSection(); ?>
 
 
+
+<?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/attendance/calendar.blade.php ENDPATH**/ ?>

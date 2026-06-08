@@ -699,15 +699,12 @@
                             @if(isset($todayLeaveEmployees) && $todayLeaveEmployees->count() > 0)
                                 <table class="db-table">
                                     <thead>
-                                        <tr><th>Employee</th><th>Leave Type</th></tr>
+                                        <tr><th>Employee</th></tr>
                                     </thead>
                                     <tbody>
                                         @foreach($todayLeaveEmployees as $leave)
                                         <tr>
                                             <td><i class="fas fa-user-circle text-muted me-1"></i>{{ $leave->employees->name ?? 'N/A' }}</td>
-                                            <td style="font-size:12px;">
-                                                <span class="prio-high">{{ $leave->leaveType->title ?? 'N/A' }}</span>
-                                            </td>
                                         </tr>
                                         @endforeach
                                     </tbody>
