@@ -378,53 +378,74 @@ class LeaveAllocationService
                 continue;
             }
 
+            $currentMonth = date('Y-m');
+            $currentYear = date('Y');
+            
+            // For yearly leave types, we check the yearly period_type, else monthly
+            $periodToQuery = $leaveType->type === 'yearly' ? 'yearly' : 'monthly';
+            $monthToQuery = $leaveType->type === 'yearly' ? $currentYear : $currentMonth;
+
             $currentBalance = CarryForwardBalance::where('employee_id', $employeeId)
                 ->where('leave_type_id', $leaveType->id)
-                ->where('month', $currentMonth)
-                ->where('period_type', 'monthly')
+                ->where('month', $monthToQuery)
+                ->where('period_type', $periodToQuery)
                 ->first();
+            
+            // Fallback for custom allocations that might have been saved as 'monthly' for a 'yearly' leave type
+            if (!$currentBalance && $leaveType->type === 'yearly') {
+                $currentBalance = CarryForwardBalance::where('employee_id', $employeeId)
+                    ->where('leave_type_id', $leaveType->id)
+                    ->where('month', 'like', $currentYear . '%')
+                    ->where('extra_days', '>', 0)
+                    ->first();
+            }
             
             $carriedForwardDays = 0;
 
             if (!$currentBalance) {
                 // Create balance if it doesn't exist
-                $currentBalance = CarryForwardBalance::getOrCreateBalance($employeeId, $leaveType->id, $currentMonth, 'monthly');
+                $currentBalance = CarryForwardBalance::getOrCreateBalance($employeeId, $leaveType->id, $monthToQuery, $periodToQuery);
             }
 
             // ALWAYS fetch real-time allocated days to override any stale cached values in CarryForwardBalance
             $realTimeAllocatedDays = $this->getAllocatedDaysForEmployee($employee, $leaveType);
 
-            // Calculate carry forward from previous month if enabled
+            // Calculate carry forward from previous period if enabled
             if ($leaveType->carry_forward_enabled) {
-                $previousMonth = date('Y-m', strtotime($currentMonth . '-01 -1 month'));
-                $carriedForwardDays = CarryForwardBalance::calculateCarryForward($employeeId, $leaveType->id, $previousMonth);
+                if ($leaveType->type === 'monthly') {
+                    $previousMonth = date('Y-m', strtotime($currentMonth . '-01 -1 month'));
+                    $carriedForwardDays = CarryForwardBalance::calculateCarryForward($employeeId, $leaveType->id, $previousMonth);
+                } else {
+                    $previousYear = (string)($currentYear - 1);
+                    $carriedForwardDays = CarryForwardBalance::calculateCarryForward($employeeId, $leaveType->id, $previousYear, 'yearly');
+                }
             }
 
-            // Calculate used this month
+            // Calculate used this period
             $usedThisMonth = $this->calculateUsedDaysInPeriod($employeeId, $leaveType->id, $currentMonth, 'monthly');
             $totalLeavesThisMonth += $usedThisMonth;
             
             // Calculate total used
             $totalUsed = $this->calculateUsedDaysInPeriod($employeeId, $leaveType->id, $currentYear, 'yearly');
             
-            // Get extra days for this month
+            // Get extra days for this period
             $extraDays = $currentBalance->extra_days ?? 0;
 
             $totalAllocatedThisMonth = $realTimeAllocatedDays + $carriedForwardDays + $extraDays;
 
             // Calculate available using real-time allocated days + extra days
-            $availableDays = $totalAllocatedThisMonth - $usedThisMonth;
+            $availableDays = $totalAllocatedThisMonth - ($leaveType->type === 'monthly' ? $usedThisMonth : $totalUsed);
 
             // Update the current balance record so it accurately passes remaining days to the next month
             $currentBalance->carried_forward_days = $carriedForwardDays;
             $currentBalance->allocated_days = $realTimeAllocatedDays;
-            $currentBalance->used_days = $usedThisMonth;
+            $currentBalance->used_days = $leaveType->type === 'monthly' ? $usedThisMonth : $totalUsed;
             $currentBalance->remaining_days = max(0, $availableDays);
             $currentBalance->save();
             
             $balanceData = [
                 'title' => $leaveType->title,
-                'total_allocated' => $leaveType->type === 'monthly' ? $totalAllocatedThisMonth : $realTimeAllocatedDays,
+                'total_allocated' => $totalAllocatedThisMonth,
                 'carried_forward' => $carriedForwardDays,
                 'used_this_month' => $usedThisMonth,
                 'total_used' => $leaveType->type === 'monthly' ? $usedThisMonth : $totalUsed,

@@ -92,6 +92,7 @@ chown -R nobody:nobody storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
 
-php artisan config:clear
-php artisan cache:clear
-php artisan view:clear
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache

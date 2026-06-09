@@ -61,7 +61,7 @@ $profile=\App\Models\Utility::get_file('uploads/avatar/');
                                         <label class="col-form-label text-dark">{{ __('Name') }}</label>
                                         <input class="form-control @error('name') is-invalid @enderror" name="name"
                                             type="text" id="name" placeholder="{{ __('Enter Your Name') }}"
-                                            value="{{ $userDetail->name }}" required autocomplete="name">
+                                            value="{{ $userDetail->name }}" required autocomplete="name" {{ \Auth::user()->type == 'employee' ? 'readonly' : '' }}>
                                         @error('name')
                                             <span class="invalid-feedback text-danger text-xs"
                                                 role="alert">{{ $message }}</span>
@@ -73,7 +73,7 @@ $profile=\App\Models\Utility::get_file('uploads/avatar/');
                                         <label for="email" class="col-form-label text-dark">{{ __('Email') }}</label>
                                         <input class="form-control @error('email') is-invalid @enderror" name="email"
                                             type="text" id="email" placeholder="{{ __('Enter Your Email Address') }}"
-                                            value="{{ $userDetail->email }}" required autocomplete="email">
+                                            value="{{ $userDetail->email }}" required autocomplete="email" {{ \Auth::user()->type == 'employee' ? 'readonly' : '' }}>
                                         @error('email')
                                             <span class="invalid-feedback text-danger text-xs"
                                                 role="alert">{{ $message }}</span>

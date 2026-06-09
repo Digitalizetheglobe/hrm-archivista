@@ -47,7 +47,34 @@ class EmployeeLeaveAllocationController extends Controller
                 return in_array($employeeTypeIdentifier, $leaveType->eligible_employee_types);
             });
 
-            return view('employee_leave_allocation.edit', compact('employee', 'leaveTypes'));
+            // Fetch existing allocations
+            $currentMonth = date('Y-m');
+            $currentYear = date('Y');
+            $allocations = [];
+            
+            foreach($leaveTypes as $leaveType) {
+                $period = $leaveType->type === 'yearly' ? 'yearly' : 'monthly';
+                $monthToQuery = $leaveType->type === 'yearly' ? $currentYear : $currentMonth;
+                
+                $balance = CarryForwardBalance::where('employee_id', $employee_id)
+                    ->where('leave_type_id', $leaveType->id)
+                    ->where('month', $monthToQuery)
+                    ->where('period_type', $period)
+                    ->first();
+                
+                // Fallback for yearly leaves that might be stored as monthly
+                if (!$balance && $leaveType->type === 'yearly') {
+                    $balance = CarryForwardBalance::where('employee_id', $employee_id)
+                        ->where('leave_type_id', $leaveType->id)
+                        ->where('month', 'like', $currentYear . '%')
+                        ->where('extra_days', '>', 0)
+                        ->first();
+                }
+
+                $allocations[$leaveType->id] = $balance && $balance->extra_days > 0 ? (float)$balance->extra_days : '';
+            }
+
+            return view('employee_leave_allocation.edit', compact('employee', 'leaveTypes', 'allocations'));
         } else {
             return response()->json(['error' => __('Permission denied.')], 401);
         }
@@ -63,37 +90,37 @@ class EmployeeLeaveAllocationController extends Controller
             $currentMonth = date('Y-m');
 
             foreach ($allocationsData as $leaveTypeId => $days) {
-                if ($days !== null && $days !== '' && $days > 0) {
-                    $leaveType = LeaveType::find($leaveTypeId);
-                    if ($leaveType) {
-                        // Get or create the current balance
-                        $currentBalance = CarryForwardBalance::getOrCreateBalance($employee_id, $leaveTypeId, $currentMonth, 'monthly');
-                        
-                        // Add the top-up days directly to extra_days
-                        $currentBalance->extra_days += $days;
+                $days = ($days !== null && $days !== '') ? (float)$days : 0;
+                
+                $leaveType = LeaveType::find($leaveTypeId);
+                if ($leaveType) {
+                    // Get or create the current balance
+                    $currentBalance = CarryForwardBalance::getOrCreateBalance($employee_id, $leaveTypeId, $currentMonth, 'monthly');
+                    
+                    // Set the top-up days directly to extra_days
+                    $currentBalance->extra_days = $days;
 
-                        // Ensure allocated_days is up to date (using base LeaveType days)
-                        $newAllocatedDays = $allocationService->getAllocatedDaysForEmployee($employee, $leaveType);
-                        $currentBalance->allocated_days = $newAllocatedDays;
+                    // Ensure allocated_days is up to date (using base LeaveType days)
+                    $newAllocatedDays = $allocationService->getAllocatedDaysForEmployee($employee, $leaveType);
+                    $currentBalance->allocated_days = $newAllocatedDays;
 
-                        // Recalculate remaining_days
-                        $availableDays = ($newAllocatedDays + $currentBalance->carried_forward_days + $currentBalance->extra_days) - $currentBalance->used_days;
-                        $currentBalance->remaining_days = max(0, $availableDays);
+                    // Recalculate remaining_days
+                    $availableDays = ($newAllocatedDays + $currentBalance->carried_forward_days + $currentBalance->extra_days) - $currentBalance->used_days;
+                    $currentBalance->remaining_days = max(0, $availableDays);
 
-                        $currentBalance->save();
+                    $currentBalance->save();
 
-                        // Update current yearly balance
-                        $currentYearlyBalance = CarryForwardBalance::getOrCreateBalance($employee_id, $leaveTypeId, date('Y'), 'yearly');
-                        $currentYearlyBalance->extra_days += $days;
-                        $currentYearlyBalance->allocated_days = $newAllocatedDays * 12;
-                        $availableYearlyDays = ($currentYearlyBalance->allocated_days + $currentYearlyBalance->carried_forward_days + $currentYearlyBalance->extra_days) - $currentYearlyBalance->used_days;
-                        $currentYearlyBalance->remaining_days = max(0, $availableYearlyDays);
-                        $currentYearlyBalance->save();
-                    }
+                    // Update current yearly balance
+                    $currentYearlyBalance = CarryForwardBalance::getOrCreateBalance($employee_id, $leaveTypeId, date('Y'), 'yearly');
+                    $currentYearlyBalance->extra_days = $days;
+                    $currentYearlyBalance->allocated_days = $newAllocatedDays * 12;
+                    $availableYearlyDays = ($currentYearlyBalance->allocated_days + $currentYearlyBalance->carried_forward_days + $currentYearlyBalance->extra_days) - $currentYearlyBalance->used_days;
+                    $currentYearlyBalance->remaining_days = max(0, $availableYearlyDays);
+                    $currentYearlyBalance->save();
                 }
             }
 
-            return redirect()->route('employee-leave-allocations.index')->with('success', __('Extra leaves successfully added to balance.'));
+            return redirect()->route('employee-leave-allocations.index')->with('success', __('Extra leaves successfully allocated.'));
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }

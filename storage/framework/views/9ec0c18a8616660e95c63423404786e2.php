@@ -69,7 +69,7 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>" name="name"
                                             type="text" id="name" placeholder="<?php echo e(__('Enter Your Name')); ?>"
-                                            value="<?php echo e($userDetail->name); ?>" required autocomplete="name">
+                                            value="<?php echo e($userDetail->name); ?>" required autocomplete="name" <?php echo e(\Auth::user()->type == 'employee' ? 'readonly' : ''); ?>>
                                         <?php $__errorArgs = ['name'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -95,7 +95,7 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>" name="email"
                                             type="text" id="email" placeholder="<?php echo e(__('Enter Your Email Address')); ?>"
-                                            value="<?php echo e($userDetail->email); ?>" required autocomplete="email">
+                                            value="<?php echo e($userDetail->email); ?>" required autocomplete="email" <?php echo e(\Auth::user()->type == 'employee' ? 'readonly' : ''); ?>>
                                         <?php $__errorArgs = ['email'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :

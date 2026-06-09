@@ -459,19 +459,39 @@ class LeaveController extends Controller
                         }
                     } else {
                         // For yearly leave types
-                        $return = $allocatedDays - $leaves_used;
-                        if ($total_leave_days > $return) {
-                            return redirect()->back()->with('error', __('You are not eligible for leave.'));
+                        $currentYear = date('Y');
+                        
+                        $currentBalance = \App\Models\CarryForwardBalance::where('employee_id', $request->employee_id)
+                            ->where('leave_type_id', $leave_type->id)
+                            ->where('month', $currentYear)
+                            ->where('period_type', 'yearly')
+                            ->first();
+                            
+                        if (!$currentBalance) {
+                            $currentBalance = \App\Models\CarryForwardBalance::where('employee_id', $request->employee_id)
+                                ->where('leave_type_id', $leave_type->id)
+                                ->where('month', 'like', $currentYear . '%')
+                                ->where('extra_days', '>', 0)
+                                ->first();
+                        }
+                        
+                        $extraDays = $currentBalance->extra_days ?? 0;
+                        $carriedForwardDays = $currentBalance->carried_forward_days ?? 0;
+                        
+                        $totalAvailable = ($allocatedDays + $carriedForwardDays + $extraDays) - $leaves_used;
+                        
+                        if ($total_leave_days > $totalAvailable) {
+                            return redirect()->back()->with('error', __('You are not eligible for leave. Available: ' . $totalAvailable . ' days for this year.'));
                         }
 
-                        if (!empty($leaves_pending) && $leaves_pending + $total_leave_days > $return) {
-                            return redirect()->back()->with('error', __('Multiple leave entry is pending.'));
+                        if (!empty($leaves_pending) && $leaves_pending + $total_leave_days > $totalAvailable) {
+                            return redirect()->back()->with('error', __('Multiple leave entry is pending. Available: ' . ($totalAvailable - $leaves_pending) . ' days for this year.'));
                         }
 
-                        if ($allocatedDays >= $total_leave_days) {
+                        if ($totalAvailable >= $total_leave_days) {
                             // Proceed with leave creation
                         } else {
-                            return redirect()->back()->with('error', __('Insufficient leave balance.'));
+                            return redirect()->back()->with('error', __('Insufficient leave balance. Available: ' . $totalAvailable . ' days for this year.'));
                         }
                     }
                 }
@@ -1184,8 +1204,20 @@ class LeaveController extends Controller
             $monthStart = $selectedMonth . '-01';
             $monthEnd = $selectedMonth . '-' . date('t', strtotime($monthStart));
             
+            // Get search keyword
+            $search = $request->get('search');
+
             // Get all employees for the current company
-            $employees = Employee::where('created_by', \Auth::user()->creatorId())->get();
+            $query = Employee::where('created_by', \Auth::user()->creatorId());
+            
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('email', 'like', '%' . $search . '%');
+                });
+            }
+            
+            $employees = $query->get();
             
             // Get all leave types
             $leaveTypes = LeaveType::where('created_by', \Auth::user()->creatorId())->get();
@@ -1298,12 +1330,25 @@ class LeaveController extends Controller
             $carriedForwardDays = CarryForwardBalance::calculateCarryForward($employee->id, $leaveType->id, $previousMonth);
         }
 
-        // Get extra days for the current month
+        // Get extra days
+        $periodToQuery = $leaveType->type === 'yearly' ? 'yearly' : 'monthly';
+        $monthToQuery = $leaveType->type === 'yearly' ? date('Y', strtotime($monthStart)) : $currentMonth;
+        
         $currentBalance = \App\Models\CarryForwardBalance::where('employee_id', $employee->id)
             ->where('leave_type_id', $leaveType->id)
-            ->where('month', $currentMonth)
-            ->where('period_type', 'monthly')
+            ->where('month', $monthToQuery)
+            ->where('period_type', $periodToQuery)
             ->first();
+            
+        // Fallback for custom allocations that might have been saved as 'monthly' for a 'yearly' leave type
+        if (!$currentBalance && $leaveType->type === 'yearly') {
+            $currentYear = date('Y', strtotime($monthStart));
+            $currentBalance = \App\Models\CarryForwardBalance::where('employee_id', $employee->id)
+                ->where('leave_type_id', $leaveType->id)
+                ->where('month', 'like', $currentYear . '%')
+                ->where('extra_days', '>', 0)
+                ->first();
+        }
             
         if ($currentBalance) {
             $extraDays = $currentBalance->extra_days;
