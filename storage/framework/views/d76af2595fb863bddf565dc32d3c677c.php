@@ -1,46 +1,47 @@
-@extends('layouts.admin')
-
-@section('page-title')
-    {{ __('Manage Leave') }}
-@endsection
 
 
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ __('Home') }}</a></li>
-    <li class="breadcrumb-item">{{ __('Leave ') }}</li>
-@endsection
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('Manage Leave')); ?>
 
-@section('action-button')
-    @if(\Auth::user()->type != 'employee' && \Auth::user()->can('Delete Leave'))
-        <button id="bulk-delete-btn" class="btn btn-sm btn-danger d-none me-2" data-bs-toggle="tooltip" title="{{ __('Bulk Delete') }}">
+<?php $__env->stopSection(); ?>
+
+
+<?php $__env->startSection('breadcrumb'); ?>
+    <li class="breadcrumb-item"><a href="<?php echo e(route('dashboard')); ?>"><?php echo e(__('Home')); ?></a></li>
+    <li class="breadcrumb-item"><?php echo e(__('Leave ')); ?></li>
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('action-button'); ?>
+    <?php if(\Auth::user()->type != 'employee' && \Auth::user()->can('Delete Leave')): ?>
+        <button id="bulk-delete-btn" class="btn btn-sm btn-danger d-none me-2" data-bs-toggle="tooltip" title="<?php echo e(__('Bulk Delete')); ?>">
             <i class="ti ti-trash"></i>
         </button>
-    @endif
-    @if(\Auth::user()->type == 'company')
-        <a href="#" data-bs-toggle="modal" data-bs-target="#customEmailModal" class="btn btn-sm btn-info" data-bs-toggle="tooltip" data-bs-original-title="{{ __('Custom Approval Email') }}">
+    <?php endif; ?>
+    <?php if(\Auth::user()->type == 'company'): ?>
+        <a href="#" data-bs-toggle="modal" data-bs-target="#customEmailModal" class="btn btn-sm btn-info" data-bs-toggle="tooltip" data-bs-original-title="<?php echo e(__('Custom Approval Email')); ?>">
             <i class="ti ti-mail"></i>
         </a>
-    @endif
-    <a href="{{ route('leave.export') }}" class="btn btn-sm btn-primary" data-bs-toggle="tooltip"
-        data-bs-original-title="{{ __('Export') }}">
+    <?php endif; ?>
+    <a href="<?php echo e(route('leave.export')); ?>" class="btn btn-sm btn-primary" data-bs-toggle="tooltip"
+        data-bs-original-title="<?php echo e(__('Export')); ?>">
         <i class="ti ti-file-export"></i>
     </a>
 
-    <a href="{{ route('leave.calender') }}" class="btn btn-sm btn-primary" data-bs-toggle="tooltip"
-        data-bs-original-title="{{ __('Calendar View') }}">
+    <a href="<?php echo e(route('leave.calender')); ?>" class="btn btn-sm btn-primary" data-bs-toggle="tooltip"
+        data-bs-original-title="<?php echo e(__('Calendar View')); ?>">
         <i class="ti ti-calendar"></i>
     </a>
 
-    @can('Create Leave')
-        <a href="#" data-url="{{ route('leave.create') }}" data-ajax-popup="true"
-            data-title="{{ __('Create New Leave') }}" data-size="lg" data-bs-toggle="tooltip" title=""
-            class="btn btn-sm btn-primary" data-bs-original-title="{{ __('Create') }}">
+    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Create Leave')): ?>
+        <a href="#" data-url="<?php echo e(route('leave.create')); ?>" data-ajax-popup="true"
+            data-title="<?php echo e(__('Create New Leave')); ?>" data-size="lg" data-bs-toggle="tooltip" title=""
+            class="btn btn-sm btn-primary" data-bs-original-title="<?php echo e(__('Create')); ?>">
             <i class="ti ti-plus"></i>
         </a>
-    @endcan
-@endsection
+    <?php endif; ?>
+<?php $__env->stopSection(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
     <style>
         /* === Premium Total Leaves Card === */
         .leave-summary-card {
@@ -87,9 +88,9 @@
         .bar-p2 { background:#36b9cc; } .bar-p3 { background:#f6c23e; } .bar-p4 { background:#e74a3b; }
     </style>
     
-    {{-- ===== PREMIUM TOTAL LEAVES CARD ===== --}}
-    @if (\Auth::user()->type == 'employee' && !empty($leaveBalances))
-        @php
+    
+    <?php if(\Auth::user()->type == 'employee' && !empty($leaveBalances)): ?>
+        <?php
             $totalLeavesThisMonth = $leaveBalances['total_leaves_this_month'] ?? 0;
             $leaveBreakdown = [];
             foreach ($leaveBalances as $key => $balance) {
@@ -115,20 +116,20 @@
                     ];
                 }
             }
-        @endphp
+        ?>
 
         <div class="row mb-4 mt-2">
             <div class="col-12">
                 <div class="row align-items-stretch g-3">
 
-                    {{-- LEFT: Big Total Summary --}}
+                    
                     <div class="col-lg-4 col-md-12">
                         <div class="leave-summary-card h-100 p-4 d-flex flex-column justify-content-between" style="min-height:200px;">
                             <div style="position:relative;z-index:1;">
                                 <div class="leave-total-label">Total Leaves Taken</div>
-                                <div class="leave-total-badge mt-2">{{ $totalLeavesThisMonth }}</div>
+                                <div class="leave-total-badge mt-2"><?php echo e($totalLeavesThisMonth); ?></div>
                                 <div style="color:rgba(255,255,255,0.8);font-size:0.9rem;margin-top:4px;">Days this month</div>
-                                <div class="leave-month-tag"><i class="fas fa-calendar-alt me-1"></i> {{ date('F Y') }}</div>
+                                <div class="leave-month-tag"><i class="fas fa-calendar-alt me-1"></i> <?php echo e(date('F Y')); ?></div>
                             </div>
                             <div style="position:relative;z-index:1;margin-top:20px;">
                                 <div style="color:rgba(255,255,255,0.55);font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;">All Leave Types Combined</div>
@@ -136,33 +137,33 @@
                         </div>
                     </div>
 
-                    {{-- RIGHT: Breakdown per Leave Type --}}
+                    
                     <div class="col-lg-8 col-md-12">
                         <div class="row g-3 h-100">
-                            @if(!empty($leaveBreakdown))
-                                @foreach($leaveBreakdown as $idx => $item)
-                                    @php $p = $idx % 5; @endphp
+                            <?php if(!empty($leaveBreakdown)): ?>
+                                <?php $__currentLoopData = $leaveBreakdown; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php $p = $idx % 5; ?>
                                     <div class="col-lg-6 col-md-6 col-sm-12">
                                         <div class="leave-breakdown-item">
-                                            <div class="leave-breakdown-icon icon-p{{ $p }}">
+                                            <div class="leave-breakdown-icon icon-p<?php echo e($p); ?>">
                                                 <i class="fas fa-calendar-check"></i>
                                             </div>
                                             <div class="flex-grow-1">
-                                                <div class="leave-breakdown-title">{{ $item['name'] }}</div>
-                                                <div class="leave-breakdown-days">{{ $item['used_this_month'] }} <span>days this month</span></div>
-                                                @if(!$item['is_unlimited'] && $item['total_allocated'] > 0)
+                                                <div class="leave-breakdown-title"><?php echo e($item['name']); ?></div>
+                                                <div class="leave-breakdown-days"><?php echo e($item['used_this_month']); ?> <span>days this month</span></div>
+                                                <?php if(!$item['is_unlimited'] && $item['total_allocated'] > 0): ?>
                                                     <div class="leave-progress-mini">
-                                                        <div class="leave-progress-mini-bar bar-p{{ $p }}" style="width:{{ min(100, $item['total_allocated'] > 0 ? ($item['total_used']/$item['total_allocated'])*100 : 0) }}%"></div>
+                                                        <div class="leave-progress-mini-bar bar-p<?php echo e($p); ?>" style="width:<?php echo e(min(100, $item['total_allocated'] > 0 ? ($item['total_used']/$item['total_allocated'])*100 : 0)); ?>%"></div>
                                                     </div>
-                                                    <div style="font-size:0.7rem;color:#a0aec0;margin-top:4px;">Total used: {{ $item['total_used'] }} / {{ $item['total_allocated'] }}</div>
-                                                @else
-                                                    <div style="font-size:0.7rem;color:#a0aec0;margin-top:4px;">Total used: {{ $item['total_used'] }} days</div>
-                                                @endif
+                                                    <div style="font-size:0.7rem;color:#a0aec0;margin-top:4px;">Total used: <?php echo e($item['total_used']); ?> / <?php echo e($item['total_allocated']); ?></div>
+                                                <?php else: ?>
+                                                    <div style="font-size:0.7rem;color:#a0aec0;margin-top:4px;">Total used: <?php echo e($item['total_used']); ?> days</div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
-                                @endforeach
-                            @else
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php else: ?>
                                 <div class="col-12 d-flex align-items-center justify-content-center">
                                     <div class="text-center py-4">
                                         <i class="fas fa-check-circle text-success" style="font-size:2.5rem;"></i>
@@ -170,14 +171,14 @@
                                         <small class="text-muted">All your leave records will appear here.</small>
                                     </div>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
                 </div>
             </div>
         </div>
-    @endif
+    <?php endif; ?>
     <div class="row mt-4">
 
         <div class="col-xl-12">
@@ -186,56 +187,63 @@
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <div class="d-flex align-items-center justify-content-start">
-                                <h5>{{ __('Manage Leave List') }}</h5>
+                                <h5><?php echo e(__('Manage Leave List')); ?></h5>
                             </div>
                         </div>
                         <div class="col-md-8">
-                            {{ Form::open(['route' => ['leave.index'], 'method' => 'GET', 'id' => 'leave_filter_form']) }}
+                            <?php echo e(Form::open(['route' => ['leave.index'], 'method' => 'GET', 'id' => 'leave_filter_form'])); ?>
+
                             <div class="d-flex align-items-center justify-content-end">
-                                @if (Auth::user()->type == 'company' || Auth::user()->type == 'hr')
+                                <?php if(Auth::user()->type == 'company' || Auth::user()->type == 'hr'): ?>
                                     <div class="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
                                         <div class="btn-box">
-                                            {{ Form::select('employee_id', $employeeList, isset($_GET['employee_id']) ? $_GET['employee_id'] : '', ['class' => 'form-control', 'onchange' => 'document.getElementById("leave_filter_form").submit()']) }}
+                                            <?php echo e(Form::select('employee_id', $employeeList, isset($_GET['employee_id']) ? $_GET['employee_id'] : '', ['class' => 'form-control', 'onchange' => 'document.getElementById("leave_filter_form").submit()'])); ?>
+
                                         </div>
                                     </div>
-                                @endif
+                                <?php endif; ?>
                                 <div class="col-xl-2 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
                                     <div class="btn-box">
                                         <select class="form-control" name="month" onchange="document.getElementById('leave_filter_form').submit()">
                                             <option value="--">--</option>
-                                            @foreach ($month as $k => $mon)
-                                                @php
+                                            <?php $__currentLoopData = $month; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k => $mon): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <?php
                                                     $selected = (isset($_GET['month']) && $_GET['month'] == $k) || (!isset($_GET['month']) && date('m') == $k) ? 'selected' : '';
-                                                @endphp
-                                                <option value="{{ $k }}" {{ $selected }}>{{ $mon }}</option>
-                                            @endforeach
+                                                ?>
+                                                <option value="<?php echo e($k); ?>" <?php echo e($selected); ?>><?php echo e($mon); ?></option>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-xl-2 col-lg-3 col-md-6 col-sm-12 col-12 mx-2">
                                     <div class="btn-box">
-                                        {{ Form::select('year', $year, isset($_GET['year']) ? $_GET['year'] : date('Y'), ['class' => 'form-control', 'onchange' => 'document.getElementById("leave_filter_form").submit()']) }}
+                                        <?php echo e(Form::select('year', $year, isset($_GET['year']) ? $_GET['year'] : date('Y'), ['class' => 'form-control', 'onchange' => 'document.getElementById("leave_filter_form").submit()'])); ?>
+
                                     </div>
                                 </div>
                             </div>
-                            {{ Form::close() }}
+                            <?php echo e(Form::close()); ?>
+
                         </div>
                     </div>
 
                     <ul class="nav nav-tabs mb-3" id="leaveTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab" aria-controls="approved" aria-selected="true">
-                                {{ __('Approved Leaves') }}
+                                <?php echo e(__('Approved Leaves')); ?>
+
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="false">
-                                {{ __('Pending Leaves') }}
+                                <?php echo e(__('Pending Leaves')); ?>
+
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab" aria-controls="rejected" aria-selected="false">
-                                {{ __('Rejected Leaves') }}
+                                <?php echo e(__('Rejected Leaves')); ?>
+
                             </button>
                         </li>
                     </ul>
@@ -247,83 +255,86 @@
                                 <table class="table pc-dt-simple">
                                     <thead>
                                         <tr>
-                                            @if (\Auth::user()->type != 'employee')
+                                            <?php if(\Auth::user()->type != 'employee'): ?>
                                                 <th width="30px">
                                                     <input type="checkbox" id="select-all-approved" class="form-check-input select-all">
                                                 </th>
-                                            @endif
-                                            @if (\Auth::user()->type != 'employee')
-                                                <th>{{ __('Employee') }}</th>
-                                            @endif
-                                            <th>{{ __('Leave Type') }}</th>
-                                            <th>{{ __('Applied On') }}</th>
-                                            <th>{{ __('Start Date') }}</th>
-                                            <th>{{ __('End Date') }}</th>
-                                            <th>{{ __('Total Days') }}</th>
-                                            <th>{{ __('status') }}</th>
-                                            <th width="200px">{{ __('Action') }}</th>
+                                            <?php endif; ?>
+                                            <?php if(\Auth::user()->type != 'employee'): ?>
+                                                <th><?php echo e(__('Employee')); ?></th>
+                                            <?php endif; ?>
+                                            <th><?php echo e(__('Leave Type')); ?></th>
+                                            <th><?php echo e(__('Applied On')); ?></th>
+                                            <th><?php echo e(__('Start Date')); ?></th>
+                                            <th><?php echo e(__('End Date')); ?></th>
+                                            <th><?php echo e(__('Total Days')); ?></th>
+                                            <th><?php echo e(__('status')); ?></th>
+                                            <th width="200px"><?php echo e(__('Action')); ?></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($leaves as $leave)
-                                            @if($leave->status == 'Approved')
+                                        <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php if($leave->status == 'Approved'): ?>
                                                 <tr>
-                                                    @if (\Auth::user()->type != 'employee')
+                                                    <?php if(\Auth::user()->type != 'employee'): ?>
                                                         <td>
-                                                            <input type="checkbox" class="form-check-input leave-checkbox" value="{{ $leave->id }}">
+                                                            <input type="checkbox" class="form-check-input leave-checkbox" value="<?php echo e($leave->id); ?>">
                                                         </td>
-                                                    @endif
-                                                    @if (\Auth::user()->type != 'employee')
-                                                        <td>{{ !empty($leave->employees) ? $leave->employees->name : '' }}</td>
-                                                    @endif
-                                                    <td>{{ !empty($leave->leaveType) ? $leave->leaveType->title : '' }}</td>
-                                                    <td>{{ \Auth::user()->dateFormat($leave->applied_on) }}</td>
-                                                    <td>{{ \Auth::user()->dateFormat($leave->start_date) }}</td>
-                                                    <td>{{ \Auth::user()->dateFormat($leave->end_date) }}</td>
+                                                    <?php endif; ?>
+                                                    <?php if(\Auth::user()->type != 'employee'): ?>
+                                                        <td><?php echo e(!empty($leave->employees) ? $leave->employees->name : ''); ?></td>
+                                                    <?php endif; ?>
+                                                    <td><?php echo e(!empty($leave->leaveType) ? $leave->leaveType->title : ''); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->applied_on)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
                                                     <td>
-                                                        {{ $leave->total_leave_days }}
-                                                        @if($leave->leave_duration == 'half_day')
+                                                        <?php echo e($leave->total_leave_days); ?>
+
+                                                        <?php if($leave->leave_duration == 'half_day'): ?>
                                                             <br>
                                                             <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
-                                                                {{ $leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half') }}
+                                                                <?php echo e($leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half')); ?>
+
                                                             </span>
-                                                        @endif
+                                                        <?php endif; ?>
                                                     </td>
                                                     <td>
-                                                        <div class="badge bg-success p-2 px-3 rounded status-badge5">{{ $leave->status }}</div>
+                                                        <div class="badge bg-success p-2 px-3 rounded status-badge5"><?php echo e($leave->status); ?></div>
                                                     </td>
                                                     <td class="Action">
                                                         <span>
-                                                            @if (\Auth::user()->type != 'employee')
+                                                            <?php if(\Auth::user()->type != 'employee'): ?>
                                                                 <div class="action-btn bg-success ms-2">
                                                                     <a href="#" class="mx-3 btn btn-sm align-items-center"
                                                                         data-size="lg"
-                                                                        data-url="{{ URL::to('leave/' . $leave->id . '/action') }}"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
                                                                         data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                        title="" data-title="{{ __('Leave Action') }}"
-                                                                        data-bs-original-title="{{ __('Manage Leave') }}">
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
                                                                         <i class="ti ti-caret-right text-white"></i>
                                                                     </a>
                                                                 </div>
-                                                                @can('Edit Leave')
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Edit Leave')): ?>
                                                                     <div class="action-btn bg-info ms-2">
                                                                         <a href="#" class="mx-3 btn btn-sm align-items-center"
                                                                             data-size="lg"
-                                                                            data-url="{{ URL::to('leave/' . $leave->id . '/edit') }}"
+                                                                            data-url="<?php echo e(URL::to('leave/' . $leave->id . '/edit')); ?>"
                                                                             data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                            title="" data-title="{{ __('Edit Leave') }}"
-                                                                            data-bs-original-title="{{ __('Edit') }}">
+                                                                            title="" data-title="<?php echo e(__('Edit Leave')); ?>"
+                                                                            data-bs-original-title="<?php echo e(__('Edit')); ?>">
                                                                             <i class="ti ti-pencil text-white"></i>
                                                                         </a>
                                                                     </div>
-                                                                @endcan
-                                                                @can('Delete Leave')
+                                                                <?php endif; ?>
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Delete Leave')): ?>
                                                                     <div class="action-btn bg-danger ms-2">
-                                                                        {!! Form::open([
+                                                                        <?php echo Form::open([
                                                                             'method' => 'DELETE',
                                                                             'route' => ['leave.destroy', $leave->id],
                                                                             'id' => 'delete-form-' . $leave->id,
-                                                                        ]) !!}
+                                                                        ]); ?>
+
                                                                         <a href="#"
                                                                             class="mx-3 btn btn-sm align-items-center bs-pass-para"
                                                                             data-bs-toggle="tooltip" title=""
@@ -331,24 +342,24 @@
                                                                                 class="ti ti-trash text-white text-white"></i></a>
                                                                         </form>
                                                                     </div>
-                                                                @endcan
-                                                            @else
+                                                                <?php endif; ?>
+                                                            <?php else: ?>
                                                                 <div class="action-btn bg-success ms-2">
                                                                     <a href="#" class="mx-3 btn btn-sm align-items-center"
                                                                         data-size="lg"
-                                                                        data-url="{{ URL::to('leave/' . $leave->id . '/action') }}"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
                                                                         data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                        title="" data-title="{{ __('Leave Action') }}"
-                                                                        data-bs-original-title="{{ __('Manage Leave') }}">
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
                                                                         <i class="ti ti-caret-right text-white"></i>
                                                                     </a>
                                                                 </div>
-                                                            @endif
+                                                            <?php endif; ?>
                                                         </span>
                                                     </td>
                                                 </tr>
-                                            @endif
-                                        @endforeach
+                                            <?php endif; ?>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </tbody>
                                 </table>
                             </div>
@@ -360,83 +371,86 @@
                                 <table class="table pc-dt-simple">
                                     <thead>
                                         <tr>
-                                            @if (\Auth::user()->type != 'employee')
+                                            <?php if(\Auth::user()->type != 'employee'): ?>
                                                 <th width="30px">
                                                     <input type="checkbox" id="select-all-pending" class="form-check-input select-all">
                                                 </th>
-                                            @endif
-                                            @if (\Auth::user()->type != 'employee')
-                                                <th>{{ __('Employee') }}</th>
-                                            @endif
-                                            <th>{{ __('Leave Type') }}</th>
-                                            <th>{{ __('Applied On') }}</th>
-                                            <th>{{ __('Start Date') }}</th>
-                                            <th>{{ __('End Date') }}</th>
-                                            <th>{{ __('Total Days') }}</th>
-                                            <th>{{ __('status') }}</th>
-                                            <th width="200px">{{ __('Action') }}</th>
+                                            <?php endif; ?>
+                                            <?php if(\Auth::user()->type != 'employee'): ?>
+                                                <th><?php echo e(__('Employee')); ?></th>
+                                            <?php endif; ?>
+                                            <th><?php echo e(__('Leave Type')); ?></th>
+                                            <th><?php echo e(__('Applied On')); ?></th>
+                                            <th><?php echo e(__('Start Date')); ?></th>
+                                            <th><?php echo e(__('End Date')); ?></th>
+                                            <th><?php echo e(__('Total Days')); ?></th>
+                                            <th><?php echo e(__('status')); ?></th>
+                                            <th width="200px"><?php echo e(__('Action')); ?></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($leaves as $leave)
-                                            @if($leave->status == 'Pending')
+                                        <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php if($leave->status == 'Pending'): ?>
                                                 <tr>
-                                                    @if (\Auth::user()->type != 'employee')
+                                                    <?php if(\Auth::user()->type != 'employee'): ?>
                                                         <td>
-                                                            <input type="checkbox" class="form-check-input leave-checkbox" value="{{ $leave->id }}">
+                                                            <input type="checkbox" class="form-check-input leave-checkbox" value="<?php echo e($leave->id); ?>">
                                                         </td>
-                                                    @endif
-                                                    @if (\Auth::user()->type != 'employee')
-                                                        <td>{{ !empty($leave->employees) ? $leave->employees->name : '' }}</td>
-                                                    @endif
-                                                    <td>{{ !empty($leave->leaveType) ? $leave->leaveType->title : '' }}</td>
-                                                    <td>{{ \Auth::user()->dateFormat($leave->applied_on) }}</td>
-                                                    <td>{{ \Auth::user()->dateFormat($leave->start_date) }}</td>
-                                                    <td>{{ \Auth::user()->dateFormat($leave->end_date) }}</td>
+                                                    <?php endif; ?>
+                                                    <?php if(\Auth::user()->type != 'employee'): ?>
+                                                        <td><?php echo e(!empty($leave->employees) ? $leave->employees->name : ''); ?></td>
+                                                    <?php endif; ?>
+                                                    <td><?php echo e(!empty($leave->leaveType) ? $leave->leaveType->title : ''); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->applied_on)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
                                                     <td>
-                                                        {{ $leave->total_leave_days }}
-                                                        @if($leave->leave_duration == 'half_day')
+                                                        <?php echo e($leave->total_leave_days); ?>
+
+                                                        <?php if($leave->leave_duration == 'half_day'): ?>
                                                             <br>
                                                             <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
-                                                                {{ $leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half') }}
+                                                                <?php echo e($leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half')); ?>
+
                                                             </span>
-                                                        @endif
+                                                        <?php endif; ?>
                                                     </td>
                                                     <td>
-                                                        <div class="badge bg-warning p-2 px-3 rounded status-badge5">{{ $leave->status }}</div>
+                                                        <div class="badge bg-warning p-2 px-3 rounded status-badge5"><?php echo e($leave->status); ?></div>
                                                     </td>
                                                     <td class="Action">
                                                         <span>
-                                                            @if (\Auth::user()->type != 'employee')
+                                                            <?php if(\Auth::user()->type != 'employee'): ?>
                                                                 <div class="action-btn bg-success ms-2">
                                                                     <a href="#" class="mx-3 btn btn-sm align-items-center"
                                                                         data-size="lg"
-                                                                        data-url="{{ URL::to('leave/' . $leave->id . '/action') }}"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
                                                                         data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                        title="" data-title="{{ __('Leave Action') }}"
-                                                                        data-bs-original-title="{{ __('Manage Leave') }}">
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
                                                                         <i class="ti ti-caret-right text-white"></i>
                                                                     </a>
                                                                 </div>
-                                                                @can('Edit Leave')
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Edit Leave')): ?>
                                                                     <div class="action-btn bg-info ms-2">
                                                                         <a href="#" class="mx-3 btn btn-sm align-items-center"
                                                                             data-size="lg"
-                                                                            data-url="{{ URL::to('leave/' . $leave->id . '/edit') }}"
+                                                                            data-url="<?php echo e(URL::to('leave/' . $leave->id . '/edit')); ?>"
                                                                             data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                            title="" data-title="{{ __('Edit Leave') }}"
-                                                                            data-bs-original-title="{{ __('Edit') }}">
+                                                                            title="" data-title="<?php echo e(__('Edit Leave')); ?>"
+                                                                            data-bs-original-title="<?php echo e(__('Edit')); ?>">
                                                                             <i class="ti ti-pencil text-white"></i>
                                                                         </a>
                                                                     </div>
-                                                                @endcan
-                                                                @can('Delete Leave')
+                                                                <?php endif; ?>
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Delete Leave')): ?>
                                                                     <div class="action-btn bg-danger ms-2">
-                                                                        {!! Form::open([
+                                                                        <?php echo Form::open([
                                                                             'method' => 'DELETE',
                                                                             'route' => ['leave.destroy', $leave->id],
                                                                             'id' => 'delete-form-' . $leave->id,
-                                                                        ]) !!}
+                                                                        ]); ?>
+
                                                                         <a href="#"
                                                                             class="mx-3 btn btn-sm align-items-center bs-pass-para"
                                                                             data-bs-toggle="tooltip" title=""
@@ -444,24 +458,24 @@
                                                                                 class="ti ti-trash text-white text-white"></i></a>
                                                                         </form>
                                                                     </div>
-                                                                @endcan
-                                                            @else
+                                                                <?php endif; ?>
+                                                            <?php else: ?>
                                                                 <div class="action-btn bg-success ms-2">
                                                                     <a href="#" class="mx-3 btn btn-sm align-items-center"
                                                                         data-size="lg"
-                                                                        data-url="{{ URL::to('leave/' . $leave->id . '/action') }}"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
                                                                         data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                        title="" data-title="{{ __('Leave Action') }}"
-                                                                        data-bs-original-title="{{ __('Manage Leave') }}">
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
                                                                         <i class="ti ti-caret-right text-white"></i>
                                                                     </a>
                                                                 </div>
-                                                            @endif
+                                                            <?php endif; ?>
                                                         </span>
                                                     </td>
                                                 </tr>
-                                            @endif
-                                        @endforeach
+                                            <?php endif; ?>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </tbody>
                                 </table>
                             </div>
@@ -473,81 +487,84 @@
                                 <table class="table pc-dt-simple">
                                     <thead>
                                         <tr>
-                                            @if (\Auth::user()->type != 'employee')
+                                            <?php if(\Auth::user()->type != 'employee'): ?>
                                                 <th width="30px">
                                                     <input type="checkbox" id="select-all-rejected" class="form-check-input select-all">
                                                 </th>
-                                            @endif
-                                            @if (\Auth::user()->type != 'employee')
-                                                <th>{{ __('Employee') }}</th>
-                                            @endif
-                                            <th>{{ __('Leave Type') }}</th>
-                                            <th>{{ __('Applied On') }}</th>
-                                            <th>{{ __('Start Date') }}</th>
-                                            <th>{{ __('End Date') }}</th>
-                                            <th>{{ __('Total Days') }}</th>
-                                            <th>{{ __('status') }}</th>
-                                            <th width="200px">{{ __('Action') }}</th>
+                                            <?php endif; ?>
+                                            <?php if(\Auth::user()->type != 'employee'): ?>
+                                                <th><?php echo e(__('Employee')); ?></th>
+                                            <?php endif; ?>
+                                            <th><?php echo e(__('Leave Type')); ?></th>
+                                            <th><?php echo e(__('Applied On')); ?></th>
+                                            <th><?php echo e(__('Start Date')); ?></th>
+                                            <th><?php echo e(__('End Date')); ?></th>
+                                            <th><?php echo e(__('Total Days')); ?></th>
+                                            <th><?php echo e(__('status')); ?></th>
+                                            <th width="200px"><?php echo e(__('Action')); ?></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($leaves as $leave)
-                                            @if($leave->status == 'Reject')
+                                        <?php $__currentLoopData = $leaves; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php if($leave->status == 'Reject'): ?>
                                                 <tr>
                                                     <td>
-                                                        <input type="checkbox" class="form-check-input leave-checkbox" value="{{ $leave->id }}">
+                                                        <input type="checkbox" class="form-check-input leave-checkbox" value="<?php echo e($leave->id); ?>">
                                                     </td>
-                                                    @if (\Auth::user()->type != 'employee')
-                                                        <td>{{ !empty($leave->employees) ? $leave->employees->name : '' }}</td>
-                                                    @endif
-                                                    <td>{{ !empty($leave->leaveType) ? $leave->leaveType->title : '' }}</td>
-                                                    <td>{{ \Auth::user()->dateFormat($leave->applied_on) }}</td>
-                                                    <td>{{ \Auth::user()->dateFormat($leave->start_date) }}</td>
-                                                    <td>{{ \Auth::user()->dateFormat($leave->end_date) }}</td>
+                                                    <?php if(\Auth::user()->type != 'employee'): ?>
+                                                        <td><?php echo e(!empty($leave->employees) ? $leave->employees->name : ''); ?></td>
+                                                    <?php endif; ?>
+                                                    <td><?php echo e(!empty($leave->leaveType) ? $leave->leaveType->title : ''); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->applied_on)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
+                                                    <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
                                                     <td>
-                                                        {{ $leave->total_leave_days }}
-                                                        @if($leave->leave_duration == 'half_day')
+                                                        <?php echo e($leave->total_leave_days); ?>
+
+                                                        <?php if($leave->leave_duration == 'half_day'): ?>
                                                             <br>
                                                             <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
-                                                                {{ $leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half') }}
+                                                                <?php echo e($leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half')); ?>
+
                                                             </span>
-                                                        @endif
+                                                        <?php endif; ?>
                                                     </td>
                                                     <td>
-                                                        <div class="badge bg-danger p-2 px-3 rounded status-badge5">{{ $leave->status }}</div>
+                                                        <div class="badge bg-danger p-2 px-3 rounded status-badge5"><?php echo e($leave->status); ?></div>
                                                     </td>
                                                     <td class="Action">
                                                         <span>
-                                                            @if (\Auth::user()->type != 'employee')
+                                                            <?php if(\Auth::user()->type != 'employee'): ?>
                                                                 <div class="action-btn bg-success ms-2">
                                                                     <a href="#" class="mx-3 btn btn-sm align-items-center"
                                                                         data-size="lg"
-                                                                        data-url="{{ URL::to('leave/' . $leave->id . '/action') }}"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
                                                                         data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                        title="" data-title="{{ __('Leave Action') }}"
-                                                                        data-bs-original-title="{{ __('Manage Leave') }}">
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
                                                                         <i class="ti ti-caret-right text-white"></i>
                                                                     </a>
                                                                 </div>
-                                                                @can('Edit Leave')
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Edit Leave')): ?>
                                                                     <div class="action-btn bg-info ms-2">
                                                                         <a href="#" class="mx-3 btn btn-sm align-items-center"
                                                                             data-size="lg"
-                                                                            data-url="{{ URL::to('leave/' . $leave->id . '/edit') }}"
+                                                                            data-url="<?php echo e(URL::to('leave/' . $leave->id . '/edit')); ?>"
                                                                             data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                            title="" data-title="{{ __('Edit Leave') }}"
-                                                                            data-bs-original-title="{{ __('Edit') }}">
+                                                                            title="" data-title="<?php echo e(__('Edit Leave')); ?>"
+                                                                            data-bs-original-title="<?php echo e(__('Edit')); ?>">
                                                                             <i class="ti ti-pencil text-white"></i>
                                                                         </a>
                                                                     </div>
-                                                                @endcan
-                                                                @can('Delete Leave')
+                                                                <?php endif; ?>
+                                                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('Delete Leave')): ?>
                                                                     <div class="action-btn bg-danger ms-2">
-                                                                        {!! Form::open([
+                                                                        <?php echo Form::open([
                                                                             'method' => 'DELETE',
                                                                             'route' => ['leave.destroy', $leave->id],
                                                                             'id' => 'delete-form-' . $leave->id,
-                                                                        ]) !!}
+                                                                        ]); ?>
+
                                                                         <a href="#"
                                                                             class="mx-3 btn btn-sm align-items-center bs-pass-para"
                                                                             data-bs-toggle="tooltip" title=""
@@ -555,24 +572,24 @@
                                                                                 class="ti ti-trash text-white text-white"></i></a>
                                                                         </form>
                                                                     </div>
-                                                                @endcan
-                                                            @else
+                                                                <?php endif; ?>
+                                                            <?php else: ?>
                                                                 <div class="action-btn bg-success ms-2">
                                                                     <a href="#" class="mx-3 btn btn-sm align-items-center"
                                                                         data-size="lg"
-                                                                        data-url="{{ URL::to('leave/' . $leave->id . '/action') }}"
+                                                                        data-url="<?php echo e(URL::to('leave/' . $leave->id . '/action')); ?>"
                                                                         data-ajax-popup="true" data-size="md" data-bs-toggle="tooltip"
-                                                                        title="" data-title="{{ __('Leave Action') }}"
-                                                                        data-bs-original-title="{{ __('Manage Leave') }}">
+                                                                        title="" data-title="<?php echo e(__('Leave Action')); ?>"
+                                                                        data-bs-original-title="<?php echo e(__('Manage Leave')); ?>">
                                                                         <i class="ti ti-caret-right text-white"></i>
                                                                     </a>
                                                                 </div>
-                                                            @endif
+                                                            <?php endif; ?>
                                                         </span>
                                                     </td>
                                                 </tr>
-                                            @endif
-                                        @endforeach
+                                            <?php endif; ?>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </tbody>
                                 </table>
                             </div>
@@ -585,22 +602,23 @@
     </div>
     </div>
     
-    @if(\Auth::user()->type == 'company')
+    <?php if(\Auth::user()->type == 'company'): ?>
     <!-- Custom Email Modal -->
     <div class="modal fade" id="customEmailModal" tabindex="-1" aria-labelledby="customEmailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="customEmailModalLabel">{{ __('Custom Leave Approval Email') }}</h5>
+                    <h5 class="modal-title" id="customEmailModalLabel"><?php echo e(__('Custom Leave Approval Email')); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                {{ Form::open(['route' => ['leave.save_custom_email'], 'method' => 'POST']) }}
+                <?php echo e(Form::open(['route' => ['leave.save_custom_email'], 'method' => 'POST'])); ?>
+
                 <div class="modal-body">
-                    @php
+                    <?php
                         $settings = \App\Models\Utility::settings();
-                    @endphp
+                    ?>
                     <div class="alert alert-info">
-                        <strong>{{ __('Available Placeholders:') }}</strong><br>
+                        <strong><?php echo e(__('Available Placeholders:')); ?></strong><br>
                         <code>{leave_status_name}</code> - Employee Name<br>
                         <code>{leave_status}</code> - Leave Status (Approved)<br>
                         <code>{leave_reason}</code> - Reason for leave<br>
@@ -611,26 +629,31 @@
                         <code>{app_name}</code> - App Name
                     </div>
                     <div class="form-group">
-                        {{ Form::label('subject', __('Email Subject'), ['class' => 'col-form-label']) }}
-                        {{ Form::text('subject', $settings['custom_leave_approve_subject'] ?? '', ['class' => 'form-control', 'required' => 'required', 'placeholder' => 'Leave Approved: {leave_start_date} to {leave_end_date}']) }}
+                        <?php echo e(Form::label('subject', __('Email Subject'), ['class' => 'col-form-label'])); ?>
+
+                        <?php echo e(Form::text('subject', $settings['custom_leave_approve_subject'] ?? '', ['class' => 'form-control', 'required' => 'required', 'placeholder' => 'Leave Approved: {leave_start_date} to {leave_end_date}'])); ?>
+
                     </div>
                     <div class="form-group">
-                        {{ Form::label('body', __('Email Body (HTML supported)'), ['class' => 'col-form-label']) }}
-                        {{ Form::textarea('body', $settings['custom_leave_approve_body'] ?? '', ['class' => 'form-control', 'rows' => '8', 'required' => 'required', 'placeholder' => 'Hello {leave_status_name}, your leave has been {leave_status}.']) }}
+                        <?php echo e(Form::label('body', __('Email Body (HTML supported)'), ['class' => 'col-form-label'])); ?>
+
+                        <?php echo e(Form::textarea('body', $settings['custom_leave_approve_body'] ?? '', ['class' => 'form-control', 'rows' => '8', 'required' => 'required', 'placeholder' => 'Hello {leave_status_name}, your leave has been {leave_status}.'])); ?>
+
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
-                    <button type="submit" class="btn btn-primary">{{ __('Save Template') }}</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo e(__('Close')); ?></button>
+                    <button type="submit" class="btn btn-primary"><?php echo e(__('Save Template')); ?></button>
                 </div>
-                {{ Form::close() }}
+                <?php echo e(Form::close()); ?>
+
             </div>
         </div>
     </div>
-    @endif
-@endsection
+    <?php endif; ?>
+<?php $__env->stopSection(); ?>
 
-@push('script-page')
+<?php $__env->startPush('script-page'); ?>
     <!-- Conflicting legacy script commented out to allow create.blade.php / edit.blade.php to manage the dropdown layout dynamically -->
     <!--
     <script>
@@ -638,17 +661,17 @@
             var employee_id = $(this).val();
 
             $.ajax({
-                url: '{{ route('leave.jsoncount') }}',
+                url: '<?php echo e(route('leave.jsoncount')); ?>',
                 type: 'POST',
                 data: {
                     "employee_id": employee_id,
-                    "_token": "{{ csrf_token() }}",
+                    "_token": "<?php echo e(csrf_token()); ?>",
                 },
                 success: function(data) {
                     var oldval = $('#leave_type_id').val();
                     $('#leave_type_id').empty();
                     $('#leave_type_id').append(
-                        '<option value="">{{ __('Select Leave Type') }}</option>');
+                        '<option value=""><?php echo e(__('Select Leave Type')); ?></option>');
 
                     $.each(data, function(key, value) {
 
@@ -731,7 +754,7 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: '{{ route('leave.bulk_delete') }}',
+                            url: '<?php echo e(route('leave.bulk_delete')); ?>',
                             type: 'POST',
                             data: {
                                 _token: $('meta[name="csrf-token"]').attr('content'),
@@ -756,4 +779,6 @@
             });
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/leave/index.blade.php ENDPATH**/ ?>

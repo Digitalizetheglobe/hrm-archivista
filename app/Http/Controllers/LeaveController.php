@@ -757,6 +757,10 @@ class LeaveController extends Controller
 
     public function destroy(LocalLeave $leave)
     {
+        if (\Auth::user()->type == 'employee') {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+        
         if (\Auth::user()->can('Delete Leave')) {
             if ($leave->created_by == \Auth::user()->creatorId()) {
                 $leave->delete();
@@ -1441,6 +1445,10 @@ class LeaveController extends Controller
 
     public function bulkDelete(Request $request)
     {
+        if (\Auth::user()->type == 'employee') {
+            return response()->json(['status' => 'error', 'message' => __('Permission denied.')], 403);
+        }
+        
         if (\Auth::user()->can('Delete Leave')) {
             $ids = $request->ids;
             if (!empty($ids)) {
