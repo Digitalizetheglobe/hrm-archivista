@@ -50,13 +50,13 @@
                         <div class="col-auto">
                             <div class="btn-box">
                                 {{ Form::label('start_date', __('Start Date'), ['class' => 'form-label']) }}
-                                {{ Form::date('start_date', isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-d'), ['class' => 'month-btn form-control current_date', 'autocomplete' => 'off']) }}
+                                {{ Form::date('start_date', isset($_GET['start_date']) ? $_GET['start_date'] : '', ['class' => 'month-btn form-control current_date', 'autocomplete' => 'off']) }}
                             </div>
                         </div>
                         <div class="col-auto">
                             <div class="btn-box">
                                 {{ Form::label('end_date', __('End Date'), ['class' => 'form-label']) }}
-                                {{ Form::date('end_date', isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d'), ['class' => 'month-btn form-control current_date', 'autocomplete' => 'off']) }}
+                                {{ Form::date('end_date', isset($_GET['end_date']) ? $_GET['end_date'] : '', ['class' => 'month-btn form-control current_date', 'autocomplete' => 'off']) }}
                             </div>
                         </div>
                         
@@ -198,12 +198,12 @@
 <script>
     $(document).ready(function() {
         // Set default dates to today if not already set
-        if (!$('[name="start_date"]').val()) {
-            $('[name="start_date"]').val(new Date().toISOString().split('T')[0]);
-        }
-        if (!$('[name="end_date"]').val()) {
-            $('[name="end_date"]').val(new Date().toISOString().split('T')[0]);
-        }
+        // if (!$('[name="start_date"]').val()) {
+        //     $('[name="start_date"]').val(new Date().toISOString().split('T')[0]);
+        // }
+        // if (!$('[name="end_date"]').val()) {
+        //     $('[name="end_date"]').val(new Date().toISOString().split('T')[0]);
+        // }
 
         // Auto-submit form when date range changes
         $('[name="start_date"], [name="end_date"]').on('change', function() {
