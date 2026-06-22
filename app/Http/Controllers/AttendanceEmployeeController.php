@@ -819,21 +819,21 @@ class AttendanceEmployeeController extends Controller
                     if ($request->$present == 'on') {
                         $attendance = AttendanceEmployee::where('employee_id', '=', $employee)->where('date', '=', $request->date)->first();
 
-                        // If an attendance record already exists, skip it completely.
-                        if (!empty($attendance)) {
-                            continue;
-                        }
-
                         $in  = date("H:i:s", strtotime($request->$in));
                         $out = date("H:i:s", strtotime($request->$out));
 
                         // Use new attendance calculation logic
                         $attendanceData = $this->calculateAttendanceStatus($in, $out, $request->date);
 
-                        $employeeAttendance              = new AttendanceEmployee();
-                        $employeeAttendance->employee_id = $employee;
-                        $employeeAttendance->created_by  = \Auth::user()->creatorId();
-                        $employeeAttendance->date          = $request->date;
+                        if (!empty($attendance)) {
+                            $employeeAttendance = $attendance;
+                        } else {
+                            $employeeAttendance              = new AttendanceEmployee();
+                            $employeeAttendance->employee_id = $employee;
+                            $employeeAttendance->created_by  = \Auth::user()->creatorId();
+                            $employeeAttendance->date        = $request->date;
+                        }
+                        
                         $employeeAttendance->status        = $attendanceData['status'];
                         $employeeAttendance->clock_in      = $in;
                         $employeeAttendance->clock_out     = $attendanceData['clock_out'];
@@ -850,12 +850,12 @@ class AttendanceEmployeeController extends Controller
                         $clockOutLng = $request->input("clock_out_longitude_{$employee}");
                         $clockOutLoc = $request->input("clock_out_location_{$employee}");
                         
-                        $employeeAttendance->clock_in_latitude   = $clockInLat;
-                        $employeeAttendance->clock_in_longitude  = $clockInLng;
-                        $employeeAttendance->clock_in_location   = $clockInLoc;
-                        $employeeAttendance->clock_out_latitude  = $clockOutLat;
-                        $employeeAttendance->clock_out_longitude = $clockOutLng;
-                        $employeeAttendance->clock_out_location  = $clockOutLoc;
+                        if ($clockInLat) $employeeAttendance->clock_in_latitude   = $clockInLat;
+                        if ($clockInLng) $employeeAttendance->clock_in_longitude  = $clockInLng;
+                        if ($clockInLoc) $employeeAttendance->clock_in_location   = $clockInLoc;
+                        if ($clockOutLat) $employeeAttendance->clock_out_latitude  = $clockOutLat;
+                        if ($clockOutLng) $employeeAttendance->clock_out_longitude = $clockOutLng;
+                        if ($clockOutLoc) $employeeAttendance->clock_out_location  = $clockOutLoc;
                         
                         // Debug logging
                         \Log::info("Bulk attendance location data for employee {$employee}:", [
