@@ -436,6 +436,17 @@
                                                         <i class="fas fa-user-circle" style="color:var(--text-muted);font-size:16px;"></i>
                                                         <?php echo e($leave->employees->name ?? 'N/A'); ?>
 
+                                                        <?php if($leave->leave_duration == 'half_day'): ?>
+                                                            <span class="badge bg-info p-1 px-2 rounded ms-2" style="font-size: 0.65rem;">
+                                                                <?php echo e($leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half')); ?>
+
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span class="badge bg-success p-1 px-2 rounded ms-2" style="font-size: 0.65rem;">
+                                                                <?php echo e(__('Full Day')); ?>
+
+                                                            </span>
+                                                        <?php endif; ?>
                                                     </div>
                                                 </td>
                                             </tr>

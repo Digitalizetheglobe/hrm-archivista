@@ -281,7 +281,7 @@
                                                     <td>{{ \Auth::user()->dateFormat($leave->start_date) }}</td>
                                                     <td>{{ \Auth::user()->dateFormat($leave->end_date) }}</td>
                                                     <td>
-                                                        {{ $leave->total_leave_days }}
+                                                        {{ $leave->leave_duration == 'half_day' ? '0.5' : $leave->total_leave_days }}
                                                         @if($leave->leave_duration == 'half_day')
                                                             <br>
                                                             <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
@@ -394,7 +394,7 @@
                                                     <td>{{ \Auth::user()->dateFormat($leave->start_date) }}</td>
                                                     <td>{{ \Auth::user()->dateFormat($leave->end_date) }}</td>
                                                     <td>
-                                                        {{ $leave->total_leave_days }}
+                                                        {{ $leave->leave_duration == 'half_day' ? '0.5' : $leave->total_leave_days }}
                                                         @if($leave->leave_duration == 'half_day')
                                                             <br>
                                                             <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">
@@ -505,7 +505,7 @@
                                                     <td>{{ \Auth::user()->dateFormat($leave->start_date) }}</td>
                                                     <td>{{ \Auth::user()->dateFormat($leave->end_date) }}</td>
                                                     <td>
-                                                        {{ $leave->total_leave_days }}
+                                                        {{ $leave->leave_duration == 'half_day' ? '0.5' : $leave->total_leave_days }}
                                                         @if($leave->leave_duration == 'half_day')
                                                             <br>
                                                             <span class="badge bg-info p-1 px-2 rounded" style="font-size: 0.65rem;">

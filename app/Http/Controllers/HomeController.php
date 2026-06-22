@@ -178,6 +178,7 @@ class HomeController extends Controller
                 
                 $todayLeaveEmployees = \App\Models\Leave::with(['employees', 'leaveType'])
                     ->where('created_by', '=', \Auth::user()->creatorId())
+                    ->where('employee_id', '!=', $emp->id)
                     ->where('status', '=', 'Approved')
                     ->whereDate('start_date', '<=', $date)
                     ->whereDate('end_date', '>=', $date)

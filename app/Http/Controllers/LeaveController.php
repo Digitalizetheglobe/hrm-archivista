@@ -317,7 +317,6 @@ class LeaveController extends Controller
                     'leave_type_id' => 'required',
                     'start_date' => 'required',
                     'end_date' => 'required',
-                    'leave_duration' => 'required',
                     'leave_reason' => 'required',
                 ]
             );
@@ -359,11 +358,19 @@ class LeaveController extends Controller
             }
 
             // Calculate total leave days
-            if ($request->leave_duration == 'half_day') {
-                $total_leave_days = 0.5;
-                $request->merge(['end_date' => $request->start_date]); // Force same day for half-day
+            $total_leave_days = $this->calculateBusinessDays($request->start_date, $request->end_date);
+            
+            if ($request->has('has_half_day') && $request->has_half_day == '1') {
+                $total_leave_days = max(0, $total_leave_days - 0.5);
+                // The leave duration isn't strictly single "half_day" or "full_day" anymore if it's multiple days
+                // But we'll save the half_day_type
+                $request->merge(['leave_duration' => 'half_day']); // We can keep it 'half_day' so the model knows it has a half day
             } else {
-                $total_leave_days = $this->calculateBusinessDays($request->start_date, $request->end_date);
+                $request->merge(['leave_duration' => 'full_day']);
+            }
+
+            if ($leave_type->more_than_3_5_leaves && $total_leave_days <= 3.5) {
+                return redirect()->back()->with('error', __('This leave type requires a duration of more than 3.5 days.'));
             }
 
             $date = Utility::AnnualLeaveCycle();
@@ -642,7 +649,6 @@ class LeaveController extends Controller
                         'leave_type_id' => 'required',
                         'start_date' => 'required',
                         'end_date' => 'required',
-                        'leave_duration' => 'required',
                         'leave_reason' => 'required',
                     ]
                 );
@@ -665,10 +671,17 @@ class LeaveController extends Controller
                 }
                 
                 // Calculate total leave days
-                if ($request->leave_duration == 'half_day') {
-                    $total_leave_days = 0.5;
+                $total_leave_days = $this->calculateBusinessDays($request->start_date, $request->end_date);
+                
+                if ($request->has('has_half_day') && $request->has_half_day == '1') {
+                    $total_leave_days = max(0, $total_leave_days - 0.5);
+                    $request->merge(['leave_duration' => 'half_day']);
                 } else {
-                    $total_leave_days = $this->calculateBusinessDays($request->start_date, $request->end_date);
+                    $request->merge(['leave_duration' => 'full_day']);
+                }
+
+                if ($leave_type->more_than_3_5_leaves && $total_leave_days <= 3.5) {
+                    return redirect()->back()->with('error', __('This leave type requires a duration of more than 3.5 days.'));
                 }
 
                 $date = Utility::AnnualLeaveCycle();
@@ -1471,5 +1484,28 @@ class LeaveController extends Controller
         } else {
             return response()->json(['status' => 'error', 'message' => __('Permission denied.')], 403);
         }
+    }
+
+    public function calculateDays(Request $request)
+    {
+        $start_date = $request->start_date;
+        $end_date = $request->end_date;
+        $has_half_day = $request->has_half_day == 'true' || $request->has_half_day == 1;
+
+        if (!$start_date || !$end_date) {
+            return response()->json(['error' => 'Start date and end date are required.'], 400);
+        }
+
+        if (strtotime($start_date) > strtotime($end_date)) {
+            return response()->json(['total_days' => 0]);
+        }
+
+        $total_leave_days = $this->calculateBusinessDays($start_date, $end_date);
+
+        if ($has_half_day) {
+            $total_leave_days = max(0, $total_leave_days - 0.5);
+        }
+
+        return response()->json(['total_days' => $total_leave_days]);
     }
 }

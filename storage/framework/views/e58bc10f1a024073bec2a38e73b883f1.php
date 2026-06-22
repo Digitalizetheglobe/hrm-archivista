@@ -1,10 +1,9 @@
-@extends('layouts.admin')
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('Dashboard')); ?>
 
-@section('page-title')
-    {{ __('Dashboard') }}
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <style>
     :root {
         --primary: #e8590c;
@@ -444,71 +443,73 @@
 
 <div class="db-wrapper">
     <div class="row g-3">
-        @if (session('status'))
+        <?php if(session('status')): ?>
             <div class="col-12">
                 <div class="alert alert-success border-0 rounded-3 d-flex align-items-center gap-2" role="alert">
                     <i class="fas fa-check-circle text-success"></i>
-                    {{ session('status') }}
+                    <?php echo e(session('status')); ?>
+
                 </div>
             </div>
-        @endif
+        <?php endif; ?>
 
-        @if (\Auth::user()->type == 'employee')
+        <?php if(\Auth::user()->type == 'employee'): ?>
 
-        {{-- ===== LEFT / MAIN CONTENT ===== --}}
+        
         <div class="col-xxl-9">
             <div class="row g-3">
 
-                {{-- --- TOP ROW: Profile + Attendance --- --}}
+                
                 <div class="col-lg-5">
                     <div class="db-card h-100">
-                        {{-- Banner --}}
+                        
                         <div class="profile-banner">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="profile-avatar-wrap">
-                                    @php $profile = \App\Models\Utility::get_file('uploads/avatar/'); @endphp
-                                    <img src="{{ !empty($emp->user->avatar) ? $profile . $emp->user->avatar : $profile . 'avatar.png' }}" alt="Profile">
+                                    <?php $profile = \App\Models\Utility::get_file('uploads/avatar/'); ?>
+                                    <img src="<?php echo e(!empty($emp->user->avatar) ? $profile . $emp->user->avatar : $profile . 'avatar.png'); ?>" alt="Profile">
                                     <span class="profile-online-dot"></span>
                                 </div>
                                 <div>
-                                    <div class="profile-name">{{ $emp->name }}</div>
-                                    <div class="profile-role">{{ $emp->designation->name ?? 'No Designation' }}</div>
+                                    <div class="profile-name"><?php echo e($emp->name); ?></div>
+                                    <div class="profile-role"><?php echo e($emp->designation->name ?? 'No Designation'); ?></div>
                                     <span class="profile-dept-badge">
                                         <i class="fas fa-layer-group me-1" style="font-size:10px;"></i>
-                                        {{ $emp->department->name ?? 'No Department' }}
+                                        <?php echo e($emp->department->name ?? 'No Department'); ?>
+
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Info rows --}}
+                        
                         <div class="profile-info-row">
                             <div class="profile-info-item">
                                 <div class="pi-icon"><i class="fas fa-phone"></i></div>
                                 <div>
                                     <div class="pi-label">Phone Number</div>
-                                    <div class="pi-value">{{ $emp->phone ?? 'N/A' }}</div>
+                                    <div class="pi-value"><?php echo e($emp->phone ?? 'N/A'); ?></div>
                                 </div>
                             </div>
                             <div class="profile-info-item">
                                 <div class="pi-icon"><i class="fas fa-envelope"></i></div>
                                 <div>
                                     <div class="pi-label">Email Address</div>
-                                    <div class="pi-value" style="font-size:12.5px;">{{ $emp->email ?? 'N/A' }}</div>
+                                    <div class="pi-value" style="font-size:12.5px;"><?php echo e($emp->email ?? 'N/A'); ?></div>
                                 </div>
                             </div>
                             <div class="profile-info-item">
                                 <div class="pi-icon"><i class="fas fa-calendar-check"></i></div>
                                 <div>
                                     <div class="pi-label">Joined On</div>
-                                    <div class="pi-value">{{ \Carbon\Carbon::parse($emp->company_doj)->format('d M Y') }}</div>
+                                    <div class="pi-value"><?php echo e(\Carbon\Carbon::parse($emp->company_doj)->format('d M Y')); ?></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- Attendance --}}
+                
                 <div class="col-lg-7">
                     <div class="db-card h-100">
                         <div class="db-card-header">
@@ -520,7 +521,7 @@
                         </div>
                         <div class="attendance-card-body">
 
-                            {{-- SVG Clock Ring --}}
+                            
                             <div class="clock-ring-wrap">
                                 <svg width="160" height="160" viewBox="0 0 160 160">
                                     <circle cx="80" cy="80" r="68" stroke="#f0f0f0" stroke-width="10" fill="none"/>
@@ -541,87 +542,93 @@
                                 </div>
                             </div>
 
-                            {{-- Status badge --}}
-                            @php
+                            
+                            <?php
                                 $siteVisit = \App\Models\SiteVisit::where('employee_id', $emp->id)
                                     ->where('start_date', '<=', date('Y-m-d'))
                                     ->where('end_date', '>=', date('Y-m-d'))
                                     ->where('status', 'Approved')
                                     ->first();
-                            @endphp
+                            ?>
 
                             <div id="attendanceStatusWrap">
-                                @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)
+                                <?php if(!isset($employeeAttendance) || !$employeeAttendance->clock_in): ?>
                                     <span class="att-status-badge status-idle">
                                         <i class="fas fa-fingerprint"></i> Not Punched In
                                     </span>
-                                @else
-                                    @if ($siteVisit)
-                                        @if (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00')
+                                <?php else: ?>
+                                    <?php if($siteVisit): ?>
+                                        <?php if(empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00'): ?>
                                             <span class="att-status-badge status-warn">
                                                 <i class="fas fa-map-marker-alt"></i>
-                                                Site Visit Pending • Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }}
+                                                Site Visit Pending • Punched In at <?php echo e(\Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A')); ?>
+
                                             </span>
-                                        @elseif (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00')
+                                        <?php elseif(empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00'): ?>
                                             <span class="att-status-badge status-in">
                                                 <span class="live-dot"></span>
-                                                Site Visit In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in_2)->format('h:i A') }}
+                                                Site Visit In at <?php echo e(\Carbon\Carbon::parse($employeeAttendance->clock_in_2)->format('h:i A')); ?>
+
                                             </span>
-                                        @else
+                                        <?php else: ?>
                                             <span class="att-status-badge status-out">
                                                 <i class="fas fa-check-circle"></i> Site Visit Completed
                                             </span>
-                                        @endif
-                                    @else
-                                        @if ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <?php if($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out): ?>
                                             <span class="att-status-badge status-in">
                                                 <span class="live-dot"></span>
-                                                Punched In at {{ \Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A') }}
+                                                Punched In at <?php echo e(\Carbon\Carbon::parse($employeeAttendance->clock_in)->format('h:i A')); ?>
+
                                             </span>
-                                        @else
+                                        <?php else: ?>
                                             <span class="att-status-badge status-out">
                                                 <i class="fas fa-sign-out-alt"></i>
-                                                Punched Out at {{ \Carbon\Carbon::parse($employeeAttendance->clock_out)->format('h:i A') }}
+                                                Punched Out at <?php echo e(\Carbon\Carbon::parse($employeeAttendance->clock_out)->format('h:i A')); ?>
+
                                             </span>
-                                        @endif
-                                    @endif
-                                @endif
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             </div>
 
-                            {{-- Punch Buttons --}}
-                            {{ Form::open(['url' => 'attendanceemployee/attendance', 'method' => 'post', 'id' => 'attendanceForm', 'style' => 'width:100%']) }}
+                            
+                            <?php echo e(Form::open(['url' => 'attendanceemployee/attendance', 'method' => 'post', 'id' => 'attendanceForm', 'style' => 'width:100%'])); ?>
+
                                 <input type="hidden" id="latitude"  name="latitude">
                                 <input type="hidden" id="longitude" name="longitude">
                                 <input type="hidden" id="location"  name="location">
 
-                                @if (!isset($employeeAttendance) || !$employeeAttendance->clock_in)
+                                <?php if(!isset($employeeAttendance) || !$employeeAttendance->clock_in): ?>
                                     <button type="submit" value="0" name="in" id="clock_in" class="punch-btn punch-btn-in">
                                         <i class="fas fa-fingerprint"></i> Punch In
                                     </button>
-                                @elseif ($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00'))
+                                <?php elseif($siteVisit && (empty($employeeAttendance->clock_in_2) || $employeeAttendance->clock_in_2 == '00:00:00')): ?>
                                     <button type="submit" value="0" name="in" id="clock_in_2" class="punch-btn punch-btn-warn">
                                         <i class="fas fa-map-marker-alt"></i> Site Visit In
                                     </button>
-                                @elseif ($siteVisit && (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00'))
+                                <?php elseif($siteVisit && (empty($employeeAttendance->clock_out_2) || $employeeAttendance->clock_out_2 == '00:00:00')): ?>
                                     <button type="button" value="1" name="out" id="clock_out_2" class="punch-btn punch-btn-out" onclick="showClockOutModal()">
                                         <i class="fas fa-map-marker-alt"></i> Site Visit Out
                                     </button>
-                                @elseif ($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out)
+                                <?php elseif($employeeAttendance->clock_out == '00:00:00' || !$employeeAttendance->clock_out): ?>
                                     <button type="button" value="1" name="out" id="clock_out" class="punch-btn punch-btn-out" onclick="showClockOutModal()">
                                         <i class="fas fa-sign-out-alt"></i> Punch Out
                                     </button>
-                                @else
+                                <?php else: ?>
                                     <button type="button" class="punch-btn punch-btn-disabled" disabled>
                                         <i class="fas fa-check"></i> Completed for Today
                                     </button>
-                                @endif
-                            {{ Form::close() }}
+                                <?php endif; ?>
+                            <?php echo e(Form::close()); ?>
+
 
                         </div>
                     </div>
                 </div>
 
-                {{-- --- Site Visit & Leave --- --}}
+                
                 <div class="col-lg-6 d-flex">
                     <div class="db-card w-100" style="display:flex;flex-direction:column;">
                         <div class="db-card-header">
@@ -629,7 +636,7 @@
                             <span class="card-title">Today's Site Visits</span>
                         </div>
                         <div style="height:260px;overflow-y:auto;flex:1;">
-                            @php
+                            <?php
                                 $currentDate = date('Y-m-d');
                                 $todaySiteVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
                                     ->where('end_date', '>=', $currentDate)
@@ -645,46 +652,46 @@
                                     })->filter();
                                 }
                                 $hasTodaySiteVisits = $todaySiteVisits->count() > 0;
-                            @endphp
-                            @if($hasTodaySiteVisits)
+                            ?>
+                            <?php if($hasTodaySiteVisits): ?>
                                 <table class="db-table">
                                     <thead>
                                         <tr><th>Employee</th><th>Location</th></tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($siteAttendanceEmployees as $svAtt)
-                                            @php
+                                        <?php $__currentLoopData = $siteAttendanceEmployees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $svAtt): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php
                                                 $siteLocation = \App\Models\SiteVisit::where('employee_id', $svAtt['employee']->id)
                                                     ->where('start_date', '<=', date('Y-m-d'))
                                                     ->where('end_date', '>=', date('Y-m-d'))
                                                     ->where('status', 'Approved')->value('location');
-                                            @endphp
+                                            ?>
                                             <tr>
-                                                <td><i class="fas fa-user-circle text-muted me-1"></i>{{ $svAtt['employee']->name ?? 'Unknown' }}</td>
-                                                <td style="font-size:12px;color:var(--text-muted);">{{ $siteLocation ?? '--' }}</td>
+                                                <td><i class="fas fa-user-circle text-muted me-1"></i><?php echo e($svAtt['employee']->name ?? 'Unknown'); ?></td>
+                                                <td style="font-size:12px;color:var(--text-muted);"><?php echo e($siteLocation ?? '--'); ?></td>
                                             </tr>
-                                        @endforeach
-                                        @php
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        <?php
                                             $presentIds = $siteAttendanceEmployees->pluck('employee.id')->toArray();
                                             $pendingVisits = \App\Models\SiteVisit::where('start_date', '<=', $currentDate)
                                                 ->where('end_date', '>=', $currentDate)
                                                 ->where('status', 'Approved')
                                                 ->whereNotIn('employee_id', $presentIds)->get();
-                                        @endphp
-                                        @foreach($pendingVisits as $visit)
+                                        ?>
+                                        <?php $__currentLoopData = $pendingVisits; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $visit): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <tr>
-                                                <td><i class="fas fa-user-circle text-muted me-1"></i>{{ $visit->employee->name ?? 'Unknown' }}</td>
-                                                <td style="font-size:12px;color:var(--text-muted);">{{ $visit->location ?? '--' }}</td>
+                                                <td><i class="fas fa-user-circle text-muted me-1"></i><?php echo e($visit->employee->name ?? 'Unknown'); ?></td>
+                                                <td style="font-size:12px;color:var(--text-muted);"><?php echo e($visit->location ?? '--'); ?></td>
                                             </tr>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </tbody>
                                 </table>
-                            @else
+                            <?php else: ?>
                                 <div class="empty-state">
                                     <i class="fas fa-map-signs d-block"></i>
                                     <p>No site visits today</p>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -696,41 +703,44 @@
                             <span class="card-title">Today's Leave</span>
                         </div>
                         <div style="height:260px;overflow-y:auto;flex:1;">
-                            @if(isset($todayLeaveEmployees) && $todayLeaveEmployees->count() > 0)
+                            <?php if(isset($todayLeaveEmployees) && $todayLeaveEmployees->count() > 0): ?>
                                 <table class="db-table">
                                     <thead>
                                         <tr><th>Employee</th></tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($todayLeaveEmployees as $leave)
+                                        <?php $__currentLoopData = $todayLeaveEmployees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <tr>
                                             <td>
-                                                <i class="fas fa-user-circle text-muted me-1"></i>{{ $leave->employees->name ?? 'N/A' }}
-                                                @if($leave->leave_duration == 'half_day')
+                                                <i class="fas fa-user-circle text-muted me-1"></i><?php echo e($leave->employees->name ?? 'N/A'); ?>
+
+                                                <?php if($leave->leave_duration == 'half_day'): ?>
                                                     <span class="badge bg-info p-1 px-2 rounded ms-2" style="font-size: 0.65rem;">
-                                                        {{ $leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half') }}
+                                                        <?php echo e($leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half')); ?>
+
                                                     </span>
-                                                @else
+                                                <?php else: ?>
                                                     <span class="badge bg-success p-1 px-2 rounded ms-2" style="font-size: 0.65rem;">
-                                                        {{ __('Full Day') }}
+                                                        <?php echo e(__('Full Day')); ?>
+
                                                     </span>
-                                                @endif
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </tbody>
                                 </table>
-                            @else
+                            <?php else: ?>
                                 <div class="empty-state">
                                     <i class="fas fa-umbrella-beach d-block"></i>
                                     <p>No employees on leave today</p>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
-                {{-- --- Notices & TO-DO --- --}}
+                
                 <div class="col-lg-6 d-flex">
                     <div class="db-card w-100" style="display:flex;flex-direction:column;">
                         <div class="db-card-header">
@@ -738,7 +748,7 @@
                             <span class="card-title">Notices</span>
                         </div>
                         <div style="height:260px; overflow-y:auto;flex:1;">
-                            @if(isset($notices) && $notices->count() > 0)
+                            <?php if(isset($notices) && $notices->count() > 0): ?>
                                 <table class="db-table">
                                     <thead>
                                         <tr>
@@ -747,24 +757,26 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($notices as $notice)
+                                        <?php $__currentLoopData = $notices; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notice): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <tr>
-                                            <td>{{ Str::limit($notice->title, 40, '...') }}</td>
+                                            <td><?php echo e(Str::limit($notice->title, 40, '...')); ?></td>
                                             <td style="white-space:nowrap;font-size:12px;color:var(--text-muted);">
-                                                {{ \Carbon\Carbon::parse($notice->notice_startdate)->format('d M') }}
+                                                <?php echo e(\Carbon\Carbon::parse($notice->notice_startdate)->format('d M')); ?>
+
                                                 –
-                                                {{ \Carbon\Carbon::parse($notice->notice_enddate)->format('d M Y') }}
+                                                <?php echo e(\Carbon\Carbon::parse($notice->notice_enddate)->format('d M Y')); ?>
+
                                             </td>
                                         </tr>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </tbody>
                                 </table>
-                            @else
+                            <?php else: ?>
                                 <div class="empty-state">
                                     <i class="fas fa-bell-slash d-block"></i>
                                     <p>No notices right now</p>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -776,7 +788,7 @@
                             <span class="card-title">TO-DO Lists</span>
                         </div>
                         <div style="height:260px; overflow-y:auto;flex:1;">
-                            @if(isset($todos) && $todos->count() > 0)
+                            <?php if(isset($todos) && $todos->count() > 0): ?>
                                 <table class="db-table">
                                     <thead>
                                         <tr>
@@ -787,38 +799,39 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($todos as $todo)
+                                        <?php $__currentLoopData = $todos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $todo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <tr>
-                                            <td>{{ Str::limit($todo->task, 28, '...') }}</td>
+                                            <td><?php echo e(Str::limit($todo->task, 28, '...')); ?></td>
                                             <td>
-                                                @if($todo->priority == 1)
+                                                <?php if($todo->priority == 1): ?>
                                                     <span class="prio-high">High</span>
-                                                @elseif($todo->priority == 2)
+                                                <?php elseif($todo->priority == 2): ?>
                                                     <span class="prio-medium">Medium</span>
-                                                @else
+                                                <?php else: ?>
                                                     <span class="prio-low">Low</span>
-                                                @endif
+                                                <?php endif; ?>
                                             </td>
                                             <td style="font-size:12px;color:var(--text-muted);white-space:nowrap;">
-                                                {{ \Carbon\Carbon::parse($todo->expires_at)->format('d M Y') }}
+                                                <?php echo e(\Carbon\Carbon::parse($todo->expires_at)->format('d M Y')); ?>
+
                                             </td>
                                             <td>
-                                                @if($todo->is_completed)
+                                                <?php if($todo->is_completed): ?>
                                                     <span class="status-done">Done</span>
-                                                @else
+                                                <?php else: ?>
                                                     <span class="status-pend">Pending</span>
-                                                @endif
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </tbody>
                                 </table>
-                            @else
+                            <?php else: ?>
                                 <div class="empty-state">
                                     <i class="fas fa-clipboard-list d-block"></i>
                                     <p>No tasks found</p>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -826,57 +839,60 @@
             </div>
         </div>
 
-        {{-- ===== RIGHT SIDEBAR ===== --}}
+        
         <div class="col-xxl-3">
             <div class="d-flex flex-column gap-3 sticky-top" style="top:12px;">
 
-                {{-- Events --}}
+                
                 <div class="db-card">
                     <div class="db-card-header">
                         <div class="card-icon"><i class="fas fa-star"></i></div>
                         <span class="card-title">This Month's Events</span>
                     </div>
                     <div class="db-card-body pt-2 pb-3 px-3">
-                        @if(isset($monthlyEvents) && count($monthlyEvents) > 0)
+                        <?php if(isset($monthlyEvents) && count($monthlyEvents) > 0): ?>
                             <div class="events-scroll">
-                                @foreach($monthlyEvents as $event)
-                                <div class="event-item-new {{ $event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event' }}">
+                                <?php $__currentLoopData = $monthlyEvents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $event): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <div class="event-item-new <?php echo e($event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event'); ?>">
                                     <div class="event-avatar-new">
-                                        <img src="{{ asset('storage/uploads/avatar/' . $event['avatar']) }}"
-                                             alt="{{ $event['employee_name'] }}"
-                                             onerror="this.onerror=null; this.src='{{ asset('storage/uploads/avatar/avatar.png') }}'">
+                                        <img src="<?php echo e(asset('storage/uploads/avatar/' . $event['avatar'])); ?>"
+                                             alt="<?php echo e($event['employee_name']); ?>"
+                                             onerror="this.onerror=null; this.src='<?php echo e(asset('storage/uploads/avatar/avatar.png')); ?>'">
                                     </div>
                                     <div class="flex-grow-1" style="min-width:0;">
-                                        <div class="event-name">{{ $event['employee_name'] }}</div>
-                                        <div class="event-msg {{ $event['type'] == 'birthday' ? 'birthday-msg' : 'anniversary-msg' }}">
-                                            {{ $event['message'] }}
+                                        <div class="event-name"><?php echo e($event['employee_name']); ?></div>
+                                        <div class="event-msg <?php echo e($event['type'] == 'birthday' ? 'birthday-msg' : 'anniversary-msg'); ?>">
+                                            <?php echo e($event['message']); ?>
+
                                         </div>
                                         <div class="event-meta">
-                                            <i class="fas fa-calendar-alt me-1"></i>{{ $event['date'] }}
+                                            <i class="fas fa-calendar-alt me-1"></i><?php echo e($event['date']); ?>
+
                                             &bull;
-                                            <i class="fas fa-building me-1"></i>{{ $event['department'] }}
+                                            <i class="fas fa-building me-1"></i><?php echo e($event['department']); ?>
+
                                         </div>
                                     </div>
-                                    <div class="event-badge {{ $event['type'] == 'birthday' ? 'birthday-badge' : 'anniversary-badge' }}">
-                                        @if($event['type'] == 'birthday')
+                                    <div class="event-badge <?php echo e($event['type'] == 'birthday' ? 'birthday-badge' : 'anniversary-badge'); ?>">
+                                        <?php if($event['type'] == 'birthday'): ?>
                                             🎂
-                                        @else
+                                        <?php else: ?>
                                             🏆
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
                                 </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
-                        @else
+                        <?php else: ?>
                             <div class="empty-state">
                                 <i class="fas fa-calendar-times d-block"></i>
                                 <p>No events this month</p>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                {{-- Calendar --}}
+                
                 <div class="db-card">
                     <div class="db-card-header">
                         <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
@@ -890,11 +906,11 @@
             </div>
         </div>
 
-        @endif {{-- end employee check --}}
+        <?php endif; ?> 
     </div>
 </div>
 
-{{-- ===== Custom Modal ===== --}}
+
 <div class="db-modal-overlay" id="clockOutModal">
     <div class="db-modal-box">
         <div class="db-modal-icon">
@@ -909,20 +925,20 @@
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('script-page')
-    <script src="{{ asset('assets/js/plugins/main.min.js') }}"></script>
-    <script src="{{ asset('assets/js/plugins/apexcharts.min.js') }}"></script>
+<?php $__env->startPush('script-page'); ?>
+    <script src="<?php echo e(asset('assets/js/plugins/main.min.js')); ?>"></script>
+    <script src="<?php echo e(asset('assets/js/plugins/apexcharts.min.js')); ?>"></script>
 
-    @if (Auth::user()->type == 'employee')
+    <?php if(Auth::user()->type == 'employee'): ?>
     <script type="text/javascript">
     $(document).ready(function() { get_data(); });
     function get_data() {
         var calender_type = 'local_calender';
         $('#calendar').removeClass('local_calender google_calender').addClass(calender_type);
         $.ajax({
-            data: { "_token": "{{ csrf_token() }}", 'calender_type': calender_type },
+            data: { "_token": "<?php echo e(csrf_token()); ?>", 'calender_type': calender_type },
             success: function(data) {
                 var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
                     headerToolbar: { left: 'prev', center: 'title', right: 'next' },
@@ -943,7 +959,7 @@
         });
     }
     </script>
-    @endif
+    <?php endif; ?>
 
     <script>
     // Modal helpers
@@ -981,33 +997,33 @@
         let clockOutTime = localStorage.getItem("clockOutTime") && !isNewDay() ? new Date(localStorage.getItem("clockOutTime")) : null;
         let isPunchedOut = localStorage.getItem("isPunchedOut") === "true" && !isNewDay();
 
-        @if(isset($employeeAttendance) && $employeeAttendance->clock_in)
-            @php
+        <?php if(isset($employeeAttendance) && $employeeAttendance->clock_in): ?>
+            <?php
                 $clockInDate = \Carbon\Carbon::parse(($employeeAttendance->date ?? date('Y-m-d')) . ' ' . $employeeAttendance->clock_in);
-            @endphp
-            clockInTime = new Date({{ $clockInDate->year }}, {{ $clockInDate->month - 1 }}, {{ $clockInDate->day }}, {{ $clockInDate->hour }}, {{ $clockInDate->minute }}, {{ $clockInDate->second }});
+            ?>
+            clockInTime = new Date(<?php echo e($clockInDate->year); ?>, <?php echo e($clockInDate->month - 1); ?>, <?php echo e($clockInDate->day); ?>, <?php echo e($clockInDate->hour); ?>, <?php echo e($clockInDate->minute); ?>, <?php echo e($clockInDate->second); ?>);
             localStorage.setItem("clockInTime", clockInTime.toISOString());
-        @else
+        <?php else: ?>
             clockInTime = null;
             localStorage.removeItem("clockInTime");
-        @endif
+        <?php endif; ?>
 
-        @if(isset($employeeAttendance) && $employeeAttendance->clock_out && $employeeAttendance->clock_out !== '00:00:00')
-            @php
+        <?php if(isset($employeeAttendance) && $employeeAttendance->clock_out && $employeeAttendance->clock_out !== '00:00:00'): ?>
+            <?php
                 $clockOutDate = \Carbon\Carbon::parse(($employeeAttendance->date ?? date('Y-m-d')) . ' ' . $employeeAttendance->clock_out);
-            @endphp
-            clockOutTime = new Date({{ $clockOutDate->year }}, {{ $clockOutDate->month - 1 }}, {{ $clockOutDate->day }}, {{ $clockOutDate->hour }}, {{ $clockOutDate->minute }}, {{ $clockOutDate->second }});
+            ?>
+            clockOutTime = new Date(<?php echo e($clockOutDate->year); ?>, <?php echo e($clockOutDate->month - 1); ?>, <?php echo e($clockOutDate->day); ?>, <?php echo e($clockOutDate->hour); ?>, <?php echo e($clockOutDate->minute); ?>, <?php echo e($clockOutDate->second); ?>);
             localStorage.setItem("clockOutTime", clockOutTime.toISOString());
             localStorage.setItem("isPunchedOut", "true");
             localStorage.setItem("lastClockOutDate", new Date().toLocaleDateString());
             isPunchedOut = true;
-        @else
+        <?php else: ?>
             clockOutTime = null;
             isPunchedOut = false;
             localStorage.removeItem("clockOutTime");
             localStorage.removeItem("isPunchedOut");
             localStorage.removeItem("lastClockOutDate");
-        @endif
+        <?php endif; ?>
 
         function updateTimeDisplay() {
             if (!currentTimeEl) return;
@@ -1161,4 +1177,6 @@
         });
     });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/dashboard/dashboard.blade.php ENDPATH**/ ?>

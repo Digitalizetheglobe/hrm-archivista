@@ -11,6 +11,7 @@ class LeaveType extends Model
         'days',
         'type',
         'is_unlimited',
+        'more_than_3_5_leaves',
         'is_lwp',
         'carry_forward_enabled',
         'max_carry_forward_days',

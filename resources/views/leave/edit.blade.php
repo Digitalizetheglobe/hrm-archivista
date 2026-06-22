@@ -77,13 +77,54 @@
     {{-- Leave Type & Duration --}}
     <div class="lf-section">
         <div class="lf-section-title"><i class="fas fa-calendar-alt"></i> Leave Details</div>
+        {{-- Dates --}}
+        <div class="row g-3 mb-3">
+            <div class="col-md-6" id="start_date_container">
+                <div class="lf-section-label">Start Date</div>
+                <div class="lf-input-icon-wrap">
+                    <i class="fas fa-calendar-day lf-icon"></i>
+                    {{ Form::text('start_date', null, ['class' => 'form-control lf-form-control d_week', 'autocomplete' => 'off', 'id' => 'start_date']) }}
+                </div>
+            </div>
+            <div class="col-md-6" id="end_date_container">
+                <div class="lf-section-label">End Date</div>
+                <div class="lf-input-icon-wrap">
+                    <i class="fas fa-calendar-check lf-icon"></i>
+                    {{ Form::text('end_date', null, ['class' => 'form-control lf-form-control d_week', 'autocomplete' => 'off', 'id' => 'end_date']) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <div class="lf-section-label">Does this leave include a half day?</div>
+            <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" id="has_half_day" name="has_half_day" value="1" style="width: 2.5em; height: 1.25em; cursor: pointer;" @if($leave->leave_duration == 'half_day') checked @endif>
+                <label class="form-check-label ms-2" for="has_half_day" style="padding-top: 2px; font-weight: 500; cursor: pointer;">Yes, subtracts 0.5 days from total</label>
+            </div>
+        </div>
+
+        {{-- Half Day Option (hidden by default) --}}
+        <div id="half_day_type_container" style="{{ $leave->leave_duration == 'half_day' ? '' : 'display: none;' }}" class="mb-3">
+            <div class="lf-section-label">Half Day Session</div>
+            <div class="lf-pill-group orange">
+                <input type="radio" name="half_day_type" id="first_half" value="first_half" @if($leave->half_day_type == 'first_half') checked @endif>
+                <label for="first_half"><i class="fas fa-cloud-sun"></i> First Half</label>
+                <input type="radio" name="half_day_type" id="second_half" value="second_half" @if($leave->half_day_type == 'second_half') checked @endif>
+                <label for="second_half"><i class="fas fa-cloud-moon"></i> Second Half</label>
+            </div>
+        </div>
+
+        <div class="mb-3 p-2 bg-light rounded border">
+            <span class="lf-section-label mb-0" style="font-size: 0.8rem;">Calculated Leave Days: <strong id="calculated_days_display" class="text-primary" style="font-size: 1rem;">0</strong></span>
+        </div>
+
         <div class="mb-3">
             <div class="lf-section-label">Leave Type <span class="text-danger">*</span></div>
             <div class="lf-input-icon-wrap">
                 <i class="fas fa-list lf-icon"></i>
                 <select name="leave_type_id" id="leave_type_id" class="form-control lf-form-control">
                     @foreach ($leavetypes as $type)
-                        <option value="{{ $type->id }}" @if($leave->leave_type_id == $type->id) selected @endif>
+                        <option value="{{ $type->id }}" data-more-than-3-5="{{ $type->more_than_3_5_leaves ? 'true' : 'false' }}" @if($leave->leave_type_id == $type->id) selected @endif>
                             {{ $type->title }}
                             @if(strtolower(trim($type->title)) === 'comp-off')
                                 ({{ \App\Http\Controllers\LeaveController::getCompOffBalance($leave->employee_id) }} {{ __('Days Available') }})
@@ -95,46 +136,6 @@
                         </option>
                     @endforeach
                 </select>
-            </div>
-        </div>
-
-        {{-- Leave Duration Pills --}}
-        <div class="mb-3">
-            <div class="lf-section-label">Leave Duration</div>
-            <div class="lf-pill-group">
-                <input type="radio" name="leave_duration" id="full_day" value="full_day" @if($leave->leave_duration == 'full_day' || empty($leave->leave_duration)) checked @endif>
-                <label for="full_day"><i class="fas fa-sun"></i> Full Day</label>
-                <input type="radio" name="leave_duration" id="half_day" value="half_day" @if($leave->leave_duration == 'half_day') checked @endif>
-                <label for="half_day"><i class="fas fa-adjust"></i> Half Day</label>
-            </div>
-        </div>
-
-        {{-- Half Day Option --}}
-        <div id="half_day_type_container" style="{{ $leave->leave_duration == 'half_day' ? '' : 'display: none;' }}" class="mb-3">
-            <div class="lf-section-label">Half Day Session</div>
-            <div class="lf-pill-group orange">
-                <input type="radio" name="half_day_type" id="first_half" value="first_half" @if($leave->half_day_type == 'first_half') checked @endif>
-                <label for="first_half"><i class="fas fa-cloud-sun"></i> First Half</label>
-                <input type="radio" name="half_day_type" id="second_half" value="second_half" @if($leave->half_day_type == 'second_half') checked @endif>
-                <label for="second_half"><i class="fas fa-cloud-moon"></i> Second Half</label>
-            </div>
-        </div>
-
-        {{-- Dates --}}
-        <div class="row g-3">
-            <div class="col-md-6" id="start_date_container">
-                <div class="lf-section-label">Start Date</div>
-                <div class="lf-input-icon-wrap">
-                    <i class="fas fa-calendar-day lf-icon"></i>
-                    {{ Form::text('start_date', null, ['class' => 'form-control lf-form-control d_week', 'autocomplete' => 'off', 'id' => 'start_date']) }}
-                </div>
-            </div>
-            <div class="col-md-6" id="end_date_container" style="{{ $leave->leave_duration == 'half_day' ? 'display: none;' : '' }}">
-                <div class="lf-section-label">End Date</div>
-                <div class="lf-input-icon-wrap">
-                    <i class="fas fa-calendar-check lf-icon"></i>
-                    {{ Form::text('end_date', null, ['class' => 'form-control lf-form-control d_week', 'autocomplete' => 'off', 'id' => 'end_date']) }}
-                </div>
             </div>
         </div>
     </div>
@@ -176,29 +177,68 @@
 <script>
     $(document).ready(function() {
         // Leave Duration Logic
-        $('input[name="leave_duration"]').on('change', function() {
-            var duration = $(this).val();
-            if (duration == 'half_day') {
+        $('#has_half_day').on('change', function() {
+            if ($(this).is(':checked')) {
                 $('#half_day_type_container').fadeIn();
-                $('#end_date_container').hide();
-                // Set first half as default if none selected
                 if (!$('input[name="half_day_type"]:checked').val()) {
-                    $('#first_half').prop('checked', true);
+                    $('#second_half').prop('checked', true);
                 }
-                // Sync end date with start date
-                $('#end_date').val($('#start_date').val());
             } else {
                 $('#half_day_type_container').fadeOut();
-                $('#end_date_container').fadeIn();
             }
+            calculateDays();
         });
 
-        // Sync end date if it's a half day and start date changes
-        $('#start_date').on('change', function() {
-            if ($('input[name="leave_duration"]:checked').val() == 'half_day') {
-                $('#end_date').val($(this).val());
-            }
+        $('#start_date, #end_date').on('change', function() {
+            calculateDays();
         });
+
+        function calculateDays() {
+            var startDate = $('#start_date').val();
+            var endDate = $('#end_date').val();
+            var hasHalfDay = $('#has_half_day').is(':checked') ? 1 : 0;
+
+            if (startDate && endDate) {
+                $.ajax({
+                    url: '{{ route('leave.calculate_days') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        start_date: startDate,
+                        end_date: endDate,
+                        has_half_day: hasHalfDay
+                    },
+                    success: function(response) {
+                        var totalDays = parseFloat(response.total_days);
+                        $('#calculated_days_display').text(totalDays);
+                        filterLeaveTypes(totalDays);
+                    }
+                });
+            }
+        }
+
+        function filterLeaveTypes(totalDays) {
+            var $select = $('#leave_type_id');
+            var currentValue = $select.val();
+            
+            $select.find('option').each(function() {
+                if ($(this).val() === '') return;
+                
+                var requiresMoreThan35 = $(this).attr('data-more-than-3-5') === 'true';
+                
+                if (requiresMoreThan35 && totalDays <= 3.5) {
+                    $(this).prop('disabled', true).hide();
+                    if (currentValue === $(this).val()) {
+                        $select.val(''); // clear selection
+                    }
+                } else {
+                    $(this).prop('disabled', false).show();
+                }
+            });
+        }
+        
+        // Initial calculation
+        setTimeout(calculateDays, 500);
 
         setTimeout(() => {
             var employee_id = $('#employee_id').val();

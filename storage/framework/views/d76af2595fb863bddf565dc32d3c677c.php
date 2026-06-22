@@ -289,7 +289,7 @@
                                                     <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
                                                     <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
                                                     <td>
-                                                        <?php echo e($leave->total_leave_days); ?>
+                                                        <?php echo e($leave->leave_duration == 'half_day' ? '0.5' : $leave->total_leave_days); ?>
 
                                                         <?php if($leave->leave_duration == 'half_day'): ?>
                                                             <br>
@@ -405,7 +405,7 @@
                                                     <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
                                                     <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
                                                     <td>
-                                                        <?php echo e($leave->total_leave_days); ?>
+                                                        <?php echo e($leave->leave_duration == 'half_day' ? '0.5' : $leave->total_leave_days); ?>
 
                                                         <?php if($leave->leave_duration == 'half_day'): ?>
                                                             <br>
@@ -519,7 +519,7 @@
                                                     <td><?php echo e(\Auth::user()->dateFormat($leave->start_date)); ?></td>
                                                     <td><?php echo e(\Auth::user()->dateFormat($leave->end_date)); ?></td>
                                                     <td>
-                                                        <?php echo e($leave->total_leave_days); ?>
+                                                        <?php echo e($leave->leave_duration == 'half_day' ? '0.5' : $leave->total_leave_days); ?>
 
                                                         <?php if($leave->leave_duration == 'half_day'): ?>
                                                             <br>

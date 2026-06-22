@@ -1257,6 +1257,7 @@ Route::group(['middleware' => ['verified']], function () {
     Route::get('leave-details', [LeaveController::class, 'leaveDetails'])->name('leave.details')->middleware(['auth', 'XSS']);
     Route::post('leave/bulk-delete', [LeaveController::class, 'bulkDelete'])->name('leave.bulk_delete')->middleware(['auth', 'XSS']);
     Route::post('leave/save-custom-email', [LeaveController::class, 'saveCustomEmail'])->name('leave.save_custom_email')->middleware(['auth', 'XSS']);
+    Route::post('leave/calculate-days', [LeaveController::class, 'calculateDays'])->name('leave.calculate_days')->middleware(['auth', 'XSS']);
     Route::get('employee-leave-allocations', [\App\Http\Controllers\EmployeeLeaveAllocationController::class, 'index'])->name('employee-leave-allocations.index')->middleware(['auth', 'XSS']);
     Route::get('employee-leave-allocations/{employee_id}/edit', [\App\Http\Controllers\EmployeeLeaveAllocationController::class, 'edit'])->name('employee-leave-allocations.edit')->middleware(['auth', 'XSS']);
     Route::post('employee-leave-allocations/{employee_id}', [\App\Http\Controllers\EmployeeLeaveAllocationController::class, 'update'])->name('employee-leave-allocations.update')->middleware(['auth', 'XSS']);

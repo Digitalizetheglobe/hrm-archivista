@@ -433,6 +433,15 @@
                                                     <div class="d-flex align-items-center gap-2">
                                                         <i class="fas fa-user-circle" style="color:var(--text-muted);font-size:16px;"></i>
                                                         {{ $leave->employees->name ?? 'N/A' }}
+                                                        @if($leave->leave_duration == 'half_day')
+                                                            <span class="badge bg-info p-1 px-2 rounded ms-2" style="font-size: 0.65rem;">
+                                                                {{ $leave->half_day_type == 'first_half' ? __('First Half') : __('Second Half') }}
+                                                            </span>
+                                                        @else
+                                                            <span class="badge bg-success p-1 px-2 rounded ms-2" style="font-size: 0.65rem;">
+                                                                {{ __('Full Day') }}
+                                                            </span>
+                                                        @endif
                                                     </div>
                                                 </td>
                                             </tr>

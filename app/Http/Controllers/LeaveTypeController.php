@@ -58,6 +58,7 @@ class LeaveTypeController extends Controller
                 $leavetype->type = $request->type;
                 $leavetype->is_lwp = $request->has('is_lwp') ? true : false;
                 $leavetype->is_unlimited = $request->has('is_unlimited') ? true : false;
+                $leavetype->more_than_3_5_leaves = $request->has('more_than_3_5_leaves') ? true : false;
                 $leavetype->carry_forward_enabled = $request->has('carry_forward_enabled') ? true : false;
                 
                 if($leavetype->is_lwp) {
@@ -153,6 +154,7 @@ class LeaveTypeController extends Controller
                     $leavetype->type = $request->type;
                     $leavetype->is_lwp = $request->has('is_lwp') ? true : false;
                     $leavetype->is_unlimited = $request->has('is_unlimited') ? true : false;
+                    $leavetype->more_than_3_5_leaves = $request->has('more_than_3_5_leaves') ? true : false;
                     $leavetype->carry_forward_enabled = $request->has('carry_forward_enabled') ? true : false;
                     
                     if($leavetype->is_lwp) {

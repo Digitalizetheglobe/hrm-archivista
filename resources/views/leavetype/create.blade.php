@@ -48,6 +48,21 @@
 
         <div class="col-lg-12 col-md-12 col-sm-12">
             <div class="form-group">
+                {{ Form::label('more_than_3_5_leaves', __('More than 3.5 Leaves'), ['class' => 'form-label']) }}
+                <div class="form-check">
+                    {{ Form::checkbox('more_than_3_5_leaves', 1, false, ['class' => 'form-check-input', 'id' => 'more_than_3_5_leaves']) }}
+                    {{ Form::label('more_than_3_5_leaves', __('Check if this rule applies to more than 3.5 leaves'), ['class' => 'form-check-label']) }}
+                </div>
+                @error('more_than_3_5_leaves')
+                    <span class="invalid-name" role="alert">
+                        <strong class="text-danger">{{ $message }}</strong>
+                    </span>
+                @enderror
+            </div>
+        </div>
+
+        <div class="col-lg-12 col-md-12 col-sm-12">
+            <div class="form-group">
                 {{ Form::label('is_lwp', __('Leave Without Pay (LWP)'), ['class' => 'form-label']) }}
                 <div class="form-check">
                     {{ Form::checkbox('is_lwp', 1, false, ['class' => 'form-check-input', 'id' => 'is_lwp']) }}
