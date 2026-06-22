@@ -1262,7 +1262,7 @@ class AttendanceEmployeeController extends Controller
 
             $attendanceData = [];
             
-            $leaveAllocationService = new \App\services\LeaveAllocationService();
+            $leaveAllocationService = new \App\Services\LeaveAllocationService();
 
             // Only process data if we have a selected employee
             if ($selectedEmployee) {
