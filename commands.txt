@@ -49,14 +49,6 @@ git pull origin main
 ```bash
 chown -R nobody:nobody storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
-```
-
----
-writw proepr
-
-# ✅ STEP 6 — Cache Clear करा
-
-```bash
 php artisan optimize:clear
 ```
 

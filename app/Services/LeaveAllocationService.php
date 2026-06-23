@@ -301,7 +301,18 @@ class LeaveAllocationService
             $query->whereBetween('start_date', [$startDate, $endDate]);
         }
 
-        return $query->sum('total_leave_days');
+        $leaves = $query->get(['total_leave_days', 'leave_duration']);
+        
+        $totalDays = 0;
+        foreach ($leaves as $leave) {
+            if ($leave->leave_duration === 'half_day') {
+                $totalDays += 0.5;
+            } else {
+                $totalDays += (float)$leave->total_leave_days;
+            }
+        }
+        
+        return $totalDays;
     }
 
     /**
