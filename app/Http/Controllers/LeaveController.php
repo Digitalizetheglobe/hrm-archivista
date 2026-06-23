@@ -813,6 +813,9 @@ class LeaveController extends Controller
         $leave->status = $request->status;
         if ($leave->status == 'Approved') {
             $total_leave_days        = $this->calculateBusinessDays($leave->start_date, $leave->end_date);
+            if ($leave->leave_duration == 'half_day') {
+                $total_leave_days = max(0, $total_leave_days - 0.5);
+            }
             $leave->total_leave_days = $total_leave_days;
             $leave->status           = 'Approved';
         }
