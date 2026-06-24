@@ -1,18 +1,7 @@
-# 🚀 Laravel Project Update Guide (VPS - Production)
 
-## 📌 Use Case
 
-हा guide तेव्हा वापरायचा जेव्हा:
 
-* project आधीच setup आहे ✔️
-* `.env` already configured आहे ✔️
-* फक्त **new code update (git pull)** करायचा आहे ✔️
 
----
-
-# ✅ STEP 1 — Project Directory मध्ये जा
-
-```bash
 cd /home/hrma.archivistaindia.com/public_html
 ```
 
@@ -54,15 +43,6 @@ php artisan optimize:clear
 
 ---
 
-# ✅ STEP 7 — Database Migration (if needed)
-
-```bash
-php artisan migrate --force
-```
-
-👉 ⚠️ Production मध्ये `--force` वापर
-
----
 
 # ✅ STEP 8 — Restart Server
 
