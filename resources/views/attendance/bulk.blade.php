@@ -86,6 +86,67 @@
             });
         }
     </script>
+    <style>
+        .bulk-attendance-table th {
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border-color);
+        }
+        .bulk-attendance-table td {
+            vertical-align: middle;
+            padding: 15px 10px;
+        }
+        .emp-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+        .emp-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            background: rgba(34,197,94,0.1);
+            color: #16a34a;
+        }
+        .time-group {
+            background: var(--surface-2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        .time-group:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .time-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+        .time-input {
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            padding: 6px 10px;
+            font-size: 13px;
+            width: 100%;
+            transition: border-color 0.15s ease;
+        }
+        .time-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+        }
+        .custom-control-label {
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
 @endpush
 
 @section('action-button')
@@ -156,7 +217,7 @@
             <div class="card-header card-body table-border-style">
                 {{ Form::open(['route' => ['attendanceemployee.bulkattendance'], 'method' => 'post']) }}
                 <div class="table-responsive">
-                    <table class="table" id="">
+                    <table class="table bulk-attendance-table" id="">
                         <thead>
                             <tr>
                                 <th width="10%">{{ __('Employee Id') }}</th>
@@ -184,61 +245,60 @@
                                     <td class="Id">
                                         <input type="hidden" value="{{ $employee->id }}" name="employee_id[]">
                                         <a href="{{ route('employee.show', \Illuminate\Support\Facades\Crypt::encrypt($employee->id)) }}"
-                                            class="btn btn-outline-primary">{{ \Auth::user()->employeeIdFormat($employee->employee_id) }}</a>
+                                            class="btn btn-outline-primary btn-sm">{{ \Auth::user()->employeeIdFormat($employee->employee_id) }}</a>
                                     </td>
-                                    <td>{{ $employee->name }}</td>
-                                    <td>{{ !empty($employee->branch) ? $employee->branch->name : '' }}</td>
-                                    <td>{{ !empty($employee->department) ? $employee->department->name : '' }}</td>
                                     <td>
-                                        <div class="row">
-                                            <div class="col-md-1">
-                                                <div class="form-group">
-                                                    <div class="custom-control custom-checkbox">
-                                                        <input class="form-check-input present" type="checkbox"
-                                                            name="present-{{ $employee->id }}"
-                                                            id="present{{ $employee->id }}"
-                                                            {{ !empty($attendance) && in_array($attendance->status, ['Present', 'Half Day']) ? 'checked' : '' }}>
-                                                        <label class="custom-control-label"
-                                                            for="present{{ $employee->id }}"></label>
-                                                    </div>
-                                                </div>
+                                        <div class="emp-name">{{ $employee->name }}</div>
+                                    </td>
+                                    <td><span class="badge bg-secondary">{{ !empty($employee->branch) ? $employee->branch->name : '' }}</span></td>
+                                    <td><span class="badge bg-info">{{ !empty($employee->department) ? $employee->department->name : '' }}</span></td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-4">
+                                            <div class="form-check custom-checkbox">
+                                                <input class="form-check-input present" type="checkbox"
+                                                    name="present-{{ $employee->id }}"
+                                                    id="present{{ $employee->id }}"
+                                                    {{ !empty($attendance) && in_array($attendance->status, ['Present', 'Half Day']) ? 'checked' : '' }}>
+                                                <label class="form-check-label custom-control-label"
+                                                    for="present{{ $employee->id }}">Present</label>
                                             </div>
-                                            <div
-                                                class="col-md-8 present_check_in {{ empty($attendance) ? 'd-none' : '' }} ">
-                                                <div class="row">
-                                                    <label class="col-md-2 control-label">{{ __('In') }}</label>
-                                                    <div class="col-md-4">
-                                                        <input type="time" class="form-control timepicker"
+                                            
+                                            <div class="present_check_in {{ empty($attendance) ? 'd-none' : '' }} flex-grow-1">
+                                                <div class="d-flex gap-3">
+                                                    <div class="time-group flex-grow-1">
+                                                        <label class="time-label"><i class="ti ti-clock me-1"></i> {{ __('In Time') }}</label>
+                                                        <input type="time" class="time-input"
                                                             name="in-{{ $employee->id }}"
                                                             id="in-{{ $employee->id }}"
                                                             value="{{ !empty($attendance) && $attendance->clock_in != '00:00:00' ? $attendance->clock_in : \Utility::getValByName('company_start_time') }}">
+                                                        
                                                         <!-- Hidden fields for location -->
                                                         <input type="hidden" name="clock_in_latitude_{{ $employee->id }}" id="clock_in_latitude_{{ $employee->id }}" value="{{ $attendance->clock_in_latitude ?? '' }}">
                                                         <input type="hidden" name="clock_in_longitude_{{ $employee->id }}" id="clock_in_longitude_{{ $employee->id }}" value="{{ $attendance->clock_in_longitude ?? '' }}">
                                                         <input type="hidden" name="clock_in_location_{{ $employee->id }}" id="clock_in_location_{{ $employee->id }}" value="{{ $attendance->clock_in_location ?? '' }}">
-                                                        <small class="text-muted" id="clock_in_location_text_{{ $employee->id }}">
-                                                            @if(!empty($attendance->clock_in_location))
-                                                                📍 {{ $attendance->clock_in_location }}
-                                                            @endif
-                                                        </small>
+                                                        @if(!empty($attendance) && !empty($attendance->clock_in_location))
+                                                            <div class="mt-1 text-muted" style="font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="{{ $attendance->clock_in_location }}">
+                                                                <i class="ti ti-map-pin text-primary"></i> {{ $attendance->clock_in_location }}
+                                                            </div>
+                                                        @endif
                                                     </div>
 
-                                                    <label for="inputValue"
-                                                        class="col-md-2 control-label">{{ __('Out') }}</label>
-                                                    <div class="col-md-4">
-                                                        <input type="time" class="form-control timepicker"
+                                                    <div class="time-group flex-grow-1">
+                                                        <label class="time-label"><i class="ti ti-clock me-1"></i> {{ __('Out Time') }}</label>
+                                                        <input type="time" class="time-input"
                                                             name="out-{{ $employee->id }}"
                                                             id="out-{{ $employee->id }}"
-                                                            value="{{ !empty($attendance) && $attendance->clock_out != '00:00:00' ? $attendance->clock_out : \Utility::getValByName('company_end_time') }}">
+                                                            value="{{ !empty($attendance) && $attendance->clock_out != '00:00:00' ? $attendance->clock_out : '' }}">
+                                                        
                                                         <!-- Hidden fields for location -->
                                                         <input type="hidden" name="clock_out_latitude_{{ $employee->id }}" id="clock_out_latitude_{{ $employee->id }}" value="{{ $attendance->clock_out_latitude ?? '' }}">
                                                         <input type="hidden" name="clock_out_longitude_{{ $employee->id }}" id="clock_out_longitude_{{ $employee->id }}" value="{{ $attendance->clock_out_longitude ?? '' }}">
                                                         <input type="hidden" name="clock_out_location_{{ $employee->id }}" id="clock_out_location_{{ $employee->id }}" value="{{ $attendance->clock_out_location ?? '' }}">
-                                                        <small class="text-muted" id="clock_out_location_text_{{ $employee->id }}">
-                                                            @if(!empty($attendance->clock_out_location))
-                                                                📍 {{ $attendance->clock_out_location }}
-                                                            @endif
-                                                        </small>
+                                                        @if(!empty($attendance) && !empty($attendance->clock_out_location))
+                                                            <div class="mt-1 text-muted" style="font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="{{ $attendance->clock_out_location }}">
+                                                                <i class="ti ti-map-pin text-danger"></i> {{ $attendance->clock_out_location }}
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>

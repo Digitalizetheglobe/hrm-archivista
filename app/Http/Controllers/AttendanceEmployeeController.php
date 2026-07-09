@@ -86,8 +86,8 @@ class AttendanceEmployeeController extends Controller
                     $overtime = sprintf('%02d:%02d:%02d', $hours, $mins, $secs);
                 }
             } else {
-                $status = 'Half Day'; // Still same day, mark as half day
-                $clockOut = date('H:i:s', strtotime($clockIn) + (6.5 * 3600)); // 6.5 hours after punch-in
+                $status = 'Present'; // Still same day, keep as Present
+                $clockOut = '00:00:00'; // Keep clock-out empty as they haven't punched out yet
             }
         } else {
             // Calculate total worked hours
@@ -819,8 +819,8 @@ class AttendanceEmployeeController extends Controller
                     if ($request->$present == 'on') {
                         $attendance = AttendanceEmployee::where('employee_id', '=', $employee)->where('date', '=', $request->date)->first();
 
-                        $in  = date("H:i:s", strtotime($request->$in));
-                        $out = date("H:i:s", strtotime($request->$out));
+                        $in  = !empty($request->$in) ? date("H:i:s", strtotime($request->$in)) : '00:00:00';
+                        $out = !empty($request->$out) ? date("H:i:s", strtotime($request->$out)) : '00:00:00';
 
                         // Use new attendance calculation logic
                         $attendanceData = $this->calculateAttendanceStatus($in, $out, $request->date);

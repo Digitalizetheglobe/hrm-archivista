@@ -317,7 +317,7 @@
                                                     @endphp
                                                 </td>
                                                 <td>
-                                                    @if(($data['clock_out'] ?? '--:--') !== '--:--')
+                                                    @if(($data['clock_out'] ?? '--:--') !== '--:--' && ($data['clock_out'] ?? '') !== '00:00:00')
                                                         <span class="badge-absent">{{ $data['clock_out'] }}</span>
                                                     @else
                                                         <span style="color:var(--text-muted);">--:--</span>
@@ -326,7 +326,8 @@
                                                 <td style="font-size:12px;color:var(--text-muted);">
                                                     @php
                                                         $outLocation = $data['clock_out_location'] ?? null;
-                                                        if ($outLocation) {
+                                                        $clockOut = $data['clock_out'] ?? '00:00:00';
+                                                        if ($outLocation && $clockOut !== '00:00:00') {
                                                             $parts = explode(',', $outLocation);
                                                             echo '<i class="fas fa-map-marker-alt me-1" style="color:#dc2626;"></i>' . e(trim($parts[0]));
                                                         } else {
@@ -384,17 +385,17 @@
                                             <td style="font-size:12px;color:var(--text-muted);">
                                                 @php $loc = $data['clock_in_location']; $parts = explode(',', $loc); echo !empty($loc) && $loc != '--:--' ? '<i class="fas fa-map-marker-alt me-1" style="color:var(--primary);"></i>'.e(trim($parts[0])) : '--'; @endphp
                                             </td>
-                                            <td>{{ $data['clock_in_2'] ?? '--' }}</td>
+                                            <td>{{ !empty($data['clock_in_2']) && $data['clock_in_2'] !== '00:00:00' ? $data['clock_in_2'] : '--' }}</td>
                                             <td style="font-size:12px;color:var(--text-muted);">
-                                                @php $loc2 = $data['clock_in_2_location']; $parts = explode(',', $loc2); echo !empty($loc2) && $loc2 != '--:--' ? e(trim($parts[0])) : '--'; @endphp
+                                                @php $loc2 = $data['clock_in_2_location'] ?? ''; $clockIn2 = $data['clock_in_2'] ?? '00:00:00'; $parts = explode(',', $loc2); echo !empty($loc2) && $loc2 != '--:--' && $clockIn2 !== '00:00:00' ? e(trim($parts[0])) : '--'; @endphp
                                             </td>
-                                            <td>{{ $data['clock_out_2'] ?? '--' }}</td>
+                                            <td>{{ !empty($data['clock_out_2']) && $data['clock_out_2'] !== '00:00:00' ? $data['clock_out_2'] : '--' }}</td>
                                             <td style="font-size:12px;color:var(--text-muted);">
-                                                @php $outLoc2 = $data['clock_out_2_location']; $parts = explode(',', $outLoc2); echo !empty($outLoc2) && $outLoc2 != '--:--' ? e(trim($parts[0])) : '--'; @endphp
+                                                @php $outLoc2 = $data['clock_out_2_location'] ?? ''; $clockOut2 = $data['clock_out_2'] ?? '00:00:00'; $parts = explode(',', $outLoc2); echo !empty($outLoc2) && $outLoc2 != '--:--' && $clockOut2 !== '00:00:00' ? e(trim($parts[0])) : '--'; @endphp
                                             </td>
-                                            <td>{{ $data['clock_out'] ?? '--' }}</td>
+                                            <td>{{ !empty($data['clock_out']) && $data['clock_out'] !== '00:00:00' ? $data['clock_out'] : '--' }}</td>
                                             <td style="font-size:12px;color:var(--text-muted);">
-                                                @php $outLoc = $data['clock_out_location']; $parts = explode(',', $outLoc); echo !empty($outLoc) && $outLoc != '--:--' ? e(trim($parts[0])) : '--'; @endphp
+                                                @php $outLoc = $data['clock_out_location'] ?? ''; $clockOut = $data['clock_out'] ?? '00:00:00'; $parts = explode(',', $outLoc); echo !empty($outLoc) && $outLoc != '--:--' && $clockOut !== '00:00:00' ? e(trim($parts[0])) : '--'; @endphp
                                             </td>
                                         </tr>
                                     @empty
