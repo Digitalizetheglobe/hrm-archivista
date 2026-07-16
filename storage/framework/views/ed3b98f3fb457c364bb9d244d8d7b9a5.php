@@ -323,6 +323,10 @@
 
                         <?php if(\Auth::user()->type == 'company'): ?>
                                 
+                            <li class="dash-item <?php echo e(Request::segment(1) == 'carry-forward-leaves' ? ' active' : ''); ?>">
+                                <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('leave.carryforward')); ?>"><?php echo e(__('Carryforward Leaves')); ?></a>
+                            </li>
+
                             <li class="dash-item <?php echo e(Request::segment(1) == 'leave-details' ? ' active' : ''); ?>">
                                 <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('leave.details')); ?>"><?php echo e(__('Leave Details')); ?></a>
                             </li>

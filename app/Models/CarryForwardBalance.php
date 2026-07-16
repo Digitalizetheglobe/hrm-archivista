@@ -81,8 +81,13 @@ class CarryForwardBalance extends Model
         // Get current month balance
         $currentBalance = self::getOrCreateBalance($employeeId, $leaveTypeId, $currentMonth);
         
-        // Calculate carry forward (remaining days, capped at max limit)
-        $carryForwardAmount = min($currentBalance->remaining_days, $leaveType->max_carry_forward_days);
+        // Calculate carry forward (remaining days). Since UI doesn't allow setting max_carry_forward_days,
+        // we assume unlimited carry forward when enabled.
+        if (isset($leaveType->max_carry_forward_days) && $leaveType->max_carry_forward_days > 0) {
+            $carryForwardAmount = min($currentBalance->remaining_days, $leaveType->max_carry_forward_days);
+        } else {
+            $carryForwardAmount = $currentBalance->remaining_days;
+        }
         
         return max(0, $carryForwardAmount);
     }

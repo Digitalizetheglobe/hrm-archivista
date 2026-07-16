@@ -49,12 +49,3 @@ php artisan optimize:clear
 ```bash
 systemctl restart lsws
 ```
-
-
-
-
-
-
-cd /home/hrma.archivistaindia.com/public_html
-
-c

@@ -1214,6 +1214,117 @@ class LeaveController extends Controller
         return max(1, $days);
     }
 
+    public function carryforwardIndex(Request $request)
+    {
+        $user = \Auth::user();
+        
+        $canViewAll = $user->type == 'company' || $user->can('Manage Leave');
+        $canViewOwn = true;
+        
+        if (!$canViewAll && !$canViewOwn) {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+
+        if ($canViewAll) {
+            $currentYear = date('Y');
+            $employees = Employee::where('created_by', \Auth::user()->creatorId())
+                ->whereNotIn('id', function($query) {
+                    $query->select('employee_id')->from('terminations');
+                })
+                ->get();
+            
+            $selectedEmployeeId = $request->get('employee_id');
+            $employeeData = null;
+            
+            if ($selectedEmployeeId) {
+                $selectedEmployee = Employee::find($selectedEmployeeId);
+                $now = now();
+                
+                $currentYearMonth = date('Y-m');
+                // Fetch leave balances for the selected employee for the current year up to current month
+                $balances = \App\Models\CarryForwardBalance::with('leaveType')
+                    ->where('employee_id', $selectedEmployeeId)
+                    ->where('period_type', 'monthly')
+                    ->whereHas('leaveType', function($q) {
+                        $q->where('carry_forward_enabled', 1);
+                    })
+                    ->where(function($query) use ($currentYear, $currentYearMonth) {
+                        $query->where('month', 'like', $currentYear.'%')
+                              ->where('month', '<=', $currentYearMonth);
+                    })
+                    ->orderBy('month', 'asc')
+                    ->get();
+                    
+                $employeeData = [];
+                foreach ($balances as $balance) {
+                    $leaveTitle = $balance->leaveType ? $balance->leaveType->title : 'Unknown';
+                    
+                    if (!isset($employeeData[$leaveTitle])) {
+                        $employeeData[$leaveTitle] = [];
+                    }
+                    
+                    $monthNum = (int)date('m', strtotime($balance->month . '-01'));
+                    $employeeData[$leaveTitle][] = [
+                        'month' => date('F', mktime(0, 0, 0, $monthNum, 10)),
+                        'opening_balance' => $balance->carried_forward_days + $balance->extra_days,
+                        'allocated' => $balance->allocated_days,
+                        'used' => $balance->used_days,
+                        'available' => $balance->remaining_days,
+                    ];
+                }
+            }
+                
+            return view('leave.carryforward', compact('employees', 'selectedEmployeeId', 'employeeData', 'currentYear', 'canViewAll'));
+        } else {
+            // Self-service logic for own view
+            $currentYear = date('Y');
+            $employee = Employee::where('user_id', $user->id)->first();
+            
+            if (!$employee) {
+                return redirect()->back()->with('error', __('Employee profile not found.'));
+            }
+            
+            $selectedEmployeeId = $employee->id;
+            $now = now();
+
+            $currentYearMonth = date('Y-m');
+            $balances = \App\Models\CarryForwardBalance::with('leaveType')
+                ->where('employee_id', $selectedEmployeeId)
+                ->where('period_type', 'monthly')
+                ->whereHas('leaveType', function($q) {
+                    $q->where('carry_forward_enabled', 1);
+                })
+                ->where(function($query) use ($currentYear, $currentYearMonth) {
+                    $query->where('month', 'like', $currentYear.'%')
+                          ->where('month', '<=', $currentYearMonth);
+                })
+                ->orderBy('month', 'asc')
+                ->get();
+                
+            $employeeData = [];
+            foreach ($balances as $balance) {
+                $leaveTitle = $balance->leaveType ? $balance->leaveType->title : 'Unknown';
+                
+                if (!isset($employeeData[$leaveTitle])) {
+                    $employeeData[$leaveTitle] = [];
+                }
+                
+                $monthNum = (int)date('m', strtotime($balance->month . '-01'));
+                $employeeData[$leaveTitle][] = [
+                    'month' => date('F', mktime(0, 0, 0, $monthNum, 10)),
+                    'opening_balance' => $balance->carried_forward_days + $balance->extra_days,
+                    'allocated' => $balance->allocated_days,
+                    'used' => $balance->used_days,
+                    'available' => $balance->remaining_days,
+                ];
+            }
+            
+            $employees = []; // Not needed for self view, but compact needs it or we can just pass empty array
+            
+            return view('leave.carryforward', compact('employees', 'selectedEmployeeId', 'employeeData', 'currentYear', 'canViewAll'));
+        }
+    }
+
     /**
      * Display comprehensive leave details for all employees categorized by type
      */

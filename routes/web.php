@@ -1255,6 +1255,7 @@ Route::group(['middleware' => ['verified']], function () {
     Route::get('leave/get-leave-types/{employeeId}', [LeaveController::class, 'getLeaveTypesForEmployee'])->middleware(['auth', 'XSS']);
     Route::get('leave/get-leave-balance/{employeeId}/{leaveTypeId}', [LeaveController::class, 'getLeaveBalanceForEmployee'])->middleware(['auth', 'XSS']);
     Route::get('leave-details', [LeaveController::class, 'leaveDetails'])->name('leave.details')->middleware(['auth', 'XSS']);
+    Route::get('carry-forward-leaves', [LeaveController::class, 'carryforwardIndex'])->name('leave.carryforward')->middleware(['auth', 'XSS']);
     Route::post('leave/bulk-delete', [LeaveController::class, 'bulkDelete'])->name('leave.bulk_delete')->middleware(['auth', 'XSS']);
     Route::post('leave/save-custom-email', [LeaveController::class, 'saveCustomEmail'])->name('leave.save_custom_email')->middleware(['auth', 'XSS']);
     Route::post('leave/calculate-days', [LeaveController::class, 'calculateDays'])->name('leave.calculate_days')->middleware(['auth', 'XSS']);
