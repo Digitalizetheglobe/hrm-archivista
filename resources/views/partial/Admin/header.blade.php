@@ -105,6 +105,7 @@
                                         @php
                                             $notiData = $notification->data;
                                             $action = $notiData['action'] ?? '';
+                                            $url = $notiData['url'] ?? route('leave.index');
                                             $bgColor = 'bg-primary';
                                             if ($action === 'Approved') {
                                                 $bgColor = 'bg-success';
@@ -114,7 +115,7 @@
                                                 $bgColor = 'bg-warning';
                                             }
                                         @endphp
-                                        <a href="{{ route('leave.index') }}" data-id="{{ $notification->id }}" class="list-group-item list-group-item-action d-flex align-items-start notification-item-click {{ $notification->read_at ? 'opacity-75' : 'fw-bold' }}" style="background-color: white; border-bottom: 1px solid #f8f9fa; padding: 10px 15px; text-decoration: none; border-left: none; border-right: none;">
+                                        <a href="{{ $url }}" data-id="{{ $notification->id }}" class="list-group-item list-group-item-action d-flex align-items-start notification-item-click {{ $notification->read_at ? 'opacity-75' : 'fw-bold' }}" style="background-color: white; border-bottom: 1px solid #f8f9fa; padding: 10px 15px; text-decoration: none; border-left: none; border-right: none;">
                                             <span class="theme-avtar me-3 d-flex align-items-center justify-content-center text-white rounded-circle {{ $bgColor }}" style="width: 28px; height: 28px; min-width: 28px;">
                                                 @if($action === 'Approved')
                                                     <i class="ti ti-check" style="font-size: 14px;"></i>

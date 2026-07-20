@@ -248,6 +248,10 @@
                                     </li>
                                     <li class="dash-item">
                                         <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
+                                            href="{{ route('attendance-regularisation.index') }}">{{ __('Attendance Regularisation') }}</a>
+                                    </li>
+                                    <li class="dash-item">
+                                        <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg"
                                             href="{{ route('attendanceemployee.sitevisit') }}">{{ __('Site Visit Attendance') }}</a>
                                     </li>
                                     @can('Create Attendance')

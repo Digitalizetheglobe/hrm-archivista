@@ -1,16 +1,15 @@
-@extends('layouts.admin')
+<?php $__env->startSection('page-title'); ?>
+    <?php echo e(__('Set Salary')); ?> — <?php echo e($employee->name); ?>
 
-@section('page-title')
-    {{ __('Set Salary') }} — {{ $employee->name }}
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ __('Home') }}</a></li>
-    <li class="breadcrumb-item"><a href="{{ route('setsalary.index') }}">{{ __('Employee Salary') }}</a></li>
-    <li class="breadcrumb-item">{{ __('Set Salary') }}</li>
-@endsection
+<?php $__env->startSection('breadcrumb'); ?>
+    <li class="breadcrumb-item"><a href="<?php echo e(route('dashboard')); ?>"><?php echo e(__('Home')); ?></a></li>
+    <li class="breadcrumb-item"><a href="<?php echo e(route('setsalary.index')); ?>"><?php echo e(__('Employee Salary')); ?></a></li>
+    <li class="breadcrumb-item"><?php echo e(__('Set Salary')); ?></li>
+<?php $__env->stopSection(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
 <style>
 /* ===== Premium Set Salary Page ===== */
@@ -163,21 +162,24 @@ input[type=number] {
 .ss-btn-save:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(246,130,31,0.4); }
 </style>
 
-<form method="POST" action="{{ route('setsalary.save-payroll', $employee->id) }}">
-@csrf
+<form method="POST" action="<?php echo e(route('setsalary.save-payroll', $employee->id)); ?>">
+<?php echo csrf_field(); ?>
 
-{{-- ===== TOP: Employee Info + Set Salary Box ===== --}}
+
 <div class="ss-page-header">
     <div class="ss-header-info">
-        <p class="ss-employee-name">{{ $employee->name }}</p>
-        <p class="ss-employee-sub">{{ $employee->email ?? 'N/A' }}
-            @if($employee->department)
-                &nbsp;&middot;&nbsp; {{ $employee->department->name }}
-            @endif
+        <p class="ss-employee-name"><?php echo e($employee->name); ?></p>
+        <p class="ss-employee-sub"><?php echo e($employee->email ?? 'N/A'); ?>
+
+            <?php if($employee->department): ?>
+                &nbsp;&middot;&nbsp; <?php echo e($employee->department->name); ?>
+
+            <?php endif; ?>
         </p>
         <span class="ss-badge-id">
             <i class="fas fa-id-badge me-1"></i>
-            {{ \Auth::user()->employeeIdFormat($employee->employee_id) }}
+            <?php echo e(\Auth::user()->employeeIdFormat($employee->employee_id)); ?>
+
         </span>
     </div>
 
@@ -187,27 +189,29 @@ input[type=number] {
             <span class="ss-currency-symbol">₹</span>
             <input type="number" id="set_salary" name="set_salary" class="ss-salary-input"
                    placeholder="0.00" step="any" min="0"
-                   value="{{ old('set_salary', $employee->set_salary ?? '') }}"
+                   value="<?php echo e(old('set_salary', $employee->set_salary ?? '')); ?>"
                    required oninput="recalcDeductions()">
         </div>
     </div>
 </div>
 
-@if(session('success'))
+<?php if(session('success')): ?>
     <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-        <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+        <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
+
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
-@if($errors->any())
+<?php if($errors->any()): ?>
     <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-        <i class="fas fa-exclamation-circle me-2"></i>{{ $errors->first() }}
+        <i class="fas fa-exclamation-circle me-2"></i><?php echo e($errors->first()); ?>
+
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-@endif
+<?php endif; ?>
 
-{{-- ===== TABLE 1: Allowances ===== --}}
+
 <div class="ss-section-card">
     <div class="ss-section-header">
         <div class="ss-section-icon" style="background:rgba(28,200,138,0.12);">
@@ -226,7 +230,7 @@ input[type=number] {
             </tr>
         </thead>
         <tbody>
-            @php
+            <?php
                 $allowances = [
                     'basic'      => ['label' => 'Basic',       'desc' => 'Core salary component'],
                     'medical'    => ['label' => 'Medical',     'desc' => 'Medical reimbursement'],
@@ -235,31 +239,32 @@ input[type=number] {
                     'education'  => ['label' => 'Education',   'desc' => 'Education allowance'],
                     'executive'  => ['label' => 'Executive',   'desc' => 'Executive allowance'],
                 ];
-            @endphp
+            ?>
 
-            @foreach($allowances as $field => $info)
+            <?php $__currentLoopData = $allowances; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $field => $info): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <tr>
                 <td>
                     <div class="ss-allowance-name">
-                        {{ $info['label'] }}
-                        <small>{{ $info['desc'] }}</small>
+                        <?php echo e($info['label']); ?>
+
+                        <small><?php echo e($info['desc']); ?></small>
                     </div>
                 </td>
                 <td>
                     <div class="ss-input-wrap">
-                        <input type="number" id="{{ $field }}_pct" name="{{ $field }}"
+                        <input type="number" id="<?php echo e($field); ?>_pct" name="<?php echo e($field); ?>"
                                class="ss-input allowance-pct" step="any" min="0" max="100"
                                placeholder="0.00"
-                               value="{{ old($field, $payrollData?->$field ?? '') }}"
+                               value="<?php echo e(old($field, $payrollData?->$field ?? '')); ?>"
                                oninput="recalcDeductions()">
                         <span class="ss-input-unit">%</span>
                     </div>
-                    <div class="ss-computed-amount" id="{{ $field }}_amount">
+                    <div class="ss-computed-amount" id="<?php echo e($field); ?>_amount">
                         &nbsp;
                     </div>
                 </td>
             </tr>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </tbody>
         <tfoot>
             <tr style="background:#fef9f4;">
@@ -295,7 +300,7 @@ input[type=number] {
     </table>
 </div>
 
-{{-- ===== TABLE 2: Deductions ===== --}}
+
 <div class="ss-section-card">
     <div class="ss-section-header">
         <div class="ss-section-icon" style="background:rgba(231,74,59,0.10);">
@@ -314,40 +319,41 @@ input[type=number] {
             </tr>
         </thead>
         <tbody>
-            @php
+            <?php
                 $deductions = [
                     'esi'              => ['label' => 'ESI',               'desc' => 'Employee State Insurance'],
                     'pf'               => ['label' => 'PF',                'desc' => 'Provident Fund'],
                     'professional_tax' => ['label' => 'Professional Tax',  'desc' => 'State professional tax'],
                 ];
-            @endphp
+            ?>
 
-            @foreach($deductions as $field => $info)
+            <?php $__currentLoopData = $deductions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $field => $info): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <tr>
                 <td>
                     <div class="ss-allowance-name">
-                        {{ $info['label'] }}
-                        <small>{{ $info['desc'] }}</small>
+                        <?php echo e($info['label']); ?>
+
+                        <small><?php echo e($info['desc']); ?></small>
                     </div>
                 </td>
                 <td>
                     <div class="ss-input-wrap">
                         <span class="ss-input-unit" style="margin-right:0;margin-left:0;color:#e74a3b;font-size:0.9rem;">₹</span>
-                        <input type="number" name="{{ $field }}"
+                        <input type="number" name="<?php echo e($field); ?>"
                                class="ss-input deduction-amt" step="any" min="0"
                                placeholder="0.00"
-                               value="{{ old($field, $payrollData?->$field ?? '') }}">
+                               value="<?php echo e(old($field, $payrollData?->$field ?? '')); ?>">
                     </div>
                 </td>
             </tr>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </tbody>
     </table>
 </div>
 
-{{-- ===== SUBMIT BAR ===== --}}
+
 <div class="ss-submit-bar">
-    <a href="{{ route('setsalary.index') }}" class="ss-btn-cancel">
+    <a href="<?php echo e(route('setsalary.index')); ?>" class="ss-btn-cancel">
         <i class="fas fa-arrow-left me-2"></i>Back
     </a>
     <button type="submit" class="ss-btn-save" id="saveBtn">
@@ -362,19 +368,19 @@ function recalcDeductions() {
     var salary = parseFloat(document.getElementById('set_salary').value) || 0;
     var totalPct = 0;
 
-    @foreach($allowances as $field => $info)
+    <?php $__currentLoopData = $allowances; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $field => $info): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
     (function() {
-        var pct = parseFloat(document.getElementById('{{ $field }}_pct').value) || 0;
+        var pct = parseFloat(document.getElementById('<?php echo e($field); ?>_pct').value) || 0;
         totalPct += pct;
         var amount = (salary * pct / 100).toFixed(2);
-        var el = document.getElementById('{{ $field }}_amount');
+        var el = document.getElementById('<?php echo e($field); ?>_amount');
         if (pct > 0 && salary > 0) {
             el.innerHTML = '= <span>₹' + parseFloat(amount).toLocaleString('en-IN', {minimumFractionDigits: 2}) + '</span>';
         } else {
             el.innerHTML = '&nbsp;';
         }
     })();
-    @endforeach
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
     var totalPctEl = document.getElementById('total_allowance_pct');
     var totalAmountEl = document.getElementById('total_allowance_amount');
@@ -414,4 +420,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/setsalary/set_salary_page.blade.php ENDPATH**/ ?>

@@ -2213,6 +2213,21 @@ Route::middleware(['auth'])->group(function() {
     Route::resource('compoff', 'App\Http\Controllers\CompOffController');
     Route::get('/get-departments-by-branch', [\App\Http\Controllers\CompOffController::class, 'getDepartmentsByBranch'])->name('compoff.get_departments');
     Route::get('/get-employees-by-departments', [\App\Http\Controllers\CompOffController::class, 'getEmployeesByDepartments'])->name('compoff.get_employees');
+
+    // Attendance Regularisation Routes
+    Route::get('attendance-regularisation', [\App\Http\Controllers\AttendanceRegularisationController::class, 'index'])->name('attendance-regularisation.index')->middleware(['XSS']);
+    Route::get('attendance-regularisation/create', [\App\Http\Controllers\AttendanceRegularisationController::class, 'create'])->name('attendance-regularisation.create')->middleware(['XSS']);
+    Route::get('attendance-regularisation/get-employees', [\App\Http\Controllers\AttendanceRegularisationController::class, 'getEmployees'])->name('attendance-regularisation.getEmployees')->middleware(['XSS']);
+    Route::get('attendance-regularisation/get-attendance', [\App\Http\Controllers\AttendanceRegularisationController::class, 'getAttendance'])->name('attendance-regularisation.getAttendance')->middleware(['XSS']);
+    Route::post('attendance-regularisation', [\App\Http\Controllers\AttendanceRegularisationController::class, 'store'])->name('attendance-regularisation.store')->middleware(['XSS']);
+    Route::get('attendance-regularisation/{id}/action', [\App\Http\Controllers\AttendanceRegularisationController::class, 'action'])->name('attendance-regularisation.action')->middleware(['XSS']);
+    Route::get('attendance-regularisation/{id}/edit', [\App\Http\Controllers\AttendanceRegularisationController::class, 'edit'])->name('attendance-regularisation.edit')->middleware(['XSS']);
+    Route::get('attendance-regularisation/{id}', [\App\Http\Controllers\AttendanceRegularisationController::class, 'show'])->name('attendance-regularisation.show')->middleware(['XSS']);
+    Route::put('attendance-regularisation/{id}', [\App\Http\Controllers\AttendanceRegularisationController::class, 'update'])->name('attendance-regularisation.update')->middleware(['XSS']);
+    Route::delete('attendance-regularisation/{id}', [\App\Http\Controllers\AttendanceRegularisationController::class, 'destroy'])->name('attendance-regularisation.destroy')->middleware(['XSS']);
+    Route::post('attendance-regularisation/changeaction', [\App\Http\Controllers\AttendanceRegularisationController::class, 'changeaction'])->name('attendance-regularisation.changeaction')->middleware(['XSS']);
+    Route::post('attendance-regularisation/{id}/approve', [\App\Http\Controllers\AttendanceRegularisationController::class, 'approve'])->name('attendance-regularisation.approve')->middleware(['XSS']);
+    Route::post('attendance-regularisation/{id}/reject', [\App\Http\Controllers\AttendanceRegularisationController::class, 'reject'])->name('attendance-regularisation.reject')->middleware(['XSS']);
 });
 
 // Fallback route for storage files when symlink is missing (fixes broken images on server deployments)

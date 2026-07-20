@@ -1,11 +1,4 @@
-
-
-
-
 cd /home/hrma.archivistaindia.com/public_html
-```
-
----
 
 # ✅ STEP 2 — Remove Local Cache Changes (Important)
 
