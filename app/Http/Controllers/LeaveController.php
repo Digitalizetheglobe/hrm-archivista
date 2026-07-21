@@ -352,7 +352,7 @@ class LeaveController extends Controller
             // Validate contract employee leave type restrictions
             if ($employee && ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant')) {
                 $leaveTypeName = strtolower(trim($leave_type->title));
-                if (!$leave_type->is_unlimited && $leaveTypeName !== 'casual leave') {
+                if (!$leave_type->is_unlimited && $leaveTypeName !== 'casual leave' && $leaveTypeName !== 'cl') {
                     return redirect()->back()->with('error', __('Contract/Consultant employees can only apply for Casual Leave and Unlimited Leaves.'));
                 }
             }
@@ -665,7 +665,7 @@ class LeaveController extends Controller
                 // Validate contract employee leave type restrictions
                 if ($employee && ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant')) {
                     $leaveTypeName = strtolower(trim($leave_type->title));
-                    if (!$leave_type->is_unlimited && $leaveTypeName !== 'casual leave') {
+                    if (!$leave_type->is_unlimited && $leaveTypeName !== 'casual leave' && $leaveTypeName !== 'cl') {
                         return redirect()->back()->with('error', __('Contract/Consultant employees can only apply for Casual Leave and Unlimited Leaves.'));
                     }
                 }

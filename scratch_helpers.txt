@@ -1,0 +1,417 @@
+    public function calculatePayableDaysFromStatusCodes($employeeId, $year, $month)
+    {
+        $startDate = Carbon::create($year, $month)->startOfMonth();
+        $endDate = Carbon::create($year, $month)->endOfMonth();
+
+        // Get employee details
+        $employee = Employee::find($employeeId);
+        if (!$employee) {
+            return 0;
+        }
+
+        // Check joining date
+        $joiningDate = Carbon::parse($employee->company_doj);
+        if ($joiningDate->gt($endDate)) {
+            return 0; // Employee joined after this month
+        }
+        if ($joiningDate->gt($startDate)) {
+            $startDate = $joiningDate->copy(); // Employee joined mid-month
+        }
+
+        // Check termination/resignation date
+        $termination = Termination::where('employee_id', $employeeId)
+            ->whereDate('termination_date', '>=', $startDate)
+            ->whereDate('termination_date', '<=', $endDate)
+            ->first();
+
+        $resignation = Resignation::where('employee_id', $employeeId)
+            ->whereDate('resignation_date', '>=', $startDate)
+            ->whereDate('resignation_date', '<=', $endDate)
+            ->first();
+
+        if ($termination) {
+            $endDate = Carbon::parse($termination->termination_date);
+        } elseif ($resignation) {
+            $endDate = Carbon::parse($resignation->resignation_date);
+        }
+
+        // Get all dates in the period
+        $dates = [];
+        $current = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+        
+        while ($current <= $end) {
+            $dates[] = $current->format('Y-m-d');
+            $current->addDay();
+        }
+
+        // Get attendance records
+        $attendances = AttendanceEmployee::where('employee_id', $employeeId)
+            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->get();
+
+        // Group attendance by date
+        $attendanceData = [];
+        foreach ($attendances as $attendance) {
+            $attendanceData[$attendance->date] = [
+                'status' => $attendance->status,
+                'clock_in' => $attendance->clock_in,
+                'clock_out' => $attendance->clock_out,
+            ];
+        }
+
+        // Build leave codes
+        $leaveCodes = [];
+        $codePriority = ['CO' => 4, 'LOP' => 3, 'SL' => 2, 'EL' => 1];
+
+        $leaves = LocalLeave::query()
+            ->with('leaveType')
+            ->where('employee_id', $employeeId)
+            ->where('status', 'Approved')
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhereBetween('end_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhere(function ($q2) use ($startDate, $endDate) {
+                      $q2->where('start_date', '<=', $startDate->format('Y-m-d'))
+                         ->where('end_date', '>=', $endDate->format('Y-m-d'));
+                  });
+            })
+            ->get();
+
+        foreach ($leaves as $leave) {
+            $typeTitle = strtolower(trim(optional($leave->leaveType)->title ?? ''));
+            $duration = strtolower(trim($leave->leave_duration_type ?? 'full_day'));
+
+            $code = 'EL';
+            if ($typeTitle === 'comp-off' || $typeTitle === 'comp off' || str_contains($typeTitle, 'comp')) {
+                $code = 'CO';
+            } elseif ($typeTitle === 'leave without pay' || str_contains($typeTitle, 'without pay')) {
+                $code = 'LOP';
+            } elseif ($typeTitle === 'sick leave' || str_contains($typeTitle, 'sick')) {
+                $code = 'SL';
+            } elseif ($typeTitle === 'earned leave' || str_contains($typeTitle, 'earned')) {
+                $code = 'EL';
+            } elseif ($duration === 'half_day') {
+                $code = 'SL';
+            } else {
+                $code = 'EL';
+            }
+
+            $leaveStart = Carbon::parse($leave->start_date);
+            $leaveEnd = Carbon::parse($leave->end_date);
+            $periodStart = $leaveStart->lt(Carbon::parse($startDate)) ? Carbon::parse($startDate) : $leaveStart;
+            $periodEnd = $leaveEnd->gt(Carbon::parse($endDate)) ? Carbon::parse($endDate) : $leaveEnd;
+
+            for ($d = $periodStart->copy(); $d->lte($periodEnd); $d->addDay()) {
+                $dateKey = $d->format('Y-m-d');
+                $existing = $leaveCodes[$dateKey] ?? null;
+                if (!$existing) {
+                    $leaveCodes[$dateKey] = $code;
+                    continue;
+                }
+                if (($codePriority[$code] ?? 0) > ($codePriority[$existing] ?? 0)) {
+                    $leaveCodes[$dateKey] = $code;
+                }
+            }
+        }
+
+        // Build status codes (same logic as attendance export)
+        $statusCodes = [];
+        $weekOff = strtolower(trim((string) ($employee->week_off_day ?? '')));
+        $tz = \App\Models\Utility::getValByName('timezone') ?: config('app.timezone');
+        $today = Carbon::now($tz)->startOfDay();
+
+        foreach ($dates as $date) {
+            // Skip future dates
+            if (Carbon::parse($date, $tz)->startOfDay()->gt($today)) {
+                $statusCodes[$date] = '';
+                continue;
+            }
+
+            $dayName = strtolower(Carbon::parse($date)->format('l'));
+            $isWeekOff = $weekOff !== ''
+                ? ($dayName === strtolower($weekOff))
+                : in_array($dayName, ['saturday', 'sunday'], true);
+
+            $att = $attendanceData[$date] ?? null;
+            $leaveCode = $leaveCodes[$date] ?? null;
+
+            $clockIn = $att['clock_in'] ?? null;
+            $clockOut = $att['clock_out'] ?? null;
+            $hasPunch = !empty($clockIn) && $clockIn !== '00:00:00';
+            $isToday = Carbon::parse($date, $tz)->isSameDay($today);
+
+            // Priority 1: Week Off
+            if ($isWeekOff) {
+                $statusCodes[$date] = 'WO';
+                continue;
+            }
+
+            // Priority 2: If employee punched
+            if ($hasPunch) {
+                if (empty($clockOut) || $clockOut === '00:00:00') {
+                    if ($leaveCode === 'SL') {
+                        $statusCodes[$date] = 'SL';
+                    } else {
+                        $statusCodes[$date] = 'SP';
+                    }
+                    continue;
+                }
+                
+                if ($leaveCode === 'SL') {
+                    $statusCodes[$date] = 'SL';
+                } else {
+                    $status = strtolower(trim((string) ($att['status'] ?? '')));
+                    if ($status === 'present') {
+                        $statusCodes[$date] = 'P';
+                    } elseif ($status === 'absent') {
+                        $statusCodes[$date] = 'LOP';
+                    } else {
+                        $statusCodes[$date] = 'P';
+                    }
+                }
+                continue;
+            }
+
+            // Priority 3: Leave codes
+            if (!empty($leaveCode)) {
+                $statusCodes[$date] = $leaveCode;
+                continue;
+            }
+
+            // For today only: don't label as LOP yet
+            if ($isToday) {
+                $statusCodes[$date] = $isWeekOff ? 'WO' : '';
+                continue;
+            }
+
+            // Default absent
+            $status = strtolower(trim((string) ($att['status'] ?? '')));
+            if ($status === 'present') {
+                $statusCodes[$date] = 'P';
+            } elseif ($status === 'absent' || $status === '') {
+                $statusCodes[$date] = 'LOP';
+            } else {
+                $statusCodes[$date] = 'LOP';
+            }
+        }
+
+        // Calculate payable days: P + SP + EL + SL + WO + CO
+        $presentDays = 0;
+        $elDays = 0;
+        $slDays = 0;
+        $woDays = 0;
+        $coDays = 0;
+
+        foreach ($statusCodes as $date => $code) {
+            if (empty($code)) {
+                continue;
+            }
+
+            switch ($code) {
+                case 'P':
+                case 'SP': // Single Punch - count as present (1 full day)
+                    $presentDays++;
+                    break;
+                case 'EL':
+                    $elDays++;
+                    break;
+                case 'SL':
+                    // Count SL as 0.5 days only if employee punched in
+                    $att = $attendanceData[$date] ?? null;
+                    $clockIn = $att['clock_in'] ?? null;
+                    $hasPunch = !empty($clockIn) && $clockIn !== '00:00:00';
+                    if ($hasPunch) {
+                        $slDays += 0.5;
+                    }
+                    break;
+                case 'WO':
+                    $woDays++;
+                    break;
+                case 'CO':
+                    $coDays++;
+                    break;
+            }
+        }
+
+        $totalPayableDays = $presentDays + $elDays + $slDays + $woDays + $coDays;
+        return round($totalPayableDays, 2);
+    }
+
+    /**
+     * Get final payable days (check custom values first, then fallback to calculation)
+     */
+    public function getFinalPayableDays($employeeId, $year, $month)
+    {
+        $customPayableDays = EmployeePayableDay::where('employee_id', $employeeId)
+            ->where('month', (int)$month)
+            ->where('year', (int)$year)
+            ->first();
+
+        if ($customPayableDays) {
+            return (float)$customPayableDays->final_payable_salary;
+        }
+
+        return $this->calculatePayableDaysFromStatusCodes($employeeId, $year, $month);
+    }
+
+    /**
+     * Calculate Total Leave (only EL, SL, and CO - all other leaves are treated as LWP)
+     */
+    public function calculateTotalLeave($employeeId, $year, $month)
+    {
+        $startDate = Carbon::create($year, $month)->startOfMonth();
+        $endDate = Carbon::create($year, $month)->endOfMonth();
+
+        // Get employee details
+        $employee = Employee::find($employeeId);
+        if (!$employee) {
+            return 0;
+        }
+
+        // Check joining date
+        if (!empty($employee->company_doj)) {
+            try {
+                $joiningDate = Carbon::parse($employee->company_doj);
+                if ($joiningDate->gt($endDate)) {
+                    return 0; // Employee joined after this month
+                }
+                if ($joiningDate->gt($startDate)) {
+                    $startDate = $joiningDate->copy(); // Employee joined mid-month
+                }
+            } catch (\Exception $e) {
+                // If date parsing fails, use start of month
+            }
+        }
+
+        // Check termination/resignation date
+        $termination = Termination::where('employee_id', $employeeId)
+            ->whereDate('termination_date', '>=', $startDate)
+            ->whereDate('termination_date', '<=', $endDate)
+            ->first();
+
+        $resignation = Resignation::where('employee_id', $employeeId)
+            ->whereDate('resignation_date', '>=', $startDate)
+            ->whereDate('resignation_date', '<=', $endDate)
+            ->first();
+
+        if ($termination) {
+            $endDate = Carbon::parse($termination->termination_date);
+        } elseif ($resignation) {
+            $endDate = Carbon::parse($resignation->resignation_date);
+        }
+
+        // Get attendance records
+        $attendances = AttendanceEmployee::where('employee_id', $employeeId)
+            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->get();
+
+        // Group attendance by date
+        $attendanceData = [];
+        foreach ($attendances as $attendance) {
+            $attendanceData[$attendance->date] = [
+                'status' => $attendance->status,
+                'clock_in' => $attendance->clock_in,
+                'clock_out' => $attendance->clock_out,
+            ];
+        }
+
+        // Get all approved leaves
+        $leaves = LocalLeave::query()
+            ->with('leaveType')
+            ->where('employee_id', $employeeId)
+            ->where('status', 'Approved')
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhereBetween('end_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhere(function ($q2) use ($startDate, $endDate) {
+                      $q2->where('start_date', '<=', $startDate->format('Y-m-d'))
+                         ->where('end_date', '>=', $endDate->format('Y-m-d'));
+                  });
+            })
+            ->get();
+
+        // Build leave codes map (similar to calculatePayableDaysFromStatusCodes)
+        // Use priority to handle overlapping leaves: CO > LOP > SL > EL
+        $leaveCodes = [];
+        $codePriority = ['CO' => 4, 'LOP' => 3, 'SL' => 2, 'EL' => 1];
+
+        foreach ($leaves as $leave) {
+            $typeTitle = strtolower(trim(optional($leave->leaveType)->title ?? ''));
+            $duration = strtolower(trim($leave->leave_duration_type ?? 'full_day'));
+
+            // Determine leave code
+            $code = 'EL';
+            if ($typeTitle === 'comp-off' || $typeTitle === 'comp off' || str_contains($typeTitle, 'comp')) {
+                $code = 'CO';
+            } elseif ($typeTitle === 'leave without pay' || str_contains($typeTitle, 'without pay')) {
+                $code = 'LOP';
+            } elseif ($typeTitle === 'sick leave' || str_contains($typeTitle, 'sick')) {
+                $code = 'SL';
+            } elseif ($typeTitle === 'earned leave' || str_contains($typeTitle, 'earned')) {
+                $code = 'EL';
+            } elseif ($duration === 'half_day') {
+                $code = 'SL';
+            } else {
+                $code = 'EL';
+            }
+
+            $leaveStart = Carbon::parse($leave->start_date);
+            $leaveEnd = Carbon::parse($leave->end_date);
+            $periodStart = $leaveStart->lt(Carbon::parse($startDate)) ? Carbon::parse($startDate) : $leaveStart;
+            $periodEnd = $leaveEnd->gt(Carbon::parse($endDate)) ? Carbon::parse($endDate) : $leaveEnd;
+
+            // Map leave codes to dates (use priority for overlapping leaves)
+            for ($d = $periodStart->copy(); $d->lte($periodEnd); $d->addDay()) {
+                $dateKey = $d->format('Y-m-d');
+                $existing = $leaveCodes[$dateKey] ?? null;
+                if (!$existing) {
+                    $leaveCodes[$dateKey] = $code;
+                    continue;
+                }
+                // Use higher priority code if there's overlap
+                if (($codePriority[$code] ?? 0) > ($codePriority[$existing] ?? 0)) {
+                    $leaveCodes[$dateKey] = $code;
+                }
+            }
+        }
+
+        // Count only EL, SL, and CO days
+        $elDays = 0;
+        $slDays = 0;
+        $coDays = 0;
+
+        foreach ($leaveCodes as $date => $code) {
+            // Only count EL, SL, and CO (exclude LOP and other leave types)
+            if (!in_array($code, ['EL', 'SL', 'CO'])) {
+                continue;
+            }
+
+            // Check if employee punched in (for SL calculation)
+            $att = $attendanceData[$date] ?? null;
+            $clockIn = $att['clock_in'] ?? null;
+            $hasPunch = !empty($clockIn) && $clockIn !== '00:00:00';
+
+            switch ($code) {
+                case 'EL':
+                    $elDays += 1;
+                    break;
+                case 'SL':
+                    // Count SL as 0.5 days only if employee punched in
+                    if ($hasPunch) {
+                        $slDays += 0.5;
+                    }
+                    break;
+                case 'CO':
+                    $coDays += 1;
+                    break;
+            }
+        }
+
+        $totalLeave = $elDays + $slDays + $coDays;
+        return round($totalLeave, 2);
+    }
+
+    /**
+     * Display Salary Processing page
+     */

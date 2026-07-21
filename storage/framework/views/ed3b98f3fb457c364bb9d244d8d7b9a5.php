@@ -547,6 +547,9 @@
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('tds.index')); ?>"><?php echo e(__('TDS')); ?></a>
                         </li>
+                        <li class="dash-item">
+                            <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('salary-processing.index')); ?>"><?php echo e(__('Salary Processing')); ?></a>
+                        </li>
                         <?php endif; ?>
 
                     </ul>

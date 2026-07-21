@@ -6,6 +6,15 @@ use App\Exports\PayslipExport;
 use App\Models\Allowance;
 use App\Models\Commission;
 use App\Models\Employee;
+use App\Models\LoanDeduction;
+use App\Models\EmployeeLoan;
+use App\Models\SalaryArrears;
+use App\Models\PetrolAllowance;
+use App\Models\AttendanceEmployee;
+use App\Models\Leave as LocalLeave;
+use App\Models\OtherDeduction;
+use App\Models\EmployeePayableDay;
+use App\Models\Department;
 use App\Models\Loan;
 use App\Mail\InvoiceSend;
 use App\Mail\PayslipSend;
@@ -14,6 +23,8 @@ use App\Models\Expense;
 use App\Models\OtherPayment;
 use App\Models\Overtime;
 use App\Models\PaySlip;
+use App\Exports\SalaryProcessingExport;
+use App\Models\SalaryProcessingStatus;
 use App\Models\Resignation;
 use App\Models\SaturationDeduction;
 use App\Models\Termination;
@@ -517,4 +528,1211 @@ class PaySlipController extends Controller
 
         return $data;
     }
+
+
+        public function calculatePayableDaysFromStatusCodes($employeeId, $year, $month)
+    {
+        $startDate = Carbon::create($year, $month)->startOfMonth();
+        $endDate = Carbon::create($year, $month)->endOfMonth();
+
+        // Get employee details
+        $employee = Employee::find($employeeId);
+        if (!$employee) {
+            return 0;
+        }
+
+        // Check joining date
+        $joiningDate = Carbon::parse($employee->company_doj);
+        if ($joiningDate->gt($endDate)) {
+            return 0; // Employee joined after this month
+        }
+        if ($joiningDate->gt($startDate)) {
+            $startDate = $joiningDate->copy(); // Employee joined mid-month
+        }
+
+        // Check termination/resignation date
+        $termination = Termination::where('employee_id', $employeeId)
+            ->whereDate('termination_date', '>=', $startDate)
+            ->whereDate('termination_date', '<=', $endDate)
+            ->first();
+
+        $resignation = Resignation::where('employee_id', $employeeId)
+            ->whereDate('resignation_date', '>=', $startDate)
+            ->whereDate('resignation_date', '<=', $endDate)
+            ->first();
+
+        if ($termination) {
+            $endDate = Carbon::parse($termination->termination_date);
+        } elseif ($resignation) {
+            $endDate = Carbon::parse($resignation->resignation_date);
+        }
+
+        // Get all dates in the period
+        $dates = [];
+        $current = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+        
+        while ($current <= $end) {
+            $dates[] = $current->format('Y-m-d');
+            $current->addDay();
+        }
+
+        // Get attendance records
+        $attendances = AttendanceEmployee::where('employee_id', $employeeId)
+            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->get();
+
+        // Group attendance by date
+        $attendanceData = [];
+        foreach ($attendances as $attendance) {
+            $attendanceData[$attendance->date] = [
+                'status' => $attendance->status,
+                'clock_in' => $attendance->clock_in,
+                'clock_out' => $attendance->clock_out,
+            ];
+        }
+
+        // Build leave codes
+        $leaveCodes = [];
+        $codePriority = ['CO' => 4, 'LOP' => 3, 'SL' => 2, 'EL' => 1];
+
+        $leaves = LocalLeave::query()
+            ->with('leaveType')
+            ->where('employee_id', $employeeId)
+            ->where('status', 'Approved')
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhereBetween('end_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhere(function ($q2) use ($startDate, $endDate) {
+                      $q2->where('start_date', '<=', $startDate->format('Y-m-d'))
+                         ->where('end_date', '>=', $endDate->format('Y-m-d'));
+                  });
+            })
+            ->get();
+
+        foreach ($leaves as $leave) {
+            $typeTitle = strtolower(trim(optional($leave->leaveType)->title ?? ''));
+            $duration = strtolower(trim($leave->leave_duration_type ?? 'full_day'));
+
+            $code = 'EL';
+            if ($typeTitle === 'comp-off' || $typeTitle === 'comp off' || str_contains($typeTitle, 'comp')) {
+                $code = 'CO';
+            } elseif ($typeTitle === 'leave without pay' || str_contains($typeTitle, 'without pay')) {
+                $code = 'LOP';
+            } elseif ($typeTitle === 'sick leave' || str_contains($typeTitle, 'sick')) {
+                $code = 'SL';
+            } elseif ($typeTitle === 'earned leave' || str_contains($typeTitle, 'earned')) {
+                $code = 'EL';
+            } elseif ($duration === 'half_day') {
+                $code = 'SL';
+            } else {
+                $code = 'EL';
+            }
+
+            $leaveStart = Carbon::parse($leave->start_date);
+            $leaveEnd = Carbon::parse($leave->end_date);
+            $periodStart = $leaveStart->lt(Carbon::parse($startDate)) ? Carbon::parse($startDate) : $leaveStart;
+            $periodEnd = $leaveEnd->gt(Carbon::parse($endDate)) ? Carbon::parse($endDate) : $leaveEnd;
+
+            for ($d = $periodStart->copy(); $d->lte($periodEnd); $d->addDay()) {
+                $dateKey = $d->format('Y-m-d');
+                $existing = $leaveCodes[$dateKey] ?? null;
+                if (!$existing) {
+                    $leaveCodes[$dateKey] = $code;
+                    continue;
+                }
+                if (($codePriority[$code] ?? 0) > ($codePriority[$existing] ?? 0)) {
+                    $leaveCodes[$dateKey] = $code;
+                }
+            }
+        }
+
+        // Build status codes (same logic as attendance export)
+        $statusCodes = [];
+        $weekOff = strtolower(trim((string) ($employee->week_off_day ?? '')));
+        $tz = \App\Models\Utility::getValByName('timezone') ?: config('app.timezone');
+        $today = Carbon::now($tz)->startOfDay();
+
+        foreach ($dates as $date) {
+            // Skip future dates
+            if (Carbon::parse($date, $tz)->startOfDay()->gt($today)) {
+                $statusCodes[$date] = '';
+                continue;
+            }
+
+            $dayName = strtolower(Carbon::parse($date)->format('l'));
+            $isWeekOff = $weekOff !== ''
+                ? ($dayName === strtolower($weekOff))
+                : in_array($dayName, ['saturday', 'sunday'], true);
+
+            $att = $attendanceData[$date] ?? null;
+            $leaveCode = $leaveCodes[$date] ?? null;
+
+            $clockIn = $att['clock_in'] ?? null;
+            $clockOut = $att['clock_out'] ?? null;
+            $hasPunch = !empty($clockIn) && $clockIn !== '00:00:00';
+            $isToday = Carbon::parse($date, $tz)->isSameDay($today);
+
+            // Priority 1: Week Off
+            if ($isWeekOff) {
+                $statusCodes[$date] = 'WO';
+                continue;
+            }
+
+            // Priority 2: If employee punched
+            if ($hasPunch) {
+                if (empty($clockOut) || $clockOut === '00:00:00') {
+                    if ($leaveCode === 'SL') {
+                        $statusCodes[$date] = 'SL';
+                    } else {
+                        $statusCodes[$date] = 'SP';
+                    }
+                    continue;
+                }
+                
+                if ($leaveCode === 'SL') {
+                    $statusCodes[$date] = 'SL';
+                } else {
+                    $status = strtolower(trim((string) ($att['status'] ?? '')));
+                    if ($status === 'present') {
+                        $statusCodes[$date] = 'P';
+                    } elseif ($status === 'absent') {
+                        $statusCodes[$date] = 'LOP';
+                    } else {
+                        $statusCodes[$date] = 'P';
+                    }
+                }
+                continue;
+            }
+
+            // Priority 3: Leave codes
+            if (!empty($leaveCode)) {
+                $statusCodes[$date] = $leaveCode;
+                continue;
+            }
+
+            // For today only: don't label as LOP yet
+            if ($isToday) {
+                $statusCodes[$date] = $isWeekOff ? 'WO' : '';
+                continue;
+            }
+
+            // Default absent
+            $status = strtolower(trim((string) ($att['status'] ?? '')));
+            if ($status === 'present') {
+                $statusCodes[$date] = 'P';
+            } elseif ($status === 'absent' || $status === '') {
+                $statusCodes[$date] = 'LOP';
+            } else {
+                $statusCodes[$date] = 'LOP';
+            }
+        }
+
+        // Calculate payable days: P + SP + EL + SL + WO + CO
+        $presentDays = 0;
+        $elDays = 0;
+        $slDays = 0;
+        $woDays = 0;
+        $coDays = 0;
+
+        foreach ($statusCodes as $date => $code) {
+            if (empty($code)) {
+                continue;
+            }
+
+            switch ($code) {
+                case 'P':
+                case 'SP': // Single Punch - count as present (1 full day)
+                    $presentDays++;
+                    break;
+                case 'EL':
+                    $elDays++;
+                    break;
+                case 'SL':
+                    // Count SL as 0.5 days only if employee punched in
+                    $att = $attendanceData[$date] ?? null;
+                    $clockIn = $att['clock_in'] ?? null;
+                    $hasPunch = !empty($clockIn) && $clockIn !== '00:00:00';
+                    if ($hasPunch) {
+                        $slDays += 0.5;
+                    }
+                    break;
+                case 'WO':
+                    $woDays++;
+                    break;
+                case 'CO':
+                    $coDays++;
+                    break;
+            }
+        }
+
+        $totalPayableDays = $presentDays + $elDays + $slDays + $woDays + $coDays;
+        return round($totalPayableDays, 2);
+    }
+
+    /**
+     * Get final payable days (check custom values first, then fallback to calculation)
+     */
+    public function getFinalPayableDays($employeeId, $year, $month)
+    {
+        $customPayableDays = null; // EmployeePayableDay::where('employee_id', $employeeId)->where('month', (int)$month)->where('year', (int)$year)->first();
+
+        if ($customPayableDays) {
+            return (float)$customPayableDays->final_payable_salary;
+        }
+
+        return $this->calculatePayableDaysFromStatusCodes($employeeId, $year, $month);
+    }
+
+    /**
+     * Calculate Total Leave (only EL, SL, and CO - all other leaves are treated as LWP)
+     */
+    public function calculateTotalLeave($employeeId, $year, $month)
+    {
+        $startDate = Carbon::create($year, $month)->startOfMonth();
+        $endDate = Carbon::create($year, $month)->endOfMonth();
+
+        // Get employee details
+        $employee = Employee::find($employeeId);
+        if (!$employee) {
+            return 0;
+        }
+
+        // Check joining date
+        if (!empty($employee->company_doj)) {
+            try {
+                $joiningDate = Carbon::parse($employee->company_doj);
+                if ($joiningDate->gt($endDate)) {
+                    return 0; // Employee joined after this month
+                }
+                if ($joiningDate->gt($startDate)) {
+                    $startDate = $joiningDate->copy(); // Employee joined mid-month
+                }
+            } catch (\Exception $e) {
+                // If date parsing fails, use start of month
+            }
+        }
+
+        // Check termination/resignation date
+        $termination = Termination::where('employee_id', $employeeId)
+            ->whereDate('termination_date', '>=', $startDate)
+            ->whereDate('termination_date', '<=', $endDate)
+            ->first();
+
+        $resignation = Resignation::where('employee_id', $employeeId)
+            ->whereDate('resignation_date', '>=', $startDate)
+            ->whereDate('resignation_date', '<=', $endDate)
+            ->first();
+
+        if ($termination) {
+            $endDate = Carbon::parse($termination->termination_date);
+        } elseif ($resignation) {
+            $endDate = Carbon::parse($resignation->resignation_date);
+        }
+
+        // Get attendance records
+        $attendances = AttendanceEmployee::where('employee_id', $employeeId)
+            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->get();
+
+        // Group attendance by date
+        $attendanceData = [];
+        foreach ($attendances as $attendance) {
+            $attendanceData[$attendance->date] = [
+                'status' => $attendance->status,
+                'clock_in' => $attendance->clock_in,
+                'clock_out' => $attendance->clock_out,
+            ];
+        }
+
+        // Get all approved leaves
+        $leaves = LocalLeave::query()
+            ->with('leaveType')
+            ->where('employee_id', $employeeId)
+            ->where('status', 'Approved')
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhereBetween('end_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhere(function ($q2) use ($startDate, $endDate) {
+                      $q2->where('start_date', '<=', $startDate->format('Y-m-d'))
+                         ->where('end_date', '>=', $endDate->format('Y-m-d'));
+                  });
+            })
+            ->get();
+
+        // Build leave codes map (similar to calculatePayableDaysFromStatusCodes)
+        // Use priority to handle overlapping leaves: CO > LOP > SL > EL
+        $leaveCodes = [];
+        $codePriority = ['CO' => 4, 'LOP' => 3, 'SL' => 2, 'EL' => 1];
+
+        foreach ($leaves as $leave) {
+            $typeTitle = strtolower(trim(optional($leave->leaveType)->title ?? ''));
+            $duration = strtolower(trim($leave->leave_duration_type ?? 'full_day'));
+
+            // Determine leave code
+            $code = 'EL';
+            if ($typeTitle === 'comp-off' || $typeTitle === 'comp off' || str_contains($typeTitle, 'comp')) {
+                $code = 'CO';
+            } elseif ($typeTitle === 'leave without pay' || str_contains($typeTitle, 'without pay')) {
+                $code = 'LOP';
+            } elseif ($typeTitle === 'sick leave' || str_contains($typeTitle, 'sick')) {
+                $code = 'SL';
+            } elseif ($typeTitle === 'earned leave' || str_contains($typeTitle, 'earned')) {
+                $code = 'EL';
+            } elseif ($duration === 'half_day') {
+                $code = 'SL';
+            } else {
+                $code = 'EL';
+            }
+
+            $leaveStart = Carbon::parse($leave->start_date);
+            $leaveEnd = Carbon::parse($leave->end_date);
+            $periodStart = $leaveStart->lt(Carbon::parse($startDate)) ? Carbon::parse($startDate) : $leaveStart;
+            $periodEnd = $leaveEnd->gt(Carbon::parse($endDate)) ? Carbon::parse($endDate) : $leaveEnd;
+
+            // Map leave codes to dates (use priority for overlapping leaves)
+            for ($d = $periodStart->copy(); $d->lte($periodEnd); $d->addDay()) {
+                $dateKey = $d->format('Y-m-d');
+                $existing = $leaveCodes[$dateKey] ?? null;
+                if (!$existing) {
+                    $leaveCodes[$dateKey] = $code;
+                    continue;
+                }
+                // Use higher priority code if there's overlap
+                if (($codePriority[$code] ?? 0) > ($codePriority[$existing] ?? 0)) {
+                    $leaveCodes[$dateKey] = $code;
+                }
+            }
+        }
+
+        // Count only EL, SL, and CO days
+        $elDays = 0;
+        $slDays = 0;
+        $coDays = 0;
+
+        foreach ($leaveCodes as $date => $code) {
+            // Only count EL, SL, and CO (exclude LOP and other leave types)
+            if (!in_array($code, ['EL', 'SL', 'CO'])) {
+                continue;
+            }
+
+            // Check if employee punched in (for SL calculation)
+            $att = $attendanceData[$date] ?? null;
+            $clockIn = $att['clock_in'] ?? null;
+            $hasPunch = !empty($clockIn) && $clockIn !== '00:00:00';
+
+            switch ($code) {
+                case 'EL':
+                    $elDays += 1;
+                    break;
+                case 'SL':
+                    // Count SL as 0.5 days only if employee punched in
+                    if ($hasPunch) {
+                        $slDays += 0.5;
+                    }
+                    break;
+                case 'CO':
+                    $coDays += 1;
+                    break;
+            }
+        }
+
+        $totalLeave = $elDays + $slDays + $coDays;
+        return round($totalLeave, 2);
+    }
+
+    /**
+     * Display Salary Processing page
+     */
+
+    public function salaryProcessing()
+    {
+        if (\Auth::user()->type == 'company' || \Gate::check('payroll.salary_processing.view.all')) {
+            $month = [
+                '01' => 'JAN',
+                '02' => 'FEB',
+                '03' => 'MAR',
+                '04' => 'APR',
+                '05' => 'MAY',
+                '06' => 'JUN',
+                '07' => 'JUL',
+                '08' => 'AUG',
+                '09' => 'SEP',
+                '10' => 'OCT',
+                '11' => 'NOV',
+                '12' => 'DEC',
+            ];
+            $currentyear = date("Y");
+            $tempyear = intval($currentyear) - 2;
+            $year = [];
+            for ($i = 0; $i < 10; $i++) {
+                $year[$tempyear + $i] = $tempyear + $i;
+            }
+
+            $departments = Department::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
+            $departments->prepend('All', '');
+
+            return view('payslip.salary-processing', compact('month', 'year', 'departments'));
+        } else {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+    }
+
+    /**
+     * Get salary processing data for selected month/year
+     */
+    public function salaryProcessingSearch(Request $request)
+    {
+        $formate_month_year = $request->datePicker;
+        $month = substr($formate_month_year, 5, 2);
+        $year = substr($formate_month_year, 0, 4);
+
+        $employees = Employee::where('created_by', \Auth::user()->creatorId())
+            ->whereHas('user', function($query) {
+                $query->where('type', 'employee');
+            });
+
+        // Filter by company_doj only if it's not null
+        // If company_doj is null, include the employee (they might have been added without a joining date)
+        $employees->where(function($query) use ($year, $month) {
+            $query->whereNull('company_doj')
+                  ->orWhere('company_doj', '<=', date($year . '-' . $month . '-t'));
+        });
+
+        // Filter by department if provided
+        $departmentId = $request->input('department_id');
+        if (!empty($departmentId) && $departmentId !== '0') {
+            $employees->where('department_id', (int)$departmentId);
+        }
+
+        $employees = $employees->get();
+        
+        // Debug: Log the query results (remove in production)
+        \Log::info('Salary Processing Search', [
+            'user_id' => \Auth::user()->id,
+            'user_type' => \Auth::user()->type,
+            'creator_id' => \Auth::user()->creatorId(),
+            'department_id' => $departmentId,
+            'year' => $year,
+            'month' => $month,
+            'employee_count' => $employees->count(),
+            'employee_ids' => $employees->pluck('id')->toArray(),
+            'employee_names' => $employees->pluck('name')->toArray(),
+            'employee_departments' => $employees->pluck('department_id')->toArray()
+        ]);
+        
+        // Also check if current logged-in employee is in the results
+        if (\Auth::user()->type == 'employee' && \Auth::user()->employee) {
+            $currentEmployeeId = \Auth::user()->employee->id;
+            $isInResults = $employees->contains('id', $currentEmployeeId);
+            \Log::info('Current Employee Check', [
+                'current_employee_id' => $currentEmployeeId,
+                'current_employee_name' => \Auth::user()->employee->name ?? 'N/A',
+                'current_employee_department_id' => \Auth::user()->employee->department_id ?? 'N/A',
+                'is_in_results' => $isInResults
+            ]);
+        }
+
+        $data = [];
+
+        $srno = 1;
+        foreach ($employees as $employee) {
+            // Check if employee was terminated or resigned before the month
+            $terminationDate = Termination::where('employee_id', $employee->id)
+                ->whereDate('termination_date', '<', Carbon::create($year, $month)->startOfMonth())
+                ->exists();
+
+            $resignationDate = Resignation::where('employee_id', $employee->id)
+                ->whereDate('resignation_date', '<', Carbon::create($year, $month)->startOfMonth())
+                ->exists();
+
+            if ($terminationDate || $resignationDate) {
+                continue;
+            }
+
+            // Calculate Monthly Days (considering joining/termination dates)
+            $startDate = Carbon::create($year, $month)->startOfMonth();
+            $endDate = Carbon::create($year, $month)->endOfMonth();
+
+            // Handle null or empty company_doj
+            if (empty($employee->company_doj)) {
+                // If no joining date, assume employee was present for the entire month
+                $joiningDate = $startDate->copy();
+            } else {
+                try {
+                    // Try to parse the date - handle different formats
+                    $joiningDate = Carbon::parse($employee->company_doj);
+                    if ($joiningDate->gt($endDate)) {
+                        continue; // Employee joined after this month
+                    }
+                } catch (\Exception $e) {
+                    $joiningDate = $startDate->copy();
+                }
+            }
+            if ($joiningDate->gt($startDate)) {
+                $startDate = $joiningDate->copy();
+            }
+
+            $termination = Termination::where('employee_id', $employee->id)
+                ->whereDate('termination_date', '>=', $startDate)
+                ->whereDate('termination_date', '<=', $endDate)
+                ->first();
+
+            $resignation = Resignation::where('employee_id', $employee->id)
+                ->whereDate('resignation_date', '>=', $startDate)
+                ->whereDate('resignation_date', '<=', $endDate)
+                ->first();
+
+            if ($termination) {
+                $endDate = Carbon::parse($termination->termination_date);
+            } elseif ($resignation) {
+                $endDate = Carbon::parse($resignation->resignation_date);
+            }
+
+            $monthlyDays = $startDate->diffInDays($endDate) + 1;
+
+            // Calculate Payable Days (check for manually edited values from employee_payable_days table first)
+            $payableDays = $this->getFinalPayableDays($employee->id, $year, $month);
+
+            // Calculate LOP (Leave Without Pay) - if payable days were edited, adjust LOP accordingly
+            $customPayableDays = null; // EmployeePayableDay::where('employee_id', $employee->id)->where('month', (int)$month)->where('year', (int)$year)->first();
+
+            if ($customPayableDays) {
+                $lopDays = max(0, $monthlyDays - $payableDays);
+            } else {
+                $lopDays = $this->calculateLOPDays($employee->id, $year, $month);
+            }
+
+            // Calculate Total Leave (only EL, SL, and CO - all other leaves are treated as LWP)
+            $totalLeave = $this->calculateTotalLeave($employee->id, $year, $month);
+
+            // Get Actual Salary
+            $actualSalary = $employee->set_salary ?? 0;
+
+            // Use Standard Monthly Days (30) for fair salary calculation across all months
+            $standardMonthlyDays = 30;
+            
+            // Limit payable days to standard monthly days for calculation purposes
+            // If they worked 31 days, we still calculate based on 30 days to avoid inflated salaries
+            $calculationPayableDays = min($payableDays, $standardMonthlyDays);
+            
+            // Calculate Monthly Salary based on actual joining/termination dates
+            // If they joined mid-month, actual salary should be pro-rated for their active days
+            if ($monthlyDays < $startDate->daysInMonth) {
+                $monthlySalary = ($actualSalary / $standardMonthlyDays) * $monthlyDays;
+            } else {
+                $monthlySalary = $actualSalary;
+            }
+            
+            // Calculate Fixed Component Breakdown (Rates) based on monthlySalary
+            $basicPay = $monthlySalary * 0.41;
+            $hra = $monthlySalary * 0.25;
+            $conveyanceAllowance = $monthlySalary * 0.21;
+            $specialAllowance = $monthlySalary * 0.10;
+            $medicalAllowance = $monthlySalary * 0.03;
+
+            // Arrears
+            $salaryArrears = 0; // SalaryArrears::getArrearsAmount($employee->id, $year . '-' . $month);
+            $petrolAllowance = 0; // PetrolAllowance::getAllowanceAmount($employee->id, $year . '-' . $month);
+
+            // Calculate proportion for Earnings based on Paid Days
+            $proportion = ($monthlyDays > 0) ? ($calculationPayableDays / $monthlyDays) : 0;
+            
+            // Earnings Actual
+            $earnedBasic = $basicPay * $proportion;
+            $earnedHra = $hra * $proportion;
+            $earnedConveyance = $conveyanceAllowance * $proportion;
+            $earnedSpecial = $specialAllowance * $proportion;
+            $earnedMedical = $medicalAllowance * $proportion;
+
+            // Calculate Gross Salary: Actual Earned Breakdown + Arrears + Petrol
+            $grossSalary = $earnedBasic + $earnedHra + $earnedConveyance + $earnedSpecial + $earnedMedical + $salaryArrears + $petrolAllowance;
+
+            // Deductions
+            $lopDeductionAmount = 0; 
+            $professionalTax = 200;
+            $salaryAdvance = 0; // LoanDeduction::getDeductionAmount($employee->id, $year . '-' . $month);
+            $otherDeductions = 0; // OtherDeduction::getDeductionAmount($employee->id, $year . '-' . $month);
+
+            // Calculate Net Amount Payable (Total Deductions): LOP deduction + PT + Salary Advance + Other Deductions
+            $netAmountPayable = $lopDeductionAmount + $professionalTax + $salaryAdvance + $otherDeductions;
+
+            // Calculate Final Salary: Gross Salary - Net Amount Payable
+            $finalPayableSalary = $grossSalary - $netAmountPayable;
+
+            // Get status from database
+            $status = SalaryProcessingStatus::getStatus($employee->id, $year, $month);
+
+            $tmp = [];
+            $tmp[] = $employee->id; // 0
+            $tmp[] = route('employee.show', Crypt::encrypt($employee->id)); // 1
+            $tmp[] = $srno++; // 2
+            $tmp[] = \Auth::user()->employeeIdFormat($employee->employee_id); // 3
+            $tmp[] = trim(($employee->name ?? '') . ' ' . ($employee->last_name ?? '')); // 4
+            $tmp[] = $employee->department ? $employee->department->name : ''; // 5
+            $tmp[] = ''; // 6 COST_CENT
+            $tmp[] = $employee->dob ? \Carbon\Carbon::parse($employee->dob)->age : ''; // 7 AGE
+            $tmp[] = $employee->gender; // 8 SEX
+            $tmp[] = $employee->company_doj ? \Carbon\Carbon::parse($employee->company_doj)->format('d/m/Y') : ''; // 9 DOJ
+            
+            $tmp[] = 0; // 10 MIN_WAGE_R
+            $tmp[] = 0; // 11 PROD_PC_RT
+            $tmp[] = round($basicPay, 2); // 12 BASIC_RT
+            $tmp[] = round($medicalAllowance, 2); // 13 MEDICAL_RT
+            $tmp[] = round($hra, 2); // 14 HRA_RT
+            $tmp[] = round($conveyanceAllowance, 2); // 15 CONNVEYANC
+            $tmp[] = 0; // 16 EDUCATION_
+            $tmp[] = 0; // 17 EXECUTIVE_
+            $tmp[] = 0; // 18 LEAVE_ENCA
+            $tmp[] = 0; // 19 SITE EXPE
+            $tmp[] = round($specialAllowance, 2); // 20 SPL ALLOW
+            
+            $prDays = $payableDays - $totalLeave;
+            $tmp[] = round(max(0, $prDays), 2); // 21 PR_DAYS (approximation)
+            $tmp[] = 0; // 22 WEEKLY_OFF
+            $tmp[] = 0; // 23 PH
+            $tmp[] = round($lopDays, 2); // 24 LWP
+            $tmp[] = round($totalLeave, 2); // 25 LEAVE
+            $tmp[] = 0; // 26 PL
+            $tmp[] = round($payableDays, 2); // 27 PAID_DAYS
+            $tmp[] = 0; // 28 OT_HRS
+            
+            $tmp[] = round($earnedBasic, 2); // 29 BASIC
+            $tmp[] = round($earnedMedical, 2); // 30 MEDICAL
+            $tmp[] = round($earnedHra, 2); // 31 HRA
+            $tmp[] = round($earnedConveyance, 2); // 32 CONNVEYAN2
+            $tmp[] = 0; // 33 EDUCATION
+            $tmp[] = 0; // 34 EXECUTIVE
+            $tmp[] = 0; // 35 LEAVE_ENC2
+            $tmp[] = 0; // 36 SITE EXP2
+            $tmp[] = round($earnedSpecial, 2); // 37 SPL ALLO2
+            $tmp[] = round($salaryArrears, 2); // 38 Arrears
+            
+            $tmp[] = round($grossSalary, 2); // 39 GROSS
+            
+            $tmp[] = 0; // 40 PF
+            $tmp[] = round($professionalTax, 2); // 41 PT
+            $tmp[] = 0; // 42 MLWF
+            $tmp[] = round($salaryAdvance, 2); // 43 ADVANCE
+            $tmp[] = 0; // 44 TDS
+            $tmp[] = 0; // 45 TELEPHONE
+            
+            $tmp[] = round($netAmountPayable, 2); // 46 DEDUCTION
+            $tmp[] = round($finalPayableSalary, 2); // 47 NET
+            $tmp[] = ''; // 48 PMT_DT
+            $tmp[] = ''; // 49 SIGNATURE
+            $tmp[] = $status; // 50 STATUS
+
+            $data[] = $tmp;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Calculate LOP (Leave Without Pay) days for an employee in a given month
+     */
+    public function calculateLOPDays($employeeId, $year, $month)
+    {
+        $startDate = Carbon::create($year, $month)->startOfMonth();
+        $endDate = Carbon::create($year, $month)->endOfMonth();
+
+        // Get employee details
+        $employee = Employee::find($employeeId);
+        if (!$employee) {
+            return 0;
+        }
+
+        // Check joining date
+        $joiningDate = Carbon::parse($employee->company_doj);
+        if ($joiningDate->gt($endDate)) {
+            return 0;
+        }
+        if ($joiningDate->gt($startDate)) {
+            $startDate = $joiningDate->copy();
+        }
+
+        // Check termination/resignation date
+        $termination = Termination::where('employee_id', $employeeId)
+            ->whereDate('termination_date', '>=', $startDate)
+            ->whereDate('termination_date', '<=', $endDate)
+            ->first();
+
+        $resignation = Resignation::where('employee_id', $employeeId)
+            ->whereDate('resignation_date', '>=', $startDate)
+            ->whereDate('resignation_date', '<=', $endDate)
+            ->first();
+
+        if ($termination) {
+            $endDate = Carbon::parse($termination->termination_date);
+        } elseif ($resignation) {
+            $endDate = Carbon::parse($resignation->resignation_date);
+        }
+
+        // Get all dates in the period
+        $dates = [];
+        $current = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+        
+        while ($current <= $end) {
+            $dates[] = $current->format('Y-m-d');
+            $current->addDay();
+        }
+
+        // Get attendance records
+        $attendances = AttendanceEmployee::where('employee_id', $employeeId)
+            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->get();
+
+        // Group attendance by date
+        $attendanceData = [];
+        foreach ($attendances as $attendance) {
+            $attendanceData[$attendance->date] = [
+                'status' => $attendance->status,
+                'clock_in' => $attendance->clock_in,
+                'clock_out' => $attendance->clock_out,
+            ];
+        }
+
+        // Build leave codes (same logic as calculatePayableDaysFromStatusCodes)
+        $leaveCodes = [];
+        $codePriority = ['CO' => 4, 'LOP' => 3, 'SL' => 2, 'EL' => 1];
+
+        $leaves = LocalLeave::query()
+            ->with('leaveType')
+            ->where('employee_id', $employeeId)
+            ->where('status', 'Approved')
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhereBetween('end_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhere(function ($q2) use ($startDate, $endDate) {
+                      $q2->where('start_date', '<=', $startDate->format('Y-m-d'))
+                         ->where('end_date', '>=', $endDate->format('Y-m-d'));
+                  });
+            })
+            ->get();
+
+        foreach ($leaves as $leave) {
+            $typeTitle = strtolower(trim(optional($leave->leaveType)->title ?? ''));
+            $duration = strtolower(trim($leave->leave_duration_type ?? 'full_day'));
+
+            $code = 'EL';
+            if ($typeTitle === 'comp-off' || $typeTitle === 'comp off' || str_contains($typeTitle, 'comp')) {
+                $code = 'CO';
+            } elseif ($typeTitle === 'leave without pay' || str_contains($typeTitle, 'without pay')) {
+                $code = 'LOP';
+            } elseif ($typeTitle === 'sick leave' || str_contains($typeTitle, 'sick')) {
+                $code = 'SL';
+            } elseif ($typeTitle === 'earned leave' || str_contains($typeTitle, 'earned')) {
+                $code = 'EL';
+            } elseif ($duration === 'half_day') {
+                $code = 'SL';
+            } else {
+                $code = 'EL';
+            }
+
+            $leaveStart = Carbon::parse($leave->start_date);
+            $leaveEnd = Carbon::parse($leave->end_date);
+            $periodStart = $leaveStart->lt($startDate) ? $startDate : $leaveStart;
+            $periodEnd = $leaveEnd->gt($endDate) ? $endDate : $leaveEnd;
+
+            for ($d = $periodStart->copy(); $d->lte($periodEnd); $d->addDay()) {
+                $dateKey = $d->format('Y-m-d');
+                if (!isset($leaveCodes[$dateKey]) || $codePriority[$code] > $codePriority[$leaveCodes[$dateKey] ?? '']) {
+                    $leaveCodes[$dateKey] = $code;
+                }
+            }
+        }
+
+        // Build status codes (same logic as calculatePayableDaysFromStatusCodes)
+        $statusCodes = [];
+        $weekOff = strtolower(trim((string) ($employee->week_off_day ?? '')));
+        $tz = 'Asia/Kolkata';
+        $today = Carbon::now($tz)->startOfDay();
+
+        foreach ($dates as $date) {
+            if (Carbon::parse($date, $tz)->startOfDay()->gt($today)) {
+                $statusCodes[$date] = '';
+                continue;
+            }
+
+            $dayName = strtolower(Carbon::parse($date)->format('l'));
+            $isWeekOff = $weekOff !== ''
+                ? ($dayName === strtolower($weekOff))
+                : in_array($dayName, ['saturday', 'sunday'], true);
+
+            $att = $attendanceData[$date] ?? null;
+            $leaveCode = $leaveCodes[$date] ?? null;
+
+            $clockIn = $att['clock_in'] ?? null;
+            $clockOut = $att['clock_out'] ?? null;
+            $hasPunch = !empty($clockIn) && $clockIn !== '00:00:00';
+            $isToday = Carbon::parse($date, $tz)->isSameDay($today);
+
+            if ($isWeekOff) {
+                $statusCodes[$date] = 'WO';
+                continue;
+            }
+
+            if ($hasPunch) {
+                if (empty($clockOut) || $clockOut === '00:00:00') {
+                    if ($leaveCode === 'SL') {
+                        $statusCodes[$date] = 'SL';
+                    } else {
+                        $statusCodes[$date] = 'SP';
+                    }
+                    continue;
+                }
+                
+                if ($leaveCode === 'SL') {
+                    $statusCodes[$date] = 'SL';
+                } else {
+                    $status = strtolower(trim((string) ($att['status'] ?? '')));
+                    if ($status === 'present') {
+                        $statusCodes[$date] = 'P';
+                    } elseif ($status === 'absent') {
+                        $statusCodes[$date] = 'LOP';
+                    } else {
+                        $statusCodes[$date] = 'P';
+                    }
+                }
+                continue;
+            }
+
+            if (!empty($leaveCode)) {
+                $statusCodes[$date] = $leaveCode;
+                continue;
+            }
+
+            if ($isToday) {
+                $statusCodes[$date] = $isWeekOff ? 'WO' : '';
+                continue;
+            }
+
+            $status = strtolower(trim((string) ($att['status'] ?? '')));
+            if ($status === 'present') {
+                $statusCodes[$date] = 'P';
+            } elseif ($status === 'absent' || $status === '') {
+                $statusCodes[$date] = 'LOP';
+            } else {
+                $statusCodes[$date] = 'LOP';
+            }
+        }
+
+        // Count LOP days
+        $lopDays = 0;
+        foreach ($statusCodes as $date => $code) {
+            if ($code === 'LOP') {
+                $lopDays += 1;
+            }
+        }
+
+        return round($lopDays, 2);
+    }
+
+    /**
+     * Get Salary Advance (loan deductions) for an employee in a given month
+     */
+    private function getSalaryAdvance($employeeId, $year, $month)
+    {
+        $monthDate = $year . '-' . $month . '-01';
+        
+        $totalAdvance = LoanDeduction::whereHas('loan', function($query) use ($employeeId) {
+                $query->where('employee_id', $employeeId);
+            })
+            ->whereYear('month', $year)
+            ->whereMonth('month', $month)
+            ->where('is_deducted', true)
+            ->sum('emi_amount');
+
+        return $totalAdvance;
+    }
+
+    /**
+     * Export Salary Processing data to Excel
+     */
+    public function salaryProcessingExport(Request $request)
+    {
+        $formate_month_year = $request->datePicker;
+        $month = substr($formate_month_year, 5, 2);
+        $year = substr($formate_month_year, 0, 4);
+        $departmentId = $request->department_id ?? null;
+
+        $fileName = 'salary_processing_' . date('F_Y', strtotime($year . '-' . $month . '-01')) . '_' . date('Y-m-d_His') . '.xlsx';
+        
+        $export = new SalaryProcessingExport($year, $month, $this, $departmentId);
+        
+        return \Excel::download($export, $fileName);
+    }
+
+    /**
+     * Generate PDF content for payslip
+     */
+    private function generatePayslipPdf($payslipId, $month)
+    {
+        try {
+            $payslip = PaySlip::findOrFail($payslipId);
+            $employee = Employee::findOrFail($payslip->employee_id);
+            $employeesId = \Auth::user()->employeeIdFormat($employee->employee_id);
+            
+            // Calculate and set loan deduction
+            $payslip->loan = Employee::loan($employee->id, $month);
+            
+            // Calculate and set salary arrears
+            $arrearsAmount = \App\Models\SalaryArrears::getArrearsAmount($employee->id, $month);
+            $payslip->salary_arrears = $arrearsAmount;
+            
+            // Calculate and set petrol allowance
+            $petrolAllowanceAmount = \App\Models\PetrolAllowance::getPetrolAllowanceAmount($employee->id, $month);
+            $payslip->petrol_allowance = $petrolAllowanceAmount;
+            
+            // Calculate total allowance
+            $allowances = \App\Models\Allowance::where('employee_id', '=', $employee->id)->get();
+            $totalAllowance = 0;
+            foreach ($allowances as $allowance) {
+                if (isset($allowance->type) && $allowance->type == 'percentage') {
+                    $employeeForCalc = Employee::find($allowance->employee_id);
+                    $totalAllowance += $allowance->amount * ($employeeForCalc->salary ?? 0) / 100;
+                } else {
+                    $totalAllowance += $allowance->amount;
+                }
+            }
+            $payslip->allowance = (float)$totalAllowance + (float)$petrolAllowanceAmount;
+            
+            // Update net_payble
+            $baseNetSalary = Employee::find($employee->id)->get_net_salary();
+            $payslip->net_payble = $baseNetSalary + $arrearsAmount + $petrolAllowanceAmount;
+            
+            $payslipDetail = Utility::employeePayslipDetail($employee->id, $month);
+            
+            // Get logo for PDF (convert to base64 for reliable PDF rendering)
+            $logoBase64 = null;
+            try {
+                $logo = Utility::get_file('uploads/logo/');
+                $company_logo = Utility::getValByName('company_logo');
+                if (empty($company_logo)) {
+                    $company_logo = 'logo-dark.png';
+                }
+                
+                $settings = Utility::settings();
+                $storageSetting = $settings['storage_setting'] ?? 'local';
+                
+                if ($storageSetting == 'local') {
+                    $fullPath = storage_path('app/public/uploads/logo/' . $company_logo);
+                    if (file_exists($fullPath)) {
+                        $imageData = file_get_contents($fullPath);
+                        $imageType = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+                        if ($imageType == 'svg') {
+                            $imageType = 'svg+xml';
+                        }
+                        $logoBase64 = 'data:image/' . $imageType . ';base64,' . base64_encode($imageData);
+                    }
+                } else {
+                    // For cloud storage, use URL
+                    $logoPath = $logo . '/' . $company_logo;
+                    if (!filter_var($logoPath, FILTER_VALIDATE_URL)) {
+                        $logoBase64 = url($logoPath);
+                    } else {
+                        $logoBase64 = $logoPath;
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Logo base64 conversion failed: ' . $e->getMessage());
+                $logoBase64 = null;
+            }
+            
+            // Generate HTML content
+            $html = view('payslip.pdf', compact('payslip', 'employee', 'payslipDetail', 'employeesId'))->render();
+            
+            // Replace logo URL with base64 if available
+            if ($logoBase64) {
+                // Find and replace the logo src in the HTML
+                $html = preg_replace('/(<img[^>]*src=["\'])([^"\']*logo[^"\']*)(["\'][^>]*>)/i', '' . $logoBase64 . '', $html);
+            }
+            
+            // Use DomPDF if available
+            if (class_exists('Barryvdh\DomPDF\Facade\Pdf')) {
+                $pdf = \PDF::loadHTML($html);
+                return $pdf->output();
+            } elseif (class_exists('Dompdf\Dompdf')) {
+                require_once app_path('Libraries/dompdf/autoload.inc.php');
+                $dompdf = new \Dompdf\Dompdf();
+                $dompdf->loadHtml($html);
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+                return $dompdf->output();
+            } else {
+                // Fallback: try to use mPDF if available
+                if (class_exists('Mpdf\Mpdf')) {
+                    $mpdf = new \Mpdf\Mpdf();
+                    $mpdf->WriteHTML($html);
+                    return $mpdf->Output('', 'S'); // Return as string
+                }
+                throw new \Exception('No PDF library available');
+            }
+        } catch (\Exception $e) {
+            \Log::error('PDF generation failed: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Send payslip email with PDF attachment
+     */
+    private function sendPayslipEmailWithAttachment($email, $uArr, $pdfContent, $pdfFileName)
+    {
+        try {
+            $template = \App\Models\EmailTemplate::where('slug', 'new_payroll')->first();
+            
+            if (!$template) {
+                throw new \Exception('Email template not found');
+            }
+            
+            $is_active = \App\Models\UserEmailTemplate::where('template_id', '=', $template->id)->first();
+            if (!$is_active || $is_active->is_active != 1) {
+                throw new \Exception('Email template is not active');
+            }
+            
+            $settings = Utility::settings();
+            $data = Utility::getSetting();
+            
+            $setting = [
+                'mail_driver' => '',
+                'mail_host' => '',
+                'mail_port' => '',
+                'mail_encryption' => '',
+                'mail_username' => '',
+                'mail_password' => '',
+                'mail_from_address' => '',
+                'mail_from_name' => '',
+            ];
+            
+            foreach ($data as $row) {
+                $setting[$row->name] = $row->value;
+            }
+            
+            $usr = \Auth::user();
+            if ($usr) {
+                $content = \App\Models\EmailTemplateLang::where('parent_id', '=', $template->id)->where('lang', 'LIKE', $usr->lang)->first();
+            } else {
+                $content = \App\Models\EmailTemplateLang::where('parent_id', '=', $template->id)->where('lang', 'LIKE', 'en')->first();
+            }
+            
+            if (!$content || empty($content->content)) {
+                throw new \Exception('Email template content not found');
+            }
+            
+            $content->from = $template->from;
+            $content->content = Utility::replaceVariable($content->content, $uArr);
+            
+            // Override app_name if provided in uArr
+            if (isset($uArr['app_name'])) {
+                $content->content = str_replace('{app_name}', $uArr['app_name'], $content->content);
+                $content->content = str_replace('{<strong>app_name</strong>}', '<strong>' . $uArr['app_name'] . '</strong>', $content->content);
+            }
+            
+            // Configure mail settings
+            config([
+                'mail.driver' => $settings['mail_driver'] ? $settings['mail_driver'] : $setting['mail_driver'],
+                'mail.host' => $settings['mail_host'] ? $settings['mail_host'] : $setting['mail_host'],
+                'mail.port' => $settings['mail_port'] ? $settings['mail_port'] : $setting['mail_port'],
+                'mail.encryption' => $settings['mail_encryption'] ? $settings['mail_encryption'] : $setting['mail_encryption'],
+                'mail.username' => $settings['mail_username'] ? $settings['mail_username'] : $setting['mail_username'],
+                'mail.password' => $settings['mail_password'] ? $settings['mail_password'] : $setting['mail_password'],
+                'mail.from.address' => $settings['mail_from_address'] ? $settings['mail_from_address'] : $setting['mail_from_address'],
+                'mail.from.name' => $settings['mail_from_name'] ? $settings['mail_from_name'] : $setting['mail_from_name'],
+            ]);
+            
+            // Send email with PDF attachment
+            Mail::to($email)->send(new PayslipSendWithAttachment($content, $settings, $email, $pdfContent, $pdfFileName));
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to send payslip email with attachment: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Update salary processing status (only for Finance & Accounts employees, NOT company users)
+     */
+    public function updateSalaryProcessingStatus(Request $request)
+    {
+        // IMPORTANT: Company users are NOT allowed to change status
+        if (\Auth::user()->type == 'company') {
+            return response()->json(['error' => __('Permission denied. Only Finance & Accounts department employees can update payment status.')], 403);
+        }
+
+        // Check if user is from Finance & Accounts department (employees only)
+        $isFinanceAccounts = false;
+        if (\Auth::user()->type == 'employee') {
+            try {
+                // Method 1: Check by email pattern (accounts@, finance@)
+                $userEmail = strtolower(\Auth::user()->email ?? '');
+                if (strpos($userEmail, 'accounts@') !== false || 
+                    strpos($userEmail, 'finance@') !== false ||
+                    strpos($userEmail, '@accounts') !== false ||
+                    strpos($userEmail, '@finance') !== false) {
+                    $isFinanceAccounts = true;
+                }
+                
+                // Method 2: Check by department name
+                if (!$isFinanceAccounts) {
+                    $employee = Employee::where('user_id', \Auth::user()->id)->first();
+                    
+                    if ($employee && !empty($employee->department_id)) {
+                        // Load department directly by ID
+                        $department = Department::where('id', $employee->department_id)
+                            ->where('created_by', \Auth::user()->creatorId())
+                            ->first();
+                        
+                        if ($department) {
+                            $deptName = strtolower(trim($department->name));
+                            // Check for various possible department name formats
+                            $isFinanceAccounts = (
+                                $deptName == 'finance & accounts' || 
+                                $deptName == 'finance and accounts' ||
+                                $deptName == 'finance & account' ||
+                                $deptName == 'finance & accounts team' ||
+                                $deptName == 'finance and accounts team' ||
+                                (strpos($deptName, 'finance') !== false && (strpos($deptName, 'account') !== false || strpos($deptName, 'accounts') !== false))
+                            );
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error checking Finance & Accounts department: ' . $e->getMessage());
+            }
+        }
+
+        if (!$isFinanceAccounts) {
+            return response()->json(['error' => __('Permission denied. Only Finance & Accounts department employees can update payment status.')], 403);
+        }
+
+        $request->validate([
+            'employee_id' => 'required|integer|exists:employees,id',
+            'year' => 'required|string',
+            'month' => 'required|string',
+            'status' => 'required|in:Pending,Done',
+        ]);
+
+        try {
+            SalaryProcessingStatus::updateStatus(
+                $request->employee_id,
+                $request->year,
+                $request->month,
+                $request->status,
+                \Auth::id()
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => __('Status updated successfully.')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => __('Failed to update status: ') . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

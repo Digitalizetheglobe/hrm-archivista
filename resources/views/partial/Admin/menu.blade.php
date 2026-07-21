@@ -530,6 +530,9 @@
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('tds.index') }}">{{ __('TDS') }}</a>
                         </li>
+                        <li class="dash-item">
+                            <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('salary-processing.index') }}">{{ __('Salary Processing') }}</a>
+                        </li>
                         @endif
 
                     </ul>

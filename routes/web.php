@@ -1118,6 +1118,34 @@ Route::group(['middleware' => ['verified']], function () {
         ]
     );
 
+    Route::get('salary-processing', [PaySlipController::class, 'salaryProcessing'])->name('salary-processing.index')->middleware(
+        [
+            'auth',
+            'XSS',
+        ]
+    );
+
+    Route::post('salary-processing/search_json', [PaySlipController::class, 'salaryProcessingSearch'])->name('salary-processing.search_json')->middleware(
+        [
+            'auth',
+            'XSS',
+        ]
+    );
+
+    Route::post('salary-processing/export', [PaySlipController::class, 'salaryProcessingExport'])->name('salary-processing.export')->middleware(
+        [
+            'auth',
+            'XSS',
+        ]
+    );
+
+    Route::post('salary-processing/update-status', [PaySlipController::class, 'updateSalaryProcessingStatus'])->name('salary-processing.update-status')->middleware(
+        [
+            'auth',
+            'XSS',
+        ]
+    );
+
     // Invoice routes
     Route::get('invoice/paysalary/{id}/{date}', [InvoiceController::class, 'paysalary'])->name('invoice.paysalary')->middleware(['auth', 'XSS']);
     Route::get('invoice/bulk_pay_create/{date}', [InvoiceController::class, 'bulk_pay_create'])->name('invoice.bulk_pay_create')->middleware(['auth', 'XSS']);

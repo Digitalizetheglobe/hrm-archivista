@@ -1,0 +1,1 @@
+<?php $lines = file('c:\xampp\htdocs\hrm_rising\app\Http\Controllers\PaySlipController.php'); $out = []; $capture = false; foreach($lines as $i => $line) { if (strpos($line, 'public function salaryProcessing()') !== false) { $capture = true; } if ($capture) { $out[] = $line; } } array_pop($out); array_pop($out); file_put_contents('scratch_methods.txt', implode('', $out));
