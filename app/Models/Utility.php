@@ -2778,7 +2778,9 @@ class Utility extends Model
             $endDate = clone $startDate;
             $endDate->modify('last day of this month');
             $interval = new \DateInterval('P1D');
-            $period = new \DatePeriod($startDate, $interval, $endDate);
+            $periodEndDate = clone $endDate;
+            $periodEndDate->modify('+1 day');
+            $period = new \DatePeriod($startDate, $interval, $periodEndDate);
 
             // Attendance Records
             $presentDays = 0;
@@ -2787,7 +2789,14 @@ class Utility extends Model
                     ->where('employee_id', $employee->id)
                     ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                     ->get();
-                $presentDays = count($attendanceRecords);
+                
+                foreach ($attendanceRecords as $record) {
+                    if (isset($record->status) && $record->status === 'Half Day') {
+                        $presentDays += 0.5;
+                    } else {
+                        $presentDays += 1.0;
+                    }
+                }
             } catch (\Exception $e) {
                 \Log::warning('Error fetching attendance in calculation: ' . $e->getMessage());
                 $attendanceRecords = collect();
@@ -2813,19 +2822,40 @@ class Utility extends Model
             // Days Payable calculation
             $weeklyOff = 0;
             foreach ($period as $day) {
-                if ($day->format('N') == 6 || $day->format('N') == 7) { $weeklyOff++; }
+                $dayOfWeek = (int)$day->format('N'); // 1 = Mon, 7 = Sun
+                $dayOfMonth = (int)$day->format('j');
+                $isSunday = ($dayOfWeek === 7);
+                $isSecondWeek = ($dayOfMonth >= 8 && $dayOfMonth <= 14);
+                $isFourthWeek = ($dayOfMonth >= 22 && $dayOfMonth <= 28);
+                $isSecondOrFourthSaturday = ($dayOfWeek === 6 && ($isSecondWeek || $isFourthWeek));
+                
+                if ($isSunday || $isSecondOrFourthSaturday) {
+                    $hasAttended = $attendanceRecords->contains('date', $day->format('Y-m-d'));
+                    if (!$hasAttended) {
+                        $weeklyOff++;
+                    }
+                }
             }
 
             $totalAvailed = 0;
             try {
-                $totalAvailed = \DB::table('leaves')
+                $totalAvailedLeavesList = \DB::table('leaves')
                     ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
                     ->where('leaves.employee_id', $employee->id)
                     ->where('leaves.status', 'Approved')
                     ->where('leaves.start_date', '<=', $endDate->format('Y-m-d'))
                     ->where('leaves.end_date', '>=', $startDate->format('Y-m-d'))
                     ->where('leave_types.title', 'NOT LIKE', '%LWP%')
-                    ->sum('leaves.total_leave_days');
+                    ->select('leaves.total_leave_days', 'leaves.leave_duration')
+                    ->get();
+                
+                foreach ($totalAvailedLeavesList as $l) {
+                    if (strtolower(trim($l->leave_duration ?? '')) === 'half_day') {
+                        $totalAvailed += 0.5;
+                    } else {
+                        $totalAvailed += (float)$l->total_leave_days;
+                    }
+                }
             } catch (\Exception $e) {
                 \Log::warning('Error calculating Total Leaves in calculation: ' . $e->getMessage());
             }
@@ -2843,20 +2873,30 @@ class Utility extends Model
 
             $lwpDays = 0;
             try {
-                $lwpDays = \DB::table('leaves')
+                $lwpLeavesList = \DB::table('leaves')
                     ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
                     ->where('leaves.employee_id', $employee->id)
                     ->where('leaves.status', 'Approved')
                     ->where('leave_types.title', 'LIKE', '%LWP%')
                     ->where('leaves.start_date', '<=', $endDate->format('Y-m-d'))
                     ->where('leaves.end_date', '>=', $startDate->format('Y-m-d'))
-                    ->sum('leaves.total_leave_days');
+                    ->select('leaves.total_leave_days', 'leaves.leave_duration')
+                    ->get();
+                
+                foreach ($lwpLeavesList as $l) {
+                    if (strtolower(trim($l->leave_duration ?? '')) === 'half_day') {
+                        $lwpDays += 0.5;
+                    } else {
+                        $lwpDays += (float)$l->total_leave_days;
+                    }
+                }
             } catch (\Exception $e) {
                 \Log::warning('Error calculating LWP Days in calculation: ' . $e->getMessage());
             }
 
             $calculatedDaysPayable = (float)$presentDays + (float)$weeklyOff + (float)$totalAvailed + (float)$holidays - (float)$lwpDays;
-            $absentDaysNew = max(0, (float)$totalDays - $calculatedDaysPayable);
+            $calculatedDaysPayable = min((float)$totalDays, $calculatedDaysPayable);
+            $absentDaysNew = max(0.0, (float)$totalDays - $calculatedDaysPayable);
             $perDaySalary = (float)$payslip->basic_salary / 30;
             $deductionForAbsent = (float)$absentDaysNew * $perDaySalary;
 
@@ -2970,7 +3010,9 @@ class Utility extends Model
             $endDate = clone $startDate;
             $endDate->modify('last day of this month');
             $interval = new \DateInterval('P1D');
-            $period = new \DatePeriod($startDate, $interval, $endDate);
+            $periodEndDate = clone $endDate;
+            $periodEndDate->modify('+1 day');
+            $period = new \DatePeriod($startDate, $interval, $periodEndDate);
 
             // Attendance Records
             $presentDays = 0;
@@ -2979,7 +3021,14 @@ class Utility extends Model
                     ->where('employee_id', $employee->id)
                     ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                     ->get();
-                $presentDays = count($attendanceRecords);
+                
+                foreach ($attendanceRecords as $record) {
+                    if (isset($record->status) && $record->status === 'Half Day') {
+                        $presentDays += 0.5;
+                    } else {
+                        $presentDays += 1.0;
+                    }
+                }
             } catch (\Exception $e) {
                 \Log::warning('Error fetching attendance in calculation: ' . $e->getMessage());
                 $attendanceRecords = collect();
@@ -3005,19 +3054,40 @@ class Utility extends Model
             // Days Payable calculation
             $weeklyOff = 0;
             foreach ($period as $day) {
-                if ($day->format('N') == 6 || $day->format('N') == 7) { $weeklyOff++; }
+                $dayOfWeek = (int)$day->format('N'); // 1 = Mon, 7 = Sun
+                $dayOfMonth = (int)$day->format('j');
+                $isSunday = ($dayOfWeek === 7);
+                $isSecondWeek = ($dayOfMonth >= 8 && $dayOfMonth <= 14);
+                $isFourthWeek = ($dayOfMonth >= 22 && $dayOfMonth <= 28);
+                $isSecondOrFourthSaturday = ($dayOfWeek === 6 && ($isSecondWeek || $isFourthWeek));
+                
+                if ($isSunday || $isSecondOrFourthSaturday) {
+                    $hasAttended = $attendanceRecords->contains('date', $day->format('Y-m-d'));
+                    if (!$hasAttended) {
+                        $weeklyOff++;
+                    }
+                }
             }
 
             $totalAvailed = 0;
             try {
-                $totalAvailed = \DB::table('leaves')
+                $totalAvailedLeavesList = \DB::table('leaves')
                     ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
                     ->where('leaves.employee_id', $employee->id)
                     ->where('leaves.status', 'Approved')
                     ->where('leaves.start_date', '<=', $endDate->format('Y-m-d'))
                     ->where('leaves.end_date', '>=', $startDate->format('Y-m-d'))
                     ->where('leave_types.title', 'NOT LIKE', '%LWP%')
-                    ->sum('leaves.total_leave_days');
+                    ->select('leaves.total_leave_days', 'leaves.leave_duration')
+                    ->get();
+                
+                foreach ($totalAvailedLeavesList as $l) {
+                    if (strtolower(trim($l->leave_duration ?? '')) === 'half_day') {
+                        $totalAvailed += 0.5;
+                    } else {
+                        $totalAvailed += (float)$l->total_leave_days;
+                    }
+                }
             } catch (\Exception $e) {
                 \Log::warning('Error calculating Total Leaves in calculation: ' . $e->getMessage());
             }
@@ -3035,20 +3105,30 @@ class Utility extends Model
 
             $lwpDays = 0;
             try {
-                $lwpDays = \DB::table('leaves')
+                $lwpLeavesList = \DB::table('leaves')
                     ->join('leave_types', 'leaves.leave_type_id', '=', 'leave_types.id')
                     ->where('leaves.employee_id', $employee->id)
                     ->where('leaves.status', 'Approved')
                     ->where('leave_types.title', 'LIKE', '%LWP%')
                     ->where('leaves.start_date', '<=', $endDate->format('Y-m-d'))
                     ->where('leaves.end_date', '>=', $startDate->format('Y-m-d'))
-                    ->sum('leaves.total_leave_days');
+                    ->select('leaves.total_leave_days', 'leaves.leave_duration')
+                    ->get();
+                
+                foreach ($lwpLeavesList as $l) {
+                    if (strtolower(trim($l->leave_duration ?? '')) === 'half_day') {
+                        $lwpDays += 0.5;
+                    } else {
+                        $lwpDays += (float)$l->total_leave_days;
+                    }
+                }
             } catch (\Exception $e) {
                 \Log::warning('Error calculating LWP Days in calculation: ' . $e->getMessage());
             }
 
             $calculatedDaysPayable = (float)$presentDays + (float)$weeklyOff + (float)$totalAvailed + (float)$holidays - (float)$lwpDays;
-            $absentDaysNew = max(0, (float)$totalDays - $calculatedDaysPayable);
+            $calculatedDaysPayable = min((float)$totalDays, $calculatedDaysPayable);
+            $absentDaysNew = max(0.0, (float)$totalDays - $calculatedDaysPayable);
             $perDaySalary = (float)$invoice->basic_salary / 30;
             $deductionForAbsent = (float)$absentDaysNew * $perDaySalary;
 
