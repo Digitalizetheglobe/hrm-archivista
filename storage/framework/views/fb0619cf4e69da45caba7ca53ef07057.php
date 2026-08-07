@@ -120,7 +120,6 @@
 
                                 <th><?php echo e(__('Salary')); ?></th>
                                 <th><?php echo e(__('Net Salary')); ?></th>
-                                <th><?php echo e(__('Status')); ?></th>
                                 <th><?php echo e(__('Action')); ?></th>
                             </tr>
                         </thead>
@@ -253,7 +252,6 @@
                                         '<div class="badge bg-success p-2 px-3 rounded"><a href="#" class="text-white">' +
                                         valueOfElement[5] + '</a></div>';
                                 }
-
                                 var id = valueOfElement[0];
                                 var employee_id = valueOfElement[1];
                                 var payslip_id = valueOfElement[6];
@@ -262,35 +260,19 @@
                                     var payslip =
                                         '<a href="#" data-url="<?php echo e(url('payslip/pdf/')); ?>/' +
                                         id + '/' + datePicker +
-                                        '" data-size="lg"  data-ajax-popup="true" class=" btn-sm btn btn-warning" data-title="<?php echo e(__('Employee Payslip')); ?>">' +
-                                        '<?php echo e(__('Payslip')); ?>' + '</a> ';
+                                        '" data-size="lg"  data-ajax-popup="true" class="btn-sm btn btn-warning" data-bs-toggle="tooltip" title="<?php echo e(__('Payslip')); ?>" data-title="<?php echo e(__('Employee Payslip')); ?>">' +
+                                        '<i class="ti ti-download text-white"></i>' + '</a> ';
                                 }
-                                if (valueOfElement[5] == "UnPaid" && valueOfElement[6] != 0) {
-                                    var clickToPaid =
-                                        '<a href="<?php echo e(url('payslip/paysalary/')); ?>/' + id +
-                                        '/' + datePicker +
-                                        '"  class="btn-sm btn btn-primary">' +
-                                        '<?php echo e(__('Click To Paid')); ?>' + '</a>  ';
-                                } else {
-                                    var clickToPaid = '';
-                                }
-                                if (valueOfElement[6] != 0 && valueOfElement[5] == "UnPaid") {
-                                    var edit =
-                                        '<a href="#" data-url="<?php echo e(url('payslip/editemployee/')); ?>/' +
-                                        payslip_id +
-                                        '"  data-ajax-popup="true" class="btn-sm btn btn-info" data-title="<?php echo e(__('Edit Employee salary')); ?>">' +
-                                        '<?php echo e(__('Edit')); ?>' + '</a>';
-                                } else {
-                                    var edit = '';
-                                }
+                                var clickToPaid = '';
+                                var edit = '';
 
                                 var url = '<?php echo e(route('payslip.delete', ':id')); ?>';
                                 url = url.replace(':id', payslip_id);
 
                                 <?php if(\Auth::user()->type == 'company' || \Auth::user()->type == 'hr'): ?>
                                     var deleted = '<a href="#"  data-url="' + url +
-                                        '" class="payslip_delete view-btn btn btn-danger ms-1 btn-sm"  >' +
-                                        '<?php echo e(__('Delete')); ?>' + '</a>';
+                                        '" class="payslip_delete view-btn btn btn-danger ms-1 btn-sm" data-bs-toggle="tooltip" title="<?php echo e(__('Delete')); ?>" >' +
+                                        '<i class="ti ti-trash text-white"></i>' + '</a>';
                                 <?php else: ?>
                                     var deleted = '';
                                 <?php endif; ?>
@@ -304,7 +286,6 @@
                                         '<td style="text-transform: uppercase;">' + valueOfElement[2] + '</td> ' +
                                         '<td>' + valueOfElement[3] + '</td>' +
                                         '<td>' + valueOfElement[4] + '</td>' +
-                                        '<td>' + status + '</td>' +
                                         '<td>' + payslip + clickToPaid + edit + deleted +
                                         '</td>' +
                                         '</tr>';
@@ -315,7 +296,6 @@
                                         url_employee + '">' + valueOfElement[1] + '</a></td> ' +
                                         '<td>' + valueOfElement[3] + '</td>' +
                                         '<td>' + valueOfElement[4] + '</td>' +
-                                        '<td>' + status + '</td>' +
                                         '<td>' + payslip + clickToPaid + edit + deleted +
                                         '</td>' +
                                         '</tr>';

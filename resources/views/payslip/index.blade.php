@@ -109,7 +109,6 @@
 
                                 <th>{{ __('Salary') }}</th>
                                 <th>{{ __('Net Salary') }}</th>
-                                <th>{{ __('Status') }}</th>
                                 <th>{{ __('Action') }}</th>
                             </tr>
                         </thead>
@@ -242,7 +241,6 @@
                                         '<div class="badge bg-success p-2 px-3 rounded"><a href="#" class="text-white">' +
                                         valueOfElement[5] + '</a></div>';
                                 }
-
                                 var id = valueOfElement[0];
                                 var employee_id = valueOfElement[1];
                                 var payslip_id = valueOfElement[6];
@@ -251,35 +249,19 @@
                                     var payslip =
                                         '<a href="#" data-url="{{ url('payslip/pdf/') }}/' +
                                         id + '/' + datePicker +
-                                        '" data-size="lg"  data-ajax-popup="true" class=" btn-sm btn btn-warning" data-title="{{ __('Employee Payslip') }}">' +
-                                        '{{ __('Payslip') }}' + '</a> ';
+                                        '" data-size="lg"  data-ajax-popup="true" class="btn-sm btn btn-warning" data-bs-toggle="tooltip" title="{{ __('Payslip') }}" data-title="{{ __('Employee Payslip') }}">' +
+                                        '<i class="ti ti-download text-white"></i>' + '</a> ';
                                 }
-                                if (valueOfElement[5] == "UnPaid" && valueOfElement[6] != 0) {
-                                    var clickToPaid =
-                                        '<a href="{{ url('payslip/paysalary/') }}/' + id +
-                                        '/' + datePicker +
-                                        '"  class="btn-sm btn btn-primary">' +
-                                        '{{ __('Click To Paid') }}' + '</a>  ';
-                                } else {
-                                    var clickToPaid = '';
-                                }
-                                if (valueOfElement[6] != 0 && valueOfElement[5] == "UnPaid") {
-                                    var edit =
-                                        '<a href="#" data-url="{{ url('payslip/editemployee/') }}/' +
-                                        payslip_id +
-                                        '"  data-ajax-popup="true" class="btn-sm btn btn-info" data-title="{{ __('Edit Employee salary') }}">' +
-                                        '{{ __('Edit') }}' + '</a>';
-                                } else {
-                                    var edit = '';
-                                }
+                                var clickToPaid = '';
+                                var edit = '';
 
                                 var url = '{{ route('payslip.delete', ':id') }}';
                                 url = url.replace(':id', payslip_id);
 
                                 @if (\Auth::user()->type == 'company' || \Auth::user()->type == 'hr')
                                     var deleted = '<a href="#"  data-url="' + url +
-                                        '" class="payslip_delete view-btn btn btn-danger ms-1 btn-sm"  >' +
-                                        '{{ __('Delete') }}' + '</a>';
+                                        '" class="payslip_delete view-btn btn btn-danger ms-1 btn-sm" data-bs-toggle="tooltip" title="{{ __('Delete') }}" >' +
+                                        '<i class="ti ti-trash text-white"></i>' + '</a>';
                                 @else
                                     var deleted = '';
                                 @endif
@@ -293,7 +275,6 @@
                                         '<td style="text-transform: uppercase;">' + valueOfElement[2] + '</td> ' +
                                         '<td>' + valueOfElement[3] + '</td>' +
                                         '<td>' + valueOfElement[4] + '</td>' +
-                                        '<td>' + status + '</td>' +
                                         '<td>' + payslip + clickToPaid + edit + deleted +
                                         '</td>' +
                                         '</tr>';
@@ -304,7 +285,6 @@
                                         url_employee + '">' + valueOfElement[1] + '</a></td> ' +
                                         '<td>' + valueOfElement[3] + '</td>' +
                                         '<td>' + valueOfElement[4] + '</td>' +
-                                        '<td>' + status + '</td>' +
                                         '<td>' + payslip + clickToPaid + edit + deleted +
                                         '</td>' +
                                         '</tr>';

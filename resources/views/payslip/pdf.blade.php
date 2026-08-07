@@ -1480,6 +1480,7 @@ try {
                             $deductionsList[] = ['name' => 'ESI', 'amount' => $esiDeduction];
                             $deductionsList[] = ['name' => 'PF', 'amount' => $pfDeduction];
                             $deductionsList[] = ['name' => 'Professional Tax', 'amount' => $ptDeduction];
+                            $deductionsList[] = ['name' => 'TDS', 'amount' => $tdsDeduction];
                             if($mlwfDeduction > 0) {
                                 $deductionsList[] = ['name' => 'MLWF', 'amount' => $mlwfDeduction];
                             }
