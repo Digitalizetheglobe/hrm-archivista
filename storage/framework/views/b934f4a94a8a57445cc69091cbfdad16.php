@@ -675,7 +675,7 @@ try {
         // Calculate gross salary as exactly Set Salary + any Extra DB allowances
         $grossSalaryWithExtra = $grossSalary + $totalAllowances;
 
-        $totalDeductions = (float)$ptDeduction + (float)$loanDeduction + (float)$pfDeduction + (float)$esiDeduction + (float)$mlwfDeduction + (float)$otherDeduction + (float)$tdsDeduction + (float)$deductionForAbsent;
+        $totalDeductions = (float)$ptDeduction + (float)$loanDeduction + (float)$pfDeduction + (float)$esiDeduction + (float)$mlwfDeduction + (float)$otherDeduction + (float)$tdsDeduction;
         $netSalary = (float)$grossSalaryWithExtra - (float)$totalDeductions;
         
         // Save the correctly calculated net salary to the database
@@ -1487,7 +1487,6 @@ try {
                             if($otherDeduction > 0) {
                                 $deductionsList[] = ['name' => 'Other Deduction', 'amount' => $otherDeduction];
                             }
-                            $deductionsList[] = ['name' => 'Absent Deduction', 'amount' => $deductionForAbsent];
                             
                             // Build Annual Income Array
                             $annualIncomeList = [];
