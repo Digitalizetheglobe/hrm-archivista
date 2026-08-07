@@ -842,9 +842,9 @@
                                 @foreach($monthlyEvents as $event)
                                 <div class="event-item-new {{ $event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event' }}">
                                     <div class="event-avatar-new">
-                                        <img src="{{ asset('storage/uploads/avatar/' . $event['avatar']) }}"
+                                        <img src="{{ !empty($event['avatar']) && $event['avatar'] != 'default-avatar.png' ? \App\Models\Utility::get_file('uploads/avatar/') . $event['avatar'] : \App\Models\Utility::get_file('uploads/avatar/') . 'avatar.png' }}"
                                              alt="{{ $event['employee_name'] }}"
-                                             onerror="this.onerror=null; this.src='{{ asset('storage/uploads/avatar/avatar.png') }}'">
+                                             onerror="this.onerror=null; this.src='{{ \App\Models\Utility::get_file('uploads/avatar/') . 'avatar.png' }}'">
                                     </div>
                                     <div class="flex-grow-1" style="min-width:0;">
                                         <div class="event-name">{{ $event['employee_name'] }}</div>

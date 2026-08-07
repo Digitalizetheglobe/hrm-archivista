@@ -568,9 +568,9 @@
                                 <div class="event-item-new <?php echo e($event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event'); ?>">
                                     <div class="event-avatar-new">
                                         <?php $avatarFile = $event['avatar'] ?? 'avatar.png'; ?>
-                                        <img src="<?php echo e(asset('storage/uploads/avatar/' . $avatarFile)); ?>"
-                                             alt="<?php echo e($event['employee_name']); ?>"
-                                             onerror="this.onerror=null; this.src='<?php echo e(asset('storage/uploads/avatar/avatar.png')); ?>'">
+                                         <img src="<?php echo e(!empty($event['avatar']) && $event['avatar'] != 'default-avatar.png' ? \App\Models\Utility::get_file('uploads/avatar/') . $event['avatar'] : \App\Models\Utility::get_file('uploads/avatar/') . 'avatar.png'); ?>"
+                                              alt="<?php echo e($event['employee_name']); ?>"
+                                              onerror="this.onerror=null; this.src='<?php echo e(\App\Models\Utility::get_file('uploads/avatar/') . 'avatar.png'); ?>'">
                                     </div>
                                     <div style="flex:1;min-width:0;">
                                         <div class="event-name"><?php echo e($event['employee_name']); ?></div>

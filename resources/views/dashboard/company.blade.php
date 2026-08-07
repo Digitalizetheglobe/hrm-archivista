@@ -560,9 +560,9 @@
                                 <div class="event-item-new {{ $event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event' }}">
                                     <div class="event-avatar-new">
                                         @php $avatarFile = $event['avatar'] ?? 'avatar.png'; @endphp
-                                        <img src="{{ asset('storage/uploads/avatar/' . $avatarFile) }}"
-                                             alt="{{ $event['employee_name'] }}"
-                                             onerror="this.onerror=null; this.src='{{ asset('storage/uploads/avatar/avatar.png') }}'">
+                                         <img src="{{ !empty($event['avatar']) && $event['avatar'] != 'default-avatar.png' ? \App\Models\Utility::get_file('uploads/avatar/') . $event['avatar'] : \App\Models\Utility::get_file('uploads/avatar/') . 'avatar.png' }}"
+                                              alt="{{ $event['employee_name'] }}"
+                                              onerror="this.onerror=null; this.src='{{ \App\Models\Utility::get_file('uploads/avatar/') . 'avatar.png' }}'">
                                     </div>
                                     <div style="flex:1;min-width:0;">
                                         <div class="event-name">{{ $event['employee_name'] }}</div>
