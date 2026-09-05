@@ -165,6 +165,10 @@ use App\Http\Controllers\NotificationController;
 
 require __DIR__ . '/auth.php';
 
+Route::get('/csrf-token', function () {
+    return response()->json(['csrf_token' => csrf_token()]);
+})->name('csrf.token');
+
 
 
 Route::get('/fix-laravel', function () {

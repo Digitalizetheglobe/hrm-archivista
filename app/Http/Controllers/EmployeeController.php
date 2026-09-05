@@ -56,11 +56,9 @@ class EmployeeController extends Controller
                 // If employee type is Contract or Payroll and confirmation filter is specified
         if (($request->employee_type === 'Consultant' || $request->employee_type === 'Payroll') && $request->has('confirm_employment')) {
                     if ($request->confirm_employment === '1') {
-                        // Show only confirmed employees
-                        $query->where('confirm_of_employment', true);
+                        $query->whereNotNull('confirm_of_employment');
                     } elseif ($request->confirm_employment === '0') {
-                        // Show only unconfirmed employees
-                        $query->where('confirm_of_employment', false);
+                        $query->whereNull('confirm_of_employment');
                     }
                 }
             }

@@ -87,11 +87,18 @@
                                     </div>
                                     <div class="form-group col-md-6">
                                         {!! Form::label('password', __('Password'), ['class' => 'form-label']) !!}<span class="text-danger pl-1">*</span>
-                                        {!! Form::password('password', [
-                                            'class' => 'form-control',
-                                            'required' => 'required',
-                                            'placeholder' => 'Enter employee password',
-                                        ]) !!}
+                                        <div class="input-group">
+                                            {!! Form::password('password', [
+                                                'class' => 'form-control',
+                                                'id' => 'password',
+                                                'required' => 'required',
+                                                'placeholder' => 'Enter employee password',
+                                                'autocomplete' => 'new-password',
+                                            ]) !!}
+                                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="#password" aria-label="{{ __('Show password') }}">
+                                                <i class="ti ti-eye"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -259,6 +266,18 @@
 
 @push('script-page')
     <script>
+        $(document).on('click', '.toggle-password', function() {
+            var $input = $($(this).data('target'));
+            var $icon = $(this).find('i');
+            if ($input.attr('type') === 'password') {
+                $input.attr('type', 'text');
+                $icon.removeClass('ti-eye').addClass('ti-eye-off');
+            } else {
+                $input.attr('type', 'password');
+                $icon.removeClass('ti-eye-off').addClass('ti-eye');
+            }
+        });
+
         $('input[type="file"]').change(function(e) {
             var file = e.target.files[0].name;
             var file_name = $(this).attr('data-filename');

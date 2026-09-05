@@ -13,6 +13,7 @@ use App\Models\PetrolAllowance;
 use App\Models\AttendanceEmployee;
 use App\Models\Leave as LocalLeave;
 use App\Models\OtherDeduction;
+use App\Models\Deduction;
 use App\Models\EmployeePayableDay;
 use App\Models\Department;
 use App\Models\Loan;
@@ -69,8 +70,13 @@ class PaySlipController extends Controller
                 $year[$tempyear + $i] = $tempyear + $i;
             }
 
-            $employeeList = Employee::where('created_by', \Auth::user()->creatorId())->pluck('name', 'id');
-            $employeeList->prepend('All', '');
+            $employeeList = Employee::where('created_by', \Auth::user()->creatorId())
+                ->whereHas('user', function ($query) {
+                    $query->where('is_active', 1)->where('is_disable', 1);
+                })
+                ->orderBy('name')
+                ->pluck('name', 'id');
+            $employeeList->prepend(__('All'), '');
 
             return view('payslip.index', compact('employees', 'month', 'year', 'employeeList'));
         } else {
@@ -1152,10 +1158,13 @@ class PaySlipController extends Controller
             $lopDeductionAmount = 0; 
             $professionalTax = 200;
             $salaryAdvance = 0; // LoanDeduction::getDeductionAmount($employee->id, $year . '-' . $month);
-            $otherDeductions = 0; // OtherDeduction::getDeductionAmount($employee->id, $year . '-' . $month);
+            $monthKey = $year . '-' . str_pad((string) $month, 2, '0', STR_PAD_LEFT);
+            $mlwfAmount = Deduction::amountFor($employee->id, 'MLWF', $monthKey);
+            $tdsAmount = Deduction::amountFor($employee->id, 'TDS', $monthKey);
+            $otherDeductions = Deduction::amountFor($employee->id, 'Other Deduction', $monthKey);
 
             // Calculate Net Amount Payable (Total Deductions): LOP deduction + PT + Salary Advance + Other Deductions
-            $netAmountPayable = $lopDeductionAmount + $professionalTax + $salaryAdvance + $otherDeductions;
+            $netAmountPayable = $lopDeductionAmount + $professionalTax + $salaryAdvance + $otherDeductions + $mlwfAmount + $tdsAmount;
 
             // Calculate Final Salary: Gross Salary - Net Amount Payable
             $finalPayableSalary = $grossSalary - $netAmountPayable;
@@ -1212,9 +1221,9 @@ class PaySlipController extends Controller
             
             $tmp[] = 0; // 40 PF
             $tmp[] = round($professionalTax, 2); // 41 PT
-            $tmp[] = 0; // 42 MLWF
+            $tmp[] = round($mlwfAmount, 2); // 42 MLWF
             $tmp[] = round($salaryAdvance, 2); // 43 ADVANCE
-            $tmp[] = 0; // 44 TDS
+            $tmp[] = round($tdsAmount, 2); // 44 TDS
             $tmp[] = 0; // 45 TELEPHONE
             
             $tmp[] = round($netAmountPayable, 2); // 46 DEDUCTION

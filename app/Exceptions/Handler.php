@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Session\TokenMismatchException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -45,6 +46,25 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        $this->renderable(function (TokenMismatchException $e, $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => __('Your session expired. Please try again.'),
+                    'csrf_token' => csrf_token(),
+                ], 419);
+            }
+
+            $message = __('Your session expired. Please try again.');
+
+            if ($request->is('login') || $request->routeIs('login')) {
+                return redirect()->route('login')->with('error', $message);
+            }
+
+            $fallback = $request->headers->get('referer') ?: url('/');
+
+            return redirect()->to($fallback)->with('error', $message);
         });
     }
 }

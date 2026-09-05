@@ -246,28 +246,28 @@ class LeaveAllocationService
                 case 'payroll_confirm':
                     $query->orWhere(function($q) {
                         $q->where('employee_type', 'Payroll')
-                          ->where('confirm_of_employment', true);
+                          ->whereNotNull('confirm_of_employment');
                     });
                     break;
                     
                 case 'payroll_not_confirm':
                     $query->orWhere(function($q) {
                         $q->where('employee_type', 'Payroll')
-                          ->where('confirm_of_employment', false);
+                          ->whereNull('confirm_of_employment');
                     });
                     break;
                     
                 case 'contract_confirm':
                     $query->orWhere(function($q) {
                         $q->whereIn('employee_type', ['Contract', 'Consultant'])
-                          ->where('confirm_of_employment', true);
+                          ->whereNotNull('confirm_of_employment');
                     });
                     break;
                     
                 case 'contract_not_confirm':
                     $query->orWhere(function($q) {
                         $q->whereIn('employee_type', ['Contract', 'Consultant'])
-                          ->where('confirm_of_employment', false);
+                          ->whereNull('confirm_of_employment');
                     });
                     break;
             }

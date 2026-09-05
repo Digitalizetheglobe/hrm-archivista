@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use App\Models\Employee;
 
@@ -26,6 +27,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        if (! app()->runningInConsole()) {
+            $request = request();
+            if ($request && $request->getHost()) {
+                URL::forceRootUrl($request->root());
+                if ($request->secure()) {
+                    URL::forceScheme('https');
+                }
+            }
+        }
+
         View::composer('partial.Admin.menu', function ($view) {
             if (auth()->check() && auth()->user()->type == 'employee') {
                 $employee = Employee::where('user_id', auth()->id())->first();

@@ -109,6 +109,24 @@ class LeaveController extends Controller
         return null; // Unknown type
     }
 
+    private function employeeCanApplyLeaveType($employee, $leaveType)
+    {
+        if (!$employee || !$leaveType) {
+            return false;
+        }
+
+        if (empty($leaveType->eligible_employee_types)) {
+            return true;
+        }
+
+        $identifier = $this->getEmployeeTypeIdentifier($employee);
+        if ($identifier === null) {
+            return true;
+        }
+
+        return in_array($identifier, $leaveType->eligible_employee_types, true);
+    }
+
     /**
      * Get allocated days for employee based on leave type
      */
@@ -349,12 +367,8 @@ class LeaveController extends Controller
                 }
             }
 
-            // Validate contract employee leave type restrictions
-            if ($employee && ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant')) {
-                $leaveTypeName = strtolower(trim($leave_type->title));
-                if (!$leave_type->is_unlimited && $leaveTypeName !== 'casual leave' && $leaveTypeName !== 'cl') {
-                    return redirect()->back()->with('error', __('Contract/Consultant employees can only apply for Casual Leave and Unlimited Leaves.'));
-                }
+            if ($employee && $leave_type && !$this->employeeCanApplyLeaveType($employee, $leave_type)) {
+                return redirect()->back()->with('error', __('You are not eligible to apply for this leave type.'));
             }
 
             // Calculate total leave days
@@ -662,12 +676,8 @@ class LeaveController extends Controller
                 $employee = Employee::find($request->employee_id);
                 $leave_type = LeaveType::find($request->leave_type_id);
                 
-                // Validate contract employee leave type restrictions
-                if ($employee && ($employee->employee_type === 'Contract' || $employee->employee_type === 'Consultant')) {
-                    $leaveTypeName = strtolower(trim($leave_type->title));
-                    if (!$leave_type->is_unlimited && $leaveTypeName !== 'casual leave' && $leaveTypeName !== 'cl') {
-                        return redirect()->back()->with('error', __('Contract/Consultant employees can only apply for Casual Leave and Unlimited Leaves.'));
-                    }
+                if ($employee && $leave_type && !$this->employeeCanApplyLeaveType($employee, $leave_type)) {
+                    return redirect()->back()->with('error', __('You are not eligible to apply for this leave type.'));
                 }
                 
                 // Calculate total leave days

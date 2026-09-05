@@ -4,6 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <meta name="csrf-token-url" content="<?php echo e(route('csrf.token')); ?>">
     <title><?php echo e(__('Login')); ?></title>
     <link href="<?php echo e(asset('css/app.css')); ?>" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -268,8 +270,9 @@ unset($__errorArgs, $__bag); ?>
         </div>
     </div>
 
+    <script src="<?php echo e(asset('js/csrf-guard.js')); ?>"></script>
+
     <script>
-        // Password visibility toggle
         const togglePassword = document.getElementById('togglePassword');
         const password = document.getElementById('password');
 
@@ -280,24 +283,11 @@ unset($__errorArgs, $__bag); ?>
             this.classList.toggle('fa-eye-slash');
         });
 
-        // Clear form fields on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Clear password field (email is preserved for UX)
-            document.getElementById('password').value = '';
-            
-            // Force reload if page is loaded from cache (back/forward navigation)
-            if (window.performance && performance.navigation.type === 2) {
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
                 window.location.reload();
             }
         });
-
-        // Prevent form resubmission on refresh
-        if (window.history.replaceState) {
-            window.history.replaceState(null, null, window.location.href);
-        }
-
-        // Clear session storage (optional additional measure)
-        sessionStorage.clear();
     </script>
 </body>
 </html><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/auth/login.blade.php ENDPATH**/ ?>

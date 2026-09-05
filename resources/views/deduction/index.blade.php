@@ -46,7 +46,7 @@
                                 <tr class="{{ session('new_deduction_id') == $deduction->id ?  : '' }}">
                                     <td>{{ $deduction->employee ? $deduction->employee->name : '-' }}</td>
                                     <td>
-                                        <span class="badge bg-{{ $deduction->deduction_type == 'MLWF' ? 'primary' : 'secondary' }}">
+                                        <span class="badge bg-{{ $deduction->deduction_type == 'MLWF' ? 'primary' : ($deduction->deduction_type == 'TDS' ? 'warning' : 'secondary') }}">
                                             {{ $deduction->deduction_type }}
                                         </span>
                                     </td>

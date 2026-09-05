@@ -2913,52 +2913,9 @@ class Utility extends Model
             $pfDeduction = $basicComponent * 0.12;
             $esiDeduction = $basicComponent * 0.0075;
 
-            // Optional Deductions (MLWF, Other)
-            $mlwfDeduction = 0;
-            $otherDeduction = 0;
-            try {
-                $mlwfRecord = \DB::table('deductions')->where('employee_id', $employee->id)->where('deduction_type', 'MLWF')->where('month', $month)->first();
-                if ($mlwfRecord) $mlwfDeduction = (float)$mlwfRecord->amount;
-                
-                $otherRecord = \DB::table('deductions')->where('employee_id', $employee->id)->where('deduction_type', 'Other Deduction')->where('month', $month)->first();
-                if ($otherRecord) $otherDeduction = (float)$otherRecord->amount;
-            } catch (\Exception $e) {
-                \Log::warning('Error fetching deductions table (may not exist): ' . $e->getMessage());
-            }
-
-            // TDS
-            $tdsDeduction = 0;
-            try {
-                $tdsRecord = \DB::table('tds')->where('employee_id', $employee->id)->first();
-                if ($tdsRecord) {
-                    $tdsAllowances = \DB::table('tds_allowances')->where('employee_id', $employee->id)->sum('amount');
-                    $tdsDeductions = \DB::table('tds_deductions')->where('employee_id', $employee->id)->sum('amount');
-                    $tdsPayments = \DB::table('tds_payments')->where('employee_id', $employee->id)->where('is_paid', true)->get();
-                    
-                    if ($tdsRecord->tds_type == 0) {
-                        $totalTaxable = ($employee->set_salary * 12) + $tdsAllowances - (2500 + 50000 + $tdsDeductions);
-                        if ($totalTaxable <= 250000) $tax = 0;
-                        elseif ($totalTaxable <= 500000) $tax = ($totalTaxable - 250000) * 0.05;
-                        elseif ($totalTaxable <= 1000000) $tax = 12500 + (($totalTaxable - 500000) * 0.20);
-                        else $tax = 112500 + (($totalTaxable - 1000000) * 0.30);
-                    } else {
-                        $totalTaxable = ($employee->set_salary * 12) + $tdsAllowances - 75000 - $tdsDeductions;
-                        if ($totalTaxable > 300000 && $totalTaxable <= 600000) $tax = ($totalTaxable - 300000) * 0.05;
-                        elseif ($totalTaxable > 600000 && $totalTaxable <= 900000) $tax = 15000 + (($totalTaxable - 600000) * 0.10);
-                        elseif ($totalTaxable > 900000 && $totalTaxable <= 1200000) $tax = 45000 + (($totalTaxable - 900000) * 0.15);
-                        elseif ($totalTaxable > 1200000 && $totalTaxable <= 1500000) $tax = 90000 + (($totalTaxable - 1200000) * 0.20);
-                        elseif ($totalTaxable > 1500000) $tax = 150000 + (($totalTaxable - 1500000) * 0.30);
-                        else $tax = 0;
-                    }
-                    $totalTaxAmount = round($tax + round($tax * 0.04));
-                    $paidMonths = count($tdsPayments);
-                    $totalPaid = $tdsPayments->sum('amount');
-                    $remainingMonths = 12 - $paidMonths;
-                    if ($remainingMonths > 0) $tdsDeduction = round(($totalTaxAmount - $totalPaid) / $remainingMonths);
-                }
-            } catch (\Exception $e) {
-                \Log::warning('Error calculating TDS: ' . $e->getMessage());
-            }
+            $mlwfDeduction = \App\Models\Deduction::amountFor($employee->id, 'MLWF', $month);
+            $otherDeduction = \App\Models\Deduction::amountFor($employee->id, 'Other Deduction', $month);
+            $tdsDeduction = \App\Models\Deduction::amountFor($employee->id, 'TDS', $month);
 
             // Final Sums
             $totalAllowances = 0;
@@ -3145,52 +3102,9 @@ class Utility extends Model
             $pfDeduction = $basicComponent * 0.12;
             $esiDeduction = $basicComponent * 0.0075;
 
-            // Optional Deductions (MLWF, Other)
-            $mlwfDeduction = 0;
-            $otherDeduction = 0;
-            try {
-                $mlwfRecord = \DB::table('deductions')->where('employee_id', $employee->id)->where('deduction_type', 'MLWF')->where('month', $month)->first();
-                if ($mlwfRecord) $mlwfDeduction = (float)$mlwfRecord->amount;
-                
-                $otherRecord = \DB::table('deductions')->where('employee_id', $employee->id)->where('deduction_type', 'Other Deduction')->where('month', $month)->first();
-                if ($otherRecord) $otherDeduction = (float)$otherRecord->amount;
-            } catch (\Exception $e) {
-                \Log::warning('Error fetching deductions table (may not exist): ' . $e->getMessage());
-            }
-
-            // TDS
-            $tdsDeduction = 0;
-            try {
-                $tdsRecord = \DB::table('tds')->where('employee_id', $employee->id)->first();
-                if ($tdsRecord) {
-                    $tdsAllowances = \DB::table('tds_allowances')->where('employee_id', $employee->id)->sum('amount');
-                    $tdsDeductions = \DB::table('tds_deductions')->where('employee_id', $employee->id)->sum('amount');
-                    $tdsPayments = \DB::table('tds_payments')->where('employee_id', $employee->id)->where('is_paid', true)->get();
-                    
-                    if ($tdsRecord->tds_type == 0) {
-                        $totalTaxable = ($employee->set_salary * 12) + $tdsAllowances - (2500 + 50000 + $tdsDeductions);
-                        if ($totalTaxable <= 250000) $tax = 0;
-                        elseif ($totalTaxable <= 500000) $tax = ($totalTaxable - 250000) * 0.05;
-                        elseif ($totalTaxable <= 1000000) $tax = 12500 + (($totalTaxable - 500000) * 0.20);
-                        else $tax = 112500 + (($totalTaxable - 1000000) * 0.30);
-                    } else {
-                        $totalTaxable = ($employee->set_salary * 12) + $tdsAllowances - 75000 - $tdsDeductions;
-                        if ($totalTaxable > 300000 && $totalTaxable <= 600000) $tax = ($totalTaxable - 300000) * 0.05;
-                        elseif ($totalTaxable > 600000 && $totalTaxable <= 900000) $tax = 15000 + (($totalTaxable - 600000) * 0.10);
-                        elseif ($totalTaxable > 900000 && $totalTaxable <= 1200000) $tax = 45000 + (($totalTaxable - 900000) * 0.15);
-                        elseif ($totalTaxable > 1200000 && $totalTaxable <= 1500000) $tax = 90000 + (($totalTaxable - 1200000) * 0.20);
-                        elseif ($totalTaxable > 1500000) $tax = 150000 + (($totalTaxable - 1500000) * 0.30);
-                        else $tax = 0;
-                    }
-                    $totalTaxAmount = round($tax + round($tax * 0.04));
-                    $paidMonths = count($tdsPayments);
-                    $totalPaid = $tdsPayments->sum('amount');
-                    $remainingMonths = 12 - $paidMonths;
-                    if ($remainingMonths > 0) $tdsDeduction = round(($totalTaxAmount - $totalPaid) / $remainingMonths);
-                }
-            } catch (\Exception $e) {
-                \Log::warning('Error calculating TDS: ' . $e->getMessage());
-            }
+            $mlwfDeduction = \App\Models\Deduction::amountFor($employee->id, 'MLWF', $month);
+            $otherDeduction = \App\Models\Deduction::amountFor($employee->id, 'Other Deduction', $month);
+            $tdsDeduction = \App\Models\Deduction::amountFor($employee->id, 'TDS', $month);
 
             // Final Sums
             $totalAllowances = 0;

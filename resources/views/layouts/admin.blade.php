@@ -51,6 +51,7 @@
 
     <meta charset="utf-8" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token-url" content="{{ route('csrf.token') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="description" content="Dashboard Template Description" />
@@ -73,19 +74,6 @@
     <link rel="stylesheet" href="{{ asset('assets/fonts/feather.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/fonts/fontawesome.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/fonts/material.css') }}">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-
-
-
-    <!-- Datepicker CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css">
-
-<!-- jQuery and jQuery UI -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-
-
 
     <!-- vendor css -->
 
@@ -114,6 +102,10 @@
     <style>
         :root {
             --color-customColor: <?=$color ?>;
+        }
+        .loader-bg {
+            pointer-events: none;
+            transition: opacity 0.2s ease;
         }
     </style>
     <link rel="stylesheet" href="{{ asset('css/custom-color.css') }}">
@@ -283,6 +275,23 @@
             <div class="loader-fill"></div>
         </div>
     </div>
+    <script>
+        (function () {
+            function hideLoader() {
+                var loader = document.querySelector('.loader-bg');
+                if (loader) {
+                    loader.remove();
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', hideLoader);
+            } else {
+                hideLoader();
+            }
+            window.addEventListener('load', hideLoader);
+            setTimeout(hideLoader, 800);
+        })();
+    </script>
     <!-- [ Pre-loader ] End -->
     <!-- [ navigation menu ] start -->
     @include('partial.Admin.menu')
@@ -472,6 +481,7 @@
     <script src="{{ asset('assets/js/plugins/choices.min.js') }}"></script>
     <script src="{{ asset('js/jquery.min.js') }}"></script>
     <script src="{{ asset('js/jquery.form.js') }}"></script>
+    <script src="{{ asset('js/csrf-guard.js') }}"></script>
 
     {{-- <script src="{{ asset('js/letter.avatar.js') }}"></script> --}}
     <script src="{{ asset('assets/js/plugins/datepicker-full.min.js') }}"></script>
@@ -500,6 +510,10 @@
 
     <script>
         document.querySelectorAll("#pc-dt-simple, .pc-dt-simple, .datatable, #tds-table, [id^='dataTable']").forEach(el => {
+            if (el.dataset.dtInit === '1' || typeof simpleDatatables === 'undefined') {
+                return;
+            }
+            el.dataset.dtInit = '1';
             new simpleDatatables.DataTable(el, {
                 pagerDelta: 1
             });
@@ -665,15 +679,10 @@
             });
 
             function pushNotification(id) {
+                if (typeof Pusher === 'undefined') {
+                    return;
+                }
 
-                // ajax setup form csrf token
-                $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                });
-
-                // Enable pusher logging - don't include this in production
                 Pusher.logToConsole = false;
 
                 var pusher = new Pusher('{{ $pusher_setting['pusher_app_key'] }}', {

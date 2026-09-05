@@ -19,4 +19,11 @@ class VerifyCsrfToken extends Middleware
         'paytab-success/*',
         '/aamarpay*',
     ];
+
+    /**
+     * Indicates whether the XSRF-TOKEN cookie should be set on the response.
+     *
+     * @var bool
+     */
+    protected $addHttpCookie = true;
 }

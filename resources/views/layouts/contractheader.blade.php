@@ -55,6 +55,7 @@
     <meta name="keywords" content="Dashboard Template" />
     <meta name="author" content="Rajodiya Infotech" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token-url" content="{{ route('csrf.token') }}">
     <!-- Favicon icon -->
     <link rel="icon" href="{{ $logo . '/' . (isset($favicon) && !empty($favicon) ? $favicon .'?'.time() : 'favicon.png' .'?'.time()) }}"
         type="image/x-icon" />
@@ -132,6 +133,7 @@
     <script src="{{ asset('assets/js/plugins/choices.min.js') }}"></script>
     <script src="{{ asset('js/jquery.min.js') }}"></script>
     <script src="{{ asset('js/jquery.form.js') }}"></script>
+    <script src="{{ asset('js/csrf-guard.js') }}"></script>
 
     <script src="{{ asset('js/letter.avatar.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/datepicker-full.min.js') }}"></script>

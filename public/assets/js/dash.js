@@ -1,14 +1,23 @@
 "use strict";
 var flg = "0";
 document.addEventListener("DOMContentLoaded", function () {
-  // feather icon start
-  feather.replace();
-  // feather icon end
-  // remove pre-loader start
-  setTimeout(function () {
-    document.querySelector(".loader-bg").remove();
-  }, 400);
-  // remove pre-loader end
+  function hideLoader() {
+    var loader = document.querySelector(".loader-bg");
+    if (loader) {
+      loader.remove();
+    }
+  }
+
+  try {
+    if (typeof feather !== "undefined") {
+      feather.replace();
+    }
+  } catch (e) {}
+
+  hideLoader();
+  setTimeout(hideLoader, 50);
+
+  try {
   if (!document.querySelector("body").classList.contains("dash-horizontal")) {
     addscroller();
   }
@@ -277,6 +286,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
   // notification scrollbar end
+  } catch (e) {}
 });
 
 function horizontalmobilemenuclick() {

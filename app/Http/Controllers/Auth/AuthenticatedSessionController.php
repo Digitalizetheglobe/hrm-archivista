@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Events\VerifyReCaptchaToken;
-use App\Models\Employee;
 use App\Http\Controllers\Controller;
-use App\Models\Plan;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Employee;
 use App\Models\LoginDetail;
-use App\Models\Utility;
+use App\Models\Plan;
 use App\Models\User;
+use App\Models\Utility;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use WhichBrowser\Parser;
 
@@ -82,13 +81,9 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $user = Auth::user();
-        
-        // Invalidate previous sessions for this user
-        $this->invalidatePreviousSessions($user);
-        
+
         $request->session()->regenerate();
-        
-        // Track current session
+
         $this->trackCurrentSession($user, $request);
         if ($user->is_active == 0) {
             auth()->logout();
@@ -222,7 +217,10 @@ class AuthenticatedSessionController extends Controller
         }
         \App::setLocale($lang);
 
-        return view('auth.login', compact('lang'));
+        return response()
+            ->view('auth.login', compact('lang'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 
     public function showLinkRequestForm($lang = '')
@@ -283,29 +281,6 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
-    }
-    
-    /**
-     * Invalidate previous sessions for the user
-     */
-    private function invalidatePreviousSessions($user)
-    {
-        // Get all sessions for this user from the database, ordered by last activity
-        $sessions = DB::table('sessions')
-            ->where('user_id', $user->id)
-            ->orderBy('last_activity', 'desc')
-            ->pluck('id');
-
-        // If we have 2 or more sessions, we need to delete the oldest ones
-        // to make room for the new login, so that we always have max 2.
-        if ($sessions->count() >= 2) {
-            // Keep the most recent 1 session, delete the rest
-            $sessionsToDelete = $sessions->slice(1);
-            
-            DB::table('sessions')
-                ->whereIn('id', $sessionsToDelete)
-                ->delete();
-        }
     }
     
     /**

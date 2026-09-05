@@ -8,20 +8,23 @@
 "use strict";
 
 $(function () {
-    if ($('.custom-scroll').length) {
+    if (typeof $.fn.niceScroll === "function" && $('.custom-scroll').length) {
         $(".custom-scroll").niceScroll();
         $(".custom-scroll-horizontal").niceScroll();
     }
 
-
-    // loadConfirm();
     daterange();
-
 });
 
 $(document).ready(function () {
-    if ($(".datatable").length > 0) {
-        new simpleDatatables.DataTable(".datatable");
+    if ($(".datatable").length > 0 && typeof simpleDatatables !== "undefined") {
+        document.querySelectorAll(".datatable").forEach(function (el) {
+            if (el.dataset.dtInit === "1") {
+                return;
+            }
+            el.dataset.dtInit = "1";
+            new simpleDatatables.DataTable(el);
+        });
     }
 
 

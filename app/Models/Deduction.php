@@ -29,6 +29,7 @@ class Deduction extends Model
     {
         return [
             'MLWF' => 'MLWF',
+            'TDS' => 'TDS',
             'Other Deduction' => 'Other Deduction',
         ];
     }
@@ -48,5 +49,30 @@ class Deduction extends Model
         }
         
         return $months;
+    }
+
+    public static function monthVariants($month)
+    {
+        $variants = array_filter([(string) $month]);
+
+        if (preg_match('/^(\d{4})-(\d{1,2})$/', (string) $month, $matches)) {
+            $year = (int) $matches[1];
+            $monthNum = (int) $matches[2];
+            $variants[] = sprintf('%04d-%02d', $year, $monthNum);
+            $variants[] = sprintf('%04d-%d', $year, $monthNum);
+        }
+
+        return array_values(array_unique($variants));
+    }
+
+    public static function amountFor($employeeId, $type, $month)
+    {
+        $record = static::query()
+            ->where('employee_id', $employeeId)
+            ->where('deduction_type', $type)
+            ->whereIn('month', self::monthVariants($month))
+            ->first();
+
+        return $record ? (float) $record->amount : 0;
     }
 }
