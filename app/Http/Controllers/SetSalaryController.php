@@ -284,6 +284,7 @@ class SetSalaryController extends Controller
             'esi'             => 'nullable|numeric|min:0',
             'pf'              => 'nullable|numeric|min:0',
             'professional_tax'=> 'nullable|numeric|min:0',
+            'tds'             => 'nullable|numeric|min:0',
         ]);
 
         // Update the employee's set salary
@@ -304,6 +305,7 @@ class SetSalaryController extends Controller
                 'esi'              => $request->esi ?? 0,
                 'pf'               => $request->pf ?? 0,
                 'professional_tax' => $request->professional_tax ?? 0,
+                'tds'              => $request->tds ?? 0,
             ]
         );
 

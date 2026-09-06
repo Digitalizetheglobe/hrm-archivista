@@ -24,6 +24,7 @@ use App\Models\Expense;
 use App\Models\OtherPayment;
 use App\Models\Overtime;
 use App\Models\PaySlip;
+use App\Models\PayrollData;
 use App\Exports\SalaryProcessingExport;
 use App\Models\SalaryProcessingStatus;
 use App\Models\Resignation;
@@ -1161,6 +1162,9 @@ class PaySlipController extends Controller
             $monthKey = $year . '-' . str_pad((string) $month, 2, '0', STR_PAD_LEFT);
             $mlwfAmount = Deduction::amountFor($employee->id, 'MLWF', $monthKey);
             $tdsAmount = Deduction::amountFor($employee->id, 'TDS', $monthKey);
+            if ($tdsAmount <= 0) {
+                $tdsAmount = PayrollData::tdsFor($employee->id);
+            }
             $otherDeductions = Deduction::amountFor($employee->id, 'Other Deduction', $monthKey);
 
             // Calculate Net Amount Payable (Total Deductions): LOP deduction + PT + Salary Advance + Other Deductions

@@ -51,7 +51,7 @@ class DeductionController extends Controller
             $validator = \Validator::make(
                 $request->all(), [
                     'employee_id' => 'required',
-                    'deduction_type' => 'required',
+                    'deduction_type' => 'required|in:' . implode(',', array_keys(Deduction::deductionTypes())),
                     'month' => 'required',
                     'amount' => 'required|numeric|min:0',
                     'remark' => 'nullable|string',
@@ -158,7 +158,7 @@ class DeductionController extends Controller
                 $validator = \Validator::make(
                     $request->all(), [
                         'employee_id' => 'required',
-                        'deduction_type' => 'required',
+                        'deduction_type' => 'required|in:' . implode(',', array_keys(Deduction::deductionTypes())),
                         'month' => 'required',
                         'amount' => 'required|numeric|min:0',
                         'remark' => 'nullable|string',

@@ -536,6 +536,9 @@ try {
         $mlwfDeduction = \App\Models\Deduction::amountFor($employee->id, 'MLWF', $salaryMonth);
         $otherDeduction = \App\Models\Deduction::amountFor($employee->id, 'Other Deduction', $salaryMonth);
         $tdsDeduction = \App\Models\Deduction::amountFor($employee->id, 'TDS', $salaryMonth);
+        if ($tdsDeduction <= 0) {
+            $tdsDeduction = \App\Models\PayrollData::tdsFor($employee->id);
+        }
 
         // Calculate gross salary as exactly Set Salary + any Extra DB allowances
         $grossSalaryWithExtra = $grossSalary + $totalAllowances;

@@ -22,6 +22,7 @@ class PayrollData extends Model
         'esi',
         'pf',
         'professional_tax',
+        'tds',
     ];
 
     public $timestamps = true;
@@ -29,5 +30,12 @@ class PayrollData extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class, 'employee_id', 'id');
+    }
+
+    public static function tdsFor($employeeId): float
+    {
+        $row = static::where('employee_id', $employeeId)->first();
+
+        return (float) ($row->tds ?? 0);
     }
 }

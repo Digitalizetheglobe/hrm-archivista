@@ -2916,6 +2916,9 @@ class Utility extends Model
             $mlwfDeduction = \App\Models\Deduction::amountFor($employee->id, 'MLWF', $month);
             $otherDeduction = \App\Models\Deduction::amountFor($employee->id, 'Other Deduction', $month);
             $tdsDeduction = \App\Models\Deduction::amountFor($employee->id, 'TDS', $month);
+            if ($tdsDeduction <= 0) {
+                $tdsDeduction = \App\Models\PayrollData::tdsFor($employee->id);
+            }
 
             // Final Sums
             $totalAllowances = 0;
@@ -3105,6 +3108,9 @@ class Utility extends Model
             $mlwfDeduction = \App\Models\Deduction::amountFor($employee->id, 'MLWF', $month);
             $otherDeduction = \App\Models\Deduction::amountFor($employee->id, 'Other Deduction', $month);
             $tdsDeduction = \App\Models\Deduction::amountFor($employee->id, 'TDS', $month);
+            if ($tdsDeduction <= 0) {
+                $tdsDeduction = \App\Models\PayrollData::tdsFor($employee->id);
+            }
 
             // Final Sums
             $totalAllowances = 0;

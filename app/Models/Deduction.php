@@ -29,7 +29,6 @@ class Deduction extends Model
     {
         return [
             'MLWF' => 'MLWF',
-            'TDS' => 'TDS',
             'Other Deduction' => 'Other Deduction',
         ];
     }

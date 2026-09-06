@@ -21,7 +21,7 @@ git pull origin main
 # ✅ STEP 4 — Composer Install (PHP 8.2 वापरून)
 
 ```bash
-/usr/local/lsws/lsphp82/bin/php /usr/bin/composer install --no-dev --optimize-autoloader
+    /usr/local/lsws/lsphp82/bin/php /usr/bin/composer install --no-dev --optimize-autoloader
 ```
 
 ---
