@@ -560,7 +560,7 @@
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('payslip.index') }}">{{ __('Payslip') }}</a>
                         </li>
                         @endif
-                        @if ($empType == 'Contract')
+                        @if (in_array($empType, ['Contract', 'Consultant']))
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="{{ route('invoice.index') }}">{{ __('Invoice') }}</a>
                         </li>

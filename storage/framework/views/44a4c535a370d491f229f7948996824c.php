@@ -1192,4 +1192,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-<?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/partial/Admin/menu.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\hrm-archivista\resources\views/partial/Admin/menu.blade.php ENDPATH**/ ?>

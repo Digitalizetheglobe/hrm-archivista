@@ -23,6 +23,7 @@ use App\Models\AccountList;
 use App\Models\Expense;
 use App\Models\OtherPayment;
 use App\Models\Overtime;
+use App\Models\Holiday;
 use App\Models\PaySlip;
 use App\Models\PayrollData;
 use App\Exports\SalaryProcessingExport;
@@ -654,6 +655,12 @@ class PaySlipController extends Controller
             }
         }
 
+        $holidayDates = Holiday::datesBetween(
+            $employee->created_by,
+            $startDate->format('Y-m-d'),
+            $endDate->format('Y-m-d')
+        );
+
         // Build status codes (same logic as attendance export)
         $statusCodes = [];
         $weekOff = strtolower(trim((string) ($employee->week_off_day ?? '')));
@@ -712,6 +719,12 @@ class PaySlipController extends Controller
                 continue;
             }
 
+            // A company holiday is paid. It is not an absence.
+            if (isset($holidayDates[$date])) {
+                $statusCodes[$date] = 'H';
+                continue;
+            }
+
             // Priority 3: Leave codes
             if (!empty($leaveCode)) {
                 $statusCodes[$date] = $leaveCode;
@@ -741,6 +754,7 @@ class PaySlipController extends Controller
         $slDays = 0;
         $woDays = 0;
         $coDays = 0;
+        $holidayDays = 0;
 
         foreach ($statusCodes as $date => $code) {
             if (empty($code)) {
@@ -767,13 +781,16 @@ class PaySlipController extends Controller
                 case 'WO':
                     $woDays++;
                     break;
+                case 'H':
+                    $holidayDays++;
+                    break;
                 case 'CO':
                     $coDays++;
                     break;
             }
         }
 
-        $totalPayableDays = $presentDays + $elDays + $slDays + $woDays + $coDays;
+        $totalPayableDays = $presentDays + $elDays + $slDays + $woDays + $holidayDays + $coDays;
         return round($totalPayableDays, 2);
     }
 
@@ -1357,6 +1374,12 @@ class PaySlipController extends Controller
             }
         }
 
+        $holidayDates = Holiday::datesBetween(
+            $employee->created_by,
+            $startDate->format('Y-m-d'),
+            $endDate->format('Y-m-d')
+        );
+
         // Build status codes (same logic as calculatePayableDaysFromStatusCodes)
         $statusCodes = [];
         $weekOff = strtolower(trim((string) ($employee->week_off_day ?? '')));
@@ -1409,6 +1432,12 @@ class PaySlipController extends Controller
                         $statusCodes[$date] = 'P';
                     }
                 }
+                continue;
+            }
+
+            // A company holiday is paid. It is not an absence.
+            if (isset($holidayDates[$date])) {
+                $statusCodes[$date] = 'H';
                 continue;
             }
 

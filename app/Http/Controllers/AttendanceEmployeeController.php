@@ -7,6 +7,7 @@ use App\Models\AttendanceEmployee;
 use App\Models\Branch;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Holiday;
 use App\Models\IpRestrict;
 use App\Models\User;
 use App\Models\Utility;
@@ -1362,9 +1363,14 @@ class AttendanceEmployeeController extends Controller
                     $compOffBalance = LeaveController::getCompOffBalance($employee->id);
                     $compOffUsed = max(0, $compOffEarned - $compOffBalance);
 
-                    // Fill in 'week_off' and 'absent' for all dates in the calendar view
+                    // Fill in 'week_off', 'holiday', and 'absent' for all dates in the calendar view
                     $startRange = $currentDate->copy()->subMonth(); 
-                    $endRange = $currentDate->copy()->addMonth(); 
+                    $endRange = $currentDate->copy()->addMonth();
+                    $holidayDates = Holiday::datesBetween(
+                        \Auth::user()->creatorId(),
+                        $startRange->format('Y-m-d'),
+                        $endRange->format('Y-m-d')
+                    );
                     
                     for ($date = $startRange->copy(); $date->lte($endRange); $date->addDay()) {
                         $dateFormatted = $date->format('Y-m-d');
@@ -1379,7 +1385,12 @@ class AttendanceEmployeeController extends Controller
                             // Apply default company week off logic (All Sundays, 2nd & 4th Saturdays)
                             $isCompanyWeekOff = ($dayOfWeek === 7) || ($dayOfWeek === 6 && ($isSecondWeek || $isFourthWeek));
                             
-                            if ($weekOffDay && $dayName === $weekOffDay) {
+                            if (isset($holidayDates[$dateFormatted])) {
+                                $employeeData[$dateFormatted] = [
+                                    'type' => 'holiday',
+                                    'occasion' => $holidayDates[$dateFormatted],
+                                ];
+                            } elseif ($weekOffDay && $dayName === $weekOffDay) {
                                 $employeeData[$dateFormatted] = ['type' => 'week_off'];
                             } elseif (!$weekOffDay && $isCompanyWeekOff) {
                                 $employeeData[$dateFormatted] = ['type' => 'week_off'];

@@ -1,3 +1,5 @@
+
+
 <?php $__env->startSection('page-title'); ?>
    <?php echo e(__('Manage Employee Salary')); ?>
 
@@ -70,4 +72,4 @@
 <?php $__env->stopSection(); ?>
 
 
-<?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/setsalary/index.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.admin', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\hrm-archivista\resources\views/setsalary/index.blade.php ENDPATH**/ ?>

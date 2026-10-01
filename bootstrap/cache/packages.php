@@ -1,13 +1,13 @@
 <?php return array (
   'anandsiddharth/laravel-paytm-wallet' => 
   array (
-    'providers' => 
-    array (
-      0 => 'Anand\\LaravelPaytmWallet\\PaytmWalletServiceProvider',
-    ),
     'aliases' => 
     array (
       'PaytmWallet' => 'Anand\\LaravelPaytmWallet\\Facades\\PaytmWallet',
+    ),
+    'providers' => 
+    array (
+      0 => 'Anand\\LaravelPaytmWallet\\PaytmWalletServiceProvider',
     ),
   ),
   'anhskohbo/no-captcha' => 
@@ -60,13 +60,13 @@
   ),
   'lahirulhr/laravel-payhere' => 
   array (
-    'providers' => 
-    array (
-      0 => 'Lahirulhr\\PayHere\\PayHereServiceProvider',
-    ),
     'aliases' => 
     array (
       'PayHere' => 'Lahirulhr\\PayHere\\PayHereFacade',
+    ),
+    'providers' => 
+    array (
+      0 => 'Lahirulhr\\PayHere\\PayHereServiceProvider',
     ),
   ),
   'laravel/breeze' => 
@@ -122,14 +122,14 @@
   ),
   'milon/barcode' => 
   array (
-    'providers' => 
-    array (
-      0 => 'Milon\\Barcode\\BarcodeServiceProvider',
-    ),
     'aliases' => 
     array (
       'DNS1D' => 'Milon\\Barcode\\Facades\\DNS1DFacade',
       'DNS2D' => 'Milon\\Barcode\\Facades\\DNS2DFacade',
+    ),
+    'providers' => 
+    array (
+      0 => 'Milon\\Barcode\\BarcodeServiceProvider',
     ),
   ),
   'nesbot/carbon' => 

@@ -93,22 +93,28 @@ class InvoiceController extends Controller
 
 
         $formate_month_year = $year . '-' . $month;
-        $validatePaysilp    = Invoice::where('salary_month', '=', $formate_month_year)->where('created_by', \Auth::user()->creatorId())->pluck('employee_id');
-        $payslip_employee   = Employee::where('created_by', \Auth::user()->creatorId())->where('company_doj', '<=', date($year . '-' . $month . '-t'))->whereIn('employee_type', ['Contract', 'Consultant'])->count();
+        $monthEnd = Carbon::create((int) $year, (int) $month, 1)->endOfMonth()->toDateString();
+        $creatorId = \Auth::user()->creatorId();
+        // in_voices.employee_id stores employees.id, not the employee code.
+        $validatePaysilp = Invoice::where('salary_month', '=', $formate_month_year)->where('created_by', $creatorId)->pluck('employee_id');
+        $eligibleEmployees = Employee::where('created_by', $creatorId)
+            ->where('company_doj', '<=', $monthEnd)
+            ->whereIn('employee_type', ['Contract', 'Consultant']);
+        $payslip_employee = (clone $eligibleEmployees)->count();
         if ($payslip_employee == 0) {
             return redirect()->route('invoice.index')->with('error', __('No contract or consultant employees found for invoice generation. Please ensure your employees are marked as "Contract" or "Consultant" type in their profile.'));
         }
 
         if ($payslip_employee > count($validatePaysilp)) {
-            $employees = Employee::where('created_by', \Auth::user()->creatorId())
-                ->where('company_doj', '<=', date($year . '-' . $month . '-t'))
-                ->whereNotIn('employee_id', $validatePaysilp)
+            $employees = (clone $eligibleEmployees)
                 ->where('set_salary', '>', 0)
-                ->whereIn('employee_type', ['Contract', 'Consultant'])
+                ->when($validatePaysilp->isNotEmpty(), function ($query) use ($validatePaysilp) {
+                    $query->whereNotIn('id', $validatePaysilp);
+                })
                 ->get();
-                
+
             if ($employees->isEmpty()) {
-                return redirect()->route('invoice.index')->with('info', __('No eligible contract employees found for invoice generation. Employees must have valid salaries set.'));
+                return redirect()->route('invoice.index')->with('error', __('No eligible contract employees found for invoice generation. Employees must have valid salaries set.'));
             }
             
             $generatedCount = 0;
@@ -224,8 +230,7 @@ class InvoiceController extends Controller
         
         $data = [];
         if (empty($validatePaysilp)) {
-            $data = [];
-            return;
+            return response()->json([]);
         } else {
             $query = Invoice::select(
                 [
@@ -291,7 +296,7 @@ class InvoiceController extends Controller
                 }
             }
 
-            return $data;
+            return response()->json($data);
         }
     }
 

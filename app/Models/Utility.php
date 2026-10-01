@@ -2862,11 +2862,21 @@ class Utility extends Model
 
             $holidays = 0;
             try {
-                $holidays = \DB::table('holidays')
-                    ->where('start_date', '<=', $endDate->format('Y-m-d'))
-                    ->where('end_date', '>=', $startDate->format('Y-m-d'))
-                    ->where('created_by', $payslip->created_by)
-                    ->count();
+                $holidayDates = \App\Models\Holiday::datesBetween(
+                    $employee->created_by,
+                    $startDate->format('Y-m-d'),
+                    $endDate->format('Y-m-d')
+                );
+                foreach ($holidayDates as $holidayDate => $occasion) {
+                    $holidayDay = \Carbon\Carbon::parse($holidayDate);
+                    $dayOfWeek = (int) $holidayDay->format('N');
+                    $dayOfMonth = (int) $holidayDay->format('j');
+                    $isWeekOff = ($dayOfWeek === 7) || ($dayOfWeek === 6 && (($dayOfMonth >= 8 && $dayOfMonth <= 14) || ($dayOfMonth >= 22 && $dayOfMonth <= 28)));
+                    $hasAttended = $attendanceRecords->contains('date', $holidayDate);
+                    if (!$isWeekOff && !$hasAttended) {
+                        $holidays++;
+                    }
+                }
             } catch (\Exception $e) {
                 \Log::warning('Error calculating Holidays in calculation: ' . $e->getMessage());
             }
@@ -3054,11 +3064,21 @@ class Utility extends Model
 
             $holidays = 0;
             try {
-                $holidays = \DB::table('holidays')
-                    ->where('start_date', '<=', $endDate->format('Y-m-d'))
-                    ->where('end_date', '>=', $startDate->format('Y-m-d'))
-                    ->where('created_by', $invoice->created_by)
-                    ->count();
+                $holidayDates = \App\Models\Holiday::datesBetween(
+                    $employee->created_by,
+                    $startDate->format('Y-m-d'),
+                    $endDate->format('Y-m-d')
+                );
+                foreach ($holidayDates as $holidayDate => $occasion) {
+                    $holidayDay = \Carbon\Carbon::parse($holidayDate);
+                    $dayOfWeek = (int) $holidayDay->format('N');
+                    $dayOfMonth = (int) $holidayDay->format('j');
+                    $isWeekOff = ($dayOfWeek === 7) || ($dayOfWeek === 6 && (($dayOfMonth >= 8 && $dayOfMonth <= 14) || ($dayOfMonth >= 22 && $dayOfMonth <= 28)));
+                    $hasAttended = $attendanceRecords->contains('date', $holidayDate);
+                    if (!$isWeekOff && !$hasAttended) {
+                        $holidays++;
+                    }
+                }
             } catch (\Exception $e) {
                 \Log::warning('Error calculating Holidays in calculation: ' . $e->getMessage());
             }

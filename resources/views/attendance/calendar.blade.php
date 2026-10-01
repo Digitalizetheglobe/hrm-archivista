@@ -107,6 +107,7 @@
                                 <div class="d-flex align-items-center"><span class="badge bg-warning-light me-2 border border-warning" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> {{ __('Late') }}</div>
                                 <div class="d-flex align-items-center"><span class="badge bg-info-light me-2 border border-info" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> {{ __('Leave') }}</div>
                                 <div class="d-flex align-items-center"><span class="badge bg-secondary-light me-2 border border-secondary" style="width:15px;height:15px;display:inline-block;border-radius:3px;">&nbsp;</span> {{ __('Week Off') }}</div>
+                                <div class="d-flex align-items-center"><span class="badge bg-holiday-light me-2 border" style="width:15px;height:15px;display:inline-block;border-radius:3px;border-color:#c2410c !important;">&nbsp;</span> {{ __('Holiday') }}</div>
                                 <div class="d-flex align-items-center"><span class="badge bg-primary-light me-2 border border-primary" style="width:15px;height:15px;display:inline-block;border-radius:3px;border-color:#5c59e8 !important;">&nbsp;</span> {{ __('Half Day / Single Punch') }}</div>
                             </div>
                         </div>
@@ -164,6 +165,10 @@
                                                     $class = 'bg-danger-light';
                                                     $title = __('Absent');
                                                     break;
+                                                case 'holiday':
+                                                    $class = 'bg-holiday-light';
+                                                    $title = __('Holiday') . ': ' . ($dayData['occasion'] ?? '');
+                                                    break;
                                                 case 'week_off':
                                                     $class = 'bg-secondary-light';
                                                     $title = __('Week Off');
@@ -196,6 +201,8 @@
                                                     @endif
                                                 @elseif($dayData['type'] == 'leave')
                                                     <small class="d-block text-center text-truncate">{{ $dayData['leave_type'] }}</small>
+                                                @elseif($dayData['type'] == 'holiday')
+                                                    <small class="d-block text-center text-truncate">{{ $dayData['occasion'] ?? __('Holiday') }}</small>
                                                 @else
                                                     <small class="d-block text-center">{{ __(ucfirst(str_replace('_', ' ', $dayData['type']))) }}</small>
                                                 @endif
@@ -278,6 +285,7 @@
         .bg-info-light { background-color: rgba(23, 162, 184, 0.15) !important; color: #117a8b; }
         .bg-secondary-light { background-color: rgba(108, 117, 125, 0.15) !important; color: #545b62; }
         .bg-primary-light { background-color: rgba(92, 89, 232, 0.15) !important; color: #5c59e8; }
+        .bg-holiday-light { background-color: rgba(253, 126, 20, 0.18) !important; color: #c2410c; }
         
         .day-info {
             font-size: 0.8rem;

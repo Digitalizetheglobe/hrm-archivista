@@ -1,0 +1,26 @@
+{
+    "name": "lahirulhr/laravel-payhere",
+    "description": "Local checkout stand-in. The upstream Visanduma/laravel-payhere repository is no longer available.",
+    "version": "0.2.1",
+    "license": "MIT",
+    "require": {
+        "php": "^8.0",
+        "illuminate/contracts": "^10.0",
+        "illuminate/support": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lahirulhr\\PayHere\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "aliases": {
+                "PayHere": "Lahirulhr\\PayHere\\PayHereFacade"
+            },
+            "providers": [
+                "Lahirulhr\\PayHere\\PayHereServiceProvider"
+            ]
+        }
+    }
+}

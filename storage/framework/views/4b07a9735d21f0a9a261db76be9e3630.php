@@ -239,4 +239,4 @@
         });
     </script>
 <?php $__env->stopPush(); ?>
-<?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/partial/Admin/header.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\hrm-archivista\resources\views/partial/Admin/header.blade.php ENDPATH**/ ?>

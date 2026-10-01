@@ -205,7 +205,7 @@
 
                 <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-card">
-                        <div class="stat-icon ic-purple"><i class="fa-solid fa-user-tie"></i></div>
+                        <div class="stat-icon ic-purple"><i class="fas fa-user-tie"></i></div>
                         <div>
                             <div class="stat-label">Total Employees</div>
                             <div class="stat-value">{{ $countUser + $countEmployee }}</div>
@@ -215,7 +215,7 @@
 
                 <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-card">
-                        <div class="stat-icon ic-blue"><i class="fa-solid fa-clipboard-question"></i></div>
+                        <div class="stat-icon ic-blue"><i class="fas fa-clipboard-list"></i></div>
                         <div>
                             <div class="stat-label">Today's TimeSheet</div>
                             <div class="stat-value">{{ $todayEnquiryCount }}</div>
@@ -225,7 +225,7 @@
 
                 <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-card">
-                        <div class="stat-icon ic-teal"><i class="fa-solid fa-calendar-check"></i></div>
+                        <div class="stat-icon ic-teal"><i class="fas fa-calendar-check"></i></div>
                         <div>
                             <div class="stat-label">Today's Leaves</div>
                             <div class="stat-value">{{ $todayLeaves }}</div>
@@ -235,7 +235,7 @@
 
                 <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-card">
-                        <div class="stat-icon ic-blue"><i class="fa-solid fa-sitemap"></i></div>
+                        <div class="stat-icon ic-blue"><i class="fas fa-sitemap"></i></div>
                         <div>
                             <div class="stat-label">Total Departments</div>
                             <div class="stat-value">{{ $totalDepartment }}</div>
@@ -245,7 +245,7 @@
 
                 <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-card">
-                        <div class="stat-icon ic-orange"><i class="fa-solid fa-diagram-project"></i></div>
+                        <div class="stat-icon ic-orange"><i class="fas fa-project-diagram"></i></div>
                         <div>
                             <div class="stat-label">Total Projects</div>
                             <div class="stat-value">{{ $totalProjects }}</div>
@@ -255,7 +255,7 @@
 
                 <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-card">
-                        <div class="stat-icon ic-pink"><i class="fa-solid fa-ticket"></i></div>
+                        <div class="stat-icon ic-pink"><i class="fas fa-ticket-alt"></i></div>
                         <div>
                             <div class="stat-label">Total Tickets</div>
                             <div class="stat-value">{{ $countTicket }}</div>

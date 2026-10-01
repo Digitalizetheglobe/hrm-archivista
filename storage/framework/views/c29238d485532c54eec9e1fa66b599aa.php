@@ -160,4 +160,4 @@
                 }
                 
             });
-        </script><?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/layouts/cookie_consent.blade.php ENDPATH**/ ?>
+        </script><?php /**PATH C:\xampp\htdocs\hrm-archivista\resources\views/layouts/cookie_consent.blade.php ENDPATH**/ ?>

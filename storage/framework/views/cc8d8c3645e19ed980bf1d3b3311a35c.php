@@ -738,4 +738,4 @@
 </body>
 
 </html>
-<?php /**PATH C:\xampp\htdocs\hrm_archivista\resources\views/layouts/admin.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\hrm-archivista\resources\views/layouts/admin.blade.php ENDPATH**/ ?>

@@ -91,9 +91,11 @@ class AttendanceExport implements FromView, ShouldAutoSize, WithStyles
                 'half_day' => 0,
                 'lwp' => 0,
                 'week_off' => 0,
+                'holiday' => 0,
                 'leave' => 0,
                 'payable_days' => 0,
             ];
+            $holidayDates = \App\Models\Holiday::datesBetween($employee->created_by, $start_date, $end_date);
 
             $dailyData = [];
             foreach ($days as $dayInfo) {
@@ -155,7 +157,10 @@ class AttendanceExport implements FromView, ShouldAutoSize, WithStyles
                     }
                     
                 } else {
-                    if ($isSunday) {
+                    if (isset($holidayDates[$date])) {
+                        $status = 'H';
+                        $summary['holiday']++;
+                    } elseif ($isSunday) {
                         $status = 'WO';
                         $summary['week_off']++;
                     } else {
@@ -173,7 +178,7 @@ class AttendanceExport implements FromView, ShouldAutoSize, WithStyles
                 ];
             }
 
-            $summary['payable_days'] = $summary['present'] + ($summary['half_day'] * 0.5) + $summary['week_off'] + $summary['leave'];
+            $summary['payable_days'] = $summary['present'] + ($summary['half_day'] * 0.5) + $summary['week_off'] + $summary['holiday'] + $summary['leave'];
 
             $reportData[] = [
                 'employee' => $employee,
