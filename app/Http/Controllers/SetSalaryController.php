@@ -275,12 +275,12 @@ class SetSalaryController extends Controller
 
         $request->validate([
             'set_salary'      => 'required|numeric|min:0',
-            'basic'           => 'nullable|numeric|min:0|max:100',
-            'medical'         => 'nullable|numeric|min:0|max:100',
-            'hra'             => 'nullable|numeric|min:0|max:100',
-            'conveyance'      => 'nullable|numeric|min:0|max:100',
-            'education'       => 'nullable|numeric|min:0|max:100',
-            'executive'       => 'nullable|numeric|min:0|max:100',
+            'basic'           => 'nullable|numeric|min:0',
+            'medical'         => 'nullable|numeric|min:0',
+            'hra'             => 'nullable|numeric|min:0',
+            'conveyance'      => 'nullable|numeric|min:0',
+            'education'       => 'nullable|numeric|min:0',
+            'executive'       => 'nullable|numeric|min:0',
             'esi'             => 'nullable|numeric|min:0',
             'pf'              => 'nullable|numeric|min:0',
             'professional_tax'=> 'nullable|numeric|min:0',

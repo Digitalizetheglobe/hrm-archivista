@@ -213,13 +213,13 @@ try {
         ]);
         
         if ($payrollData) {
-            // Calculate salary components based on percentages from payroll_data
-            $basicComponent = $grossSalary * ($payrollData->basic / 100);
-            $hraComponent = $grossSalary * ($payrollData->hra / 100);
-            $medicalComponent = $grossSalary * ($payrollData->medical / 100);
-            $conveyanceComponent = $grossSalary * ($payrollData->conveyance / 100);
-            $educationAllowance = $grossSalary * ($payrollData->education / 100);
-            $executive = $grossSalary * ($payrollData->executive / 100);
+            $components = \App\Models\PayrollData::componentAmounts($payrollData);
+            $basicComponent = $components['basic'];
+            $hraComponent = $components['hra'];
+            $medicalComponent = $components['medical'];
+            $conveyanceComponent = $components['conveyance'];
+            $educationAllowance = $components['education'];
+            $executive = $components['executive'];
         } else {
             // Fallback to hardcoded percentages from gross salary
             $basicComponent = $grossSalary * 0.40;

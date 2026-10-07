@@ -188,7 +188,7 @@ input[type=number] {
             <input type="number" id="set_salary" name="set_salary" class="ss-salary-input"
                    placeholder="0.00" step="any" min="0"
                    value="{{ old('set_salary', $employee->set_salary ?? '') }}"
-                   required oninput="recalcDeductions()">
+                   required>
         </div>
     </div>
 </div>
@@ -215,14 +215,14 @@ input[type=number] {
         </div>
         <div>
             <p class="ss-section-title">Allowances</p>
-            <p class="ss-section-subtitle">Enter percentage of the gross salary for each allowance component</p>
+            <p class="ss-section-subtitle">Enter the fixed allowance amounts for each component</p>
         </div>
     </div>
     <table class="ss-table">
         <thead>
             <tr>
                 <th>Allowance</th>
-                <th>Percentage (%)</th>
+                <th>Amount (₹)</th>
             </tr>
         </thead>
         <tbody>
@@ -247,49 +247,21 @@ input[type=number] {
                 </td>
                 <td>
                     <div class="ss-input-wrap">
-                        <input type="number" id="{{ $field }}_pct" name="{{ $field }}"
-                               class="ss-input allowance-pct" step="any" min="0" max="100"
+                        <span class="ss-input-unit" style="margin-right:0;margin-left:0;color:#1cc88a;font-size:0.9rem;">₹</span>
+                        <input type="number" id="{{ $field }}_amt" name="{{ $field }}"
+                               class="ss-input allowance-amt" step="any" min="0"
                                placeholder="0.00"
-                               value="{{ old($field, $payrollData?->$field ?? '') }}"
-                               oninput="recalcDeductions()">
-                        <span class="ss-input-unit">%</span>
-                    </div>
-                    <div class="ss-computed-amount" id="{{ $field }}_amount">
-                        &nbsp;
+                               value="{{ old($field, isset($payrollData->$field) ? number_format((float) $payrollData->$field, 2, '.', '') : '') }}"
+                               oninput="recalcAllowances()">
                     </div>
                 </td>
             </tr>
             @endforeach
         </tbody>
         <tfoot>
-            <tr style="background:#fef9f4;">
-                <td style="color:#d97706; padding:14px 24px;">
-                    <div class="ss-allowance-name" style="color:#d97706;">
-                        Special Allowance (Auto-balance)
-                        <small style="color:#f59e0b;">Adjusts automatically to match exactly 100% of Set Salary</small>
-                    </div>
-                </td>
-                <td>
-                    <div class="ss-input-wrap">
-                        <span id="special_allowance_pct" style="font-size:0.95rem; font-weight:700; color:#d97706;">0.00</span>
-                        <span class="ss-input-unit" style="color:#d97706;">%</span>
-                    </div>
-                    <div class="ss-computed-amount" id="special_allowance_amount">
-                        &nbsp;
-                    </div>
-                </td>
-            </tr>
             <tr style="background:#f8fafc; border-top:2px solid #e2e8f0;">
-                <td style="font-weight:800; color:#2d3748; padding:14px 24px;">Total Breakdown (100% of Set Salary)</td>
-                <td>
-                    <div class="ss-input-wrap">
-                        <span id="total_allowance_pct" style="font-size:1.1rem; font-weight:800; color:#10b981;">100.00</span>
-                        <span class="ss-input-unit" style="color:#10b981;">%</span>
-                    </div>
-                    <div class="ss-computed-amount" style="font-size:0.9rem;" id="total_allowance_amount">
-                        &nbsp;
-                    </div>
-                </td>
+                <td style="font-weight:800; color:#2d3748; padding:14px 24px;">Total</td>
+                <td style="font-weight:800; color:#10b981; padding:14px 24px;">₹<span id="allowance_total">0.00</span></td>
             </tr>
         </tfoot>
     </table>
@@ -359,52 +331,19 @@ input[type=number] {
 </form>
 
 <script>
-function recalcDeductions() {
-    var salary = parseFloat(document.getElementById('set_salary').value) || 0;
-    var totalPct = 0;
-
-    @foreach($allowances as $field => $info)
-    (function() {
-        var pct = parseFloat(document.getElementById('{{ $field }}_pct').value) || 0;
-        totalPct += pct;
-        var amount = (salary * pct / 100).toFixed(2);
-        var el = document.getElementById('{{ $field }}_amount');
-        if (pct > 0 && salary > 0) {
-            el.innerHTML = '= <span>₹' + parseFloat(amount).toLocaleString('en-IN', {minimumFractionDigits: 2}) + '</span>';
-        } else {
-            el.innerHTML = '&nbsp;';
-        }
-    })();
-    @endforeach
-
-    var totalPctEl = document.getElementById('total_allowance_pct');
-    var totalAmountEl = document.getElementById('total_allowance_amount');
-    var specialPctEl = document.getElementById('special_allowance_pct');
-    var specialAmountEl = document.getElementById('special_allowance_amount');
-    
-    if (totalPctEl && totalAmountEl && specialPctEl && specialAmountEl) {
-        var specialPct = 100 - totalPct;
-        var specialAmount = (salary * specialPct / 100).toFixed(2);
-        
-        specialPctEl.innerText = specialPct.toFixed(2);
-        if (salary > 0 && specialPct !== 0) {
-            specialAmountEl.innerHTML = '= <span style="color:#d97706;">₹' + parseFloat(specialAmount).toLocaleString('en-IN', {minimumFractionDigits: 2}) + '</span>';
-        } else {
-            specialAmountEl.innerHTML = '&nbsp;';
-        }
-        
-        totalPctEl.innerText = '100.00';
-        if (salary > 0) {
-            totalAmountEl.innerHTML = '= <span style="color:#10b981;">₹' + parseFloat(salary.toFixed(2)).toLocaleString('en-IN', {minimumFractionDigits: 2}) + '</span>';
-        } else {
-            totalAmountEl.innerHTML = '&nbsp;';
-        }
+function recalcAllowances() {
+    var total = 0;
+    document.querySelectorAll('.allowance-amt').forEach(function(input) {
+        total += parseFloat(input.value) || 0;
+    });
+    var totalEl = document.getElementById('allowance_total');
+    if (totalEl) {
+        totalEl.textContent = total.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 }
 
-// Run on page load to show computed amounts for existing data
 document.addEventListener('DOMContentLoaded', function() {
-    recalcDeductions();
+    recalcAllowances();
 
     // Save button loading state
     document.querySelector('form').addEventListener('submit', function() {

@@ -577,7 +577,7 @@
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('payslip.index')); ?>"><?php echo e(__('Payslip')); ?></a>
                         </li>
                         <?php endif; ?>
-                        <?php if($empType == 'Contract'): ?>
+                        <?php if(in_array($empType, ['Contract', 'Consultant'])): ?>
                         <li class="dash-item">
                             <a class="dash-link text-white hover:text-white hover:bg-[#001a3b] text-lg" href="<?php echo e(route('invoice.index')); ?>"><?php echo e(__('Invoice')); ?></a>
                         </li>
