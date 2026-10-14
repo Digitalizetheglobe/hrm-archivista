@@ -1070,38 +1070,6 @@ try {
         'pf_number' => $pfNumber,
         'branch_name' => $branchName
     ]);
-    
-    // Calculate Annual Income for the last 12 months
-    $annualIncomeData = [];
-    $totalAnnualIncome = 0;
-    try {
-        $payslipMonth = date('m', strtotime($payslip->salary_month));
-        $payslipYear = date('Y', strtotime($payslip->salary_month));
-        $fyStart = ($payslipMonth >= 4) ? $payslipYear . '-04' : ($payslipYear - 1) . '-04';
-
-        $pastSlips = \App\Models\PaySlip::where('employee_id', $employee->id)
-            ->where('salary_month', '>=', $fyStart)
-            ->where('salary_month', '<=', $payslip->salary_month)
-            ->orderBy('salary_month', 'desc')
-            ->get()
-            ->reverse();
-            
-        foreach ($pastSlips as $slip) {
-            $amt = (!empty($slip->net_payble) && $slip->net_payble != 0) ? (float)$slip->net_payble : (float)$slip->basic_salary;
-            $annualIncomeData[] = [
-                'month' => date('F_y', strtotime($slip->salary_month)),
-                'amount' => $amt
-            ];
-            $totalAnnualIncome += $amt;
-        }
-        
-        \Log::info('Annual income calculated', [
-            'months_count' => count($annualIncomeData),
-            'total_annual_income' => $totalAnnualIncome
-        ]);
-    } catch (\Exception $e) {
-        \Log::error('Annual Income Calculation Error', ['error' => $e->getMessage()]);
-    }
 
     \Log::info('Payslip generation completed successfully');
 
@@ -1319,14 +1287,7 @@ try {
                         </tr>
                     </table>
 
-                    
-                    @php
-                        $earningsCount = 6 + (!empty($employeeAllowances) ? count($employeeAllowances) : 0);
-                        $deductionsCount = 4 + ($mlwfDeduction > 0 ? 1 : 0) + ($otherDeduction > 0 ? 1 : 0);
-                        $annualIncomeCount = !empty($annualIncomeData) ? count($annualIncomeData) : 1;
-                        $maxRows = max($earningsCount, $deductionsCount, $annualIncomeCount);
-                    @endphp
-                    <!-- Earnings, Deductions, and Annual Income Section -->
+                    <!-- Earnings and Deductions Section -->
                     <div style="border-top: 0px solid #000;">
                         @php
                             // Build Earnings Array
@@ -1356,37 +1317,22 @@ try {
                                 $deductionsList[] = ['name' => 'Other Deduction', 'amount' => $otherDeduction];
                             }
                             
-                            // Build Annual Income Array
-                            $annualIncomeList = [];
-                            if(!empty($annualIncomeData)) {
-                                foreach($annualIncomeData as $income) {
-                                    $annualIncomeList[] = ['name' => $income['month'], 'amount' => $income['amount']];
-                                }
-                            } else {
-                                $annualIncomeList[] = ['name' => 'No income records found', 'amount' => null, 'colspan' => 2];
-                            }
-                            
-                            $maxRowsData = max(count($earningsList), count($deductionsList), count($annualIncomeList));
+                            $maxRowsData = max(count($earningsList), count($deductionsList));
                         @endphp
                         <table style="width: 100%; border-collapse: collapse; border-top: 2px solid #000;">
                             <!-- Headers -->
                             <tr>
-                                <th colspan="2" style="width: 33.33%; padding: 4px; font-size: 14px; border-right: 2px solid #000; border-bottom: 1px solid #000; text-align: center; background-color: #f8f9fa;">Earnings</th>
-                                <th colspan="2" style="width: 33.33%; padding: 4px; font-size: 14px; border-right: 2px solid #000; border-bottom: 1px solid #000; text-align: center; background-color: #f8f9fa;">Deductions</th>
-                                <th colspan="2" style="width: 33.34%; padding: 4px; font-size: 14px; border-bottom: 1px solid #000; text-align: center; background-color: #f8f9fa;">Annual Income</th>
+                                <th colspan="2" style="width: 50%; padding: 4px; font-size: 14px; border-right: 2px solid #000; border-bottom: 1px solid #000; text-align: center; background-color: #f8f9fa;">Earnings</th>
+                                <th colspan="2" style="width: 50%; padding: 4px; font-size: 14px; border-bottom: 1px solid #000; text-align: center; background-color: #f8f9fa;">Deductions</th>
                             </tr>
                             <tr style="background-color: #f8f9fa;">
                                 <!-- Earnings Headers -->
-                                <th style="width: 20%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: left;">Components</th>
-                                <th style="width: 13.33%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 2px solid #000; text-align: right;">Amount (Rs.)</th>
+                                <th style="width: 30%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: left;">Components</th>
+                                <th style="width: 20%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 2px solid #000; text-align: right;">Amount (Rs.)</th>
                                 
                                 <!-- Deductions Headers -->
-                                <th style="width: 20%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: left;">Common Deductions</th>
-                                <th style="width: 13.33%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 2px solid #000; text-align: right;">Amount (Rs.)</th>
-                                
-                                <!-- Annual Income Headers -->
-                                <th style="width: 20%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: left;">Month</th>
-                                <th style="width: 13.34%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; text-align: right;">Amount (Rs.)</th>
+                                <th style="width: 30%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; border-right: 1px solid #000; text-align: left;">Common Deductions</th>
+                                <th style="width: 20%; padding: 4px; font-size: 11px; font-weight: bold; border-bottom: 1px solid #000; text-align: right;">Amount (Rs.)</th>
                             </tr>
                             
                             <!-- Data Rows -->
@@ -1404,20 +1350,7 @@ try {
                                 <!-- Deductions Data -->
                                 @if(isset($deductionsList[$i]))
                                     <td style="padding: 4px; font-size: 11px; border-right: 1px solid #000; border-bottom: 1px solid #000;">{{ $deductionsList[$i]['name'] }}</td>
-                                    <td style="padding: 4px; font-size: 11px; border-right: 2px solid #000; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($deductionsList[$i]['amount']) }}</td>
-                                @else
-                                    <td style="padding: 4px; font-size: 11px; border-right: 1px solid #000; border-bottom: 0;">&nbsp;</td>
-                                    <td style="padding: 4px; font-size: 11px; border-right: 2px solid #000; border-bottom: 0;">&nbsp;</td>
-                                @endif
-                                
-                                <!-- Annual Income Data -->
-                                @if(isset($annualIncomeList[$i]))
-                                    @if(isset($annualIncomeList[$i]['colspan']))
-                                        <td colspan="2" style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: center;">{{ $annualIncomeList[$i]['name'] }}</td>
-                                    @else
-                                        <td style="padding: 4px; font-size: 11px; border-right: 1px solid #000; border-bottom: 1px solid #000;">{{ $annualIncomeList[$i]['name'] }}</td>
-                                        <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($annualIncomeList[$i]['amount']) }}</td>
-                                    @endif
+                                    <td style="padding: 4px; font-size: 11px; border-bottom: 1px solid #000; text-align: right;">{{ \Auth::user()->priceFormat($deductionsList[$i]['amount']) }}</td>
                                 @else
                                     <td style="padding: 4px; font-size: 11px; border-right: 1px solid #000; border-bottom: 0;">&nbsp;</td>
                                     <td style="padding: 4px; font-size: 11px; border-bottom: 0;">&nbsp;</td>
@@ -1431,13 +1364,11 @@ try {
                                 <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right; border-right: 2px solid #000; border-bottom: 1px solid #000; border-top: 1px solid #000;">{{ \Auth::user()->priceFormat($grossSalaryWithExtra) }}</td>
                                 
                                 <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000; border-bottom: 1px solid #000; border-top: 1px solid #000;">Total Deductions (B)</td>
-                                <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right; border-right: 2px solid #000; border-bottom: 1px solid #000; border-top: 1px solid #000;">{{ \Auth::user()->priceFormat($totalDeductions) }}</td>
-                                
-                                <td style="padding: 4px; font-size: 12px; font-weight: bold; border-right: 1px solid #000; border-bottom: 1px solid #000; border-top: 1px solid #000;">Total</td>
-                                <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right; border-bottom: 1px solid #000; border-top: 1px solid #000;">{{ \Auth::user()->priceFormat($totalAnnualIncome) }}</td>
+                                <td style="padding: 4px; font-size: 12px; font-weight: bold; text-align: right; border-bottom: 1px solid #000; border-top: 1px solid #000;">{{ \Auth::user()->priceFormat($totalDeductions) }}</td>
                             </tr>
                         </table>
                     </div>
+
 
 
                     

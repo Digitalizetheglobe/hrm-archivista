@@ -383,7 +383,12 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td><span class="days-value" style="color: #f59e0b;">{{ $leaveBalance['used_days'] }}</span></td>
+                            <td>
+                                <span class="days-value" style="color: #f59e0b;">{{ $leaveBalance['used_days'] }}</span>
+                                @if(isset($leaveBalance['used_this_month']) && $leaveBalance['used_this_month'] > 0 && $leaveBalance['used_this_month'] != $leaveBalance['used_days'])
+                                    <small class="text-muted d-block" style="font-size: 11px;">({{ $leaveBalance['used_this_month'] }} {{ __('this month') }})</small>
+                                @endif
+                            </td>
                             <td>
                                 @if($leaveBalance['is_unlimited'])
                                     <span class="days-value text-info">{{ __('Unlimited') }}</span>
@@ -466,7 +471,12 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td><span class="days-value" style="color: #f59e0b;">{{ $leaveBalance['used_days'] }}</span></td>
+                            <td>
+                                <span class="days-value" style="color: #f59e0b;">{{ $leaveBalance['used_days'] }}</span>
+                                @if(isset($leaveBalance['used_this_month']) && $leaveBalance['used_this_month'] > 0 && $leaveBalance['used_this_month'] != $leaveBalance['used_days'])
+                                    <small class="text-muted d-block" style="font-size: 11px;">({{ $leaveBalance['used_this_month'] }} {{ __('this month') }})</small>
+                                @endif
+                            </td>
                             <td>
                                 @if($leaveBalance['is_unlimited'])
                                     <span class="days-value text-info">{{ __('Unlimited') }}</span>
@@ -549,7 +559,12 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td><span class="days-value" style="color: #f59e0b;">{{ $leaveBalance['used_days'] }}</span></td>
+                            <td>
+                                <span class="days-value" style="color: #f59e0b;">{{ $leaveBalance['used_days'] }}</span>
+                                @if(isset($leaveBalance['used_this_month']) && $leaveBalance['used_this_month'] > 0 && $leaveBalance['used_this_month'] != $leaveBalance['used_days'])
+                                    <small class="text-muted d-block" style="font-size: 11px;">({{ $leaveBalance['used_this_month'] }} {{ __('this month') }})</small>
+                                @endif
+                            </td>
                             <td>
                                 @if($leaveBalance['is_unlimited'])
                                     <span class="days-value text-info">{{ __('Unlimited') }}</span>

@@ -1441,8 +1441,26 @@ class LeaveController extends Controller
         // Get allocated days based on employee type
         $allocatedDays = $this->getAllocatedDaysForEmployee($employee, $leaveType);
         
+        $currentMonth = date('Y-m', strtotime($monthStart));
+        $currentYear = date('Y', strtotime($monthStart));
+        $yearStart = $currentYear . '-01-01';
+
+        // Helper closure to calculate actual leave days respecting half-day duration
+        $sumLeaveDays = function($query) {
+            $leaves = $query->get(['total_leave_days', 'leave_duration']);
+            $total = 0;
+            foreach ($leaves as $l) {
+                if ($l->leave_duration === 'half_day') {
+                    $total += 0.5;
+                } else {
+                    $total += (float)$l->total_leave_days;
+                }
+            }
+            return $total;
+        };
+
         // Calculate used days in the selected month
-        $usedDays = LocalLeave::where('employee_id', $employee->id)
+        $monthQuery = LocalLeave::where('employee_id', $employee->id)
             ->where('leave_type_id', $leaveType->id)
             ->where('status', 'Approved')
             ->where(function($query) use ($monthStart, $monthEnd) {
@@ -1458,13 +1476,12 @@ class LeaveController extends Controller
                            ->where('end_date', '>=', $monthStart)
                            ->where('end_date', '<=', $monthEnd);
                 });
-            })
-            ->sum('total_leave_days');
+            });
+        $usedDaysThisMonth = $sumLeaveDays($monthQuery);
         
         // Calculate carried forward days for monthly leave types
         $carriedForwardDays = 0;
         $extraDays = 0;
-        $currentMonth = date('Y-m', strtotime($monthStart));
 
         if ($leaveType->type == 'monthly' && $leaveType->carry_forward_enabled) {
             $previousMonth = date('Y-m', strtotime($monthStart . ' -1 month'));
@@ -1473,7 +1490,7 @@ class LeaveController extends Controller
 
         // Get extra days
         $periodToQuery = $leaveType->type === 'yearly' ? 'yearly' : 'monthly';
-        $monthToQuery = $leaveType->type === 'yearly' ? date('Y', strtotime($monthStart)) : $currentMonth;
+        $monthToQuery = $leaveType->type === 'yearly' ? $currentYear : $currentMonth;
         
         $currentBalance = \App\Models\CarryForwardBalance::where('employee_id', $employee->id)
             ->where('leave_type_id', $leaveType->id)
@@ -1483,7 +1500,6 @@ class LeaveController extends Controller
             
         // Fallback for custom allocations that might have been saved as 'monthly' for a 'yearly' leave type
         if (!$currentBalance && $leaveType->type === 'yearly') {
-            $currentYear = date('Y', strtotime($monthStart));
             $currentBalance = \App\Models\CarryForwardBalance::where('employee_id', $employee->id)
                 ->where('leave_type_id', $leaveType->id)
                 ->where('month', 'like', $currentYear . '%')
@@ -1492,13 +1508,39 @@ class LeaveController extends Controller
         }
             
         if ($currentBalance) {
-            $extraDays = $currentBalance->extra_days;
+            $extraDays = (float)$currentBalance->extra_days;
         }
         
         if ($leaveType->is_unlimited) {
             $remainingDays = -1; // Unlimited
+            $usedDays = $usedDaysThisMonth;
+        } elseif ($leaveType->type === 'yearly') {
+            // For yearly leave types, calculate cumulative used days in the year up to selected month end
+            $yearQuery = LocalLeave::where('employee_id', $employee->id)
+                ->where('leave_type_id', $leaveType->id)
+                ->where('status', 'Approved')
+                ->where(function($query) use ($yearStart, $monthEnd) {
+                    $query->where(function($subQuery) use ($yearStart, $monthEnd) {
+                        $subQuery->where('start_date', '>=', $yearStart)
+                               ->where('end_date', '<=', $monthEnd);
+                    })->orWhere(function($subQuery) use ($yearStart, $monthEnd) {
+                        $subQuery->where('start_date', '>=', $yearStart)
+                               ->where('start_date', '<=', $monthEnd)
+                               ->where('end_date', '>', $monthEnd);
+                    })->orWhere(function($subQuery) use ($yearStart, $monthEnd) {
+                        $subQuery->where('start_date', '<', $yearStart)
+                               ->where('end_date', '>=', $yearStart)
+                               ->where('end_date', '<=', $monthEnd);
+                    });
+                });
+            $ytdUsedDays = $sumLeaveDays($yearQuery);
+
+            $usedDays = $ytdUsedDays;
+            $remainingDays = ($allocatedDays + $extraDays) - $ytdUsedDays;
         } else {
-            $remainingDays = ($allocatedDays + $carriedForwardDays + $extraDays) - $usedDays;
+            // Monthly leave types
+            $usedDays = $usedDaysThisMonth;
+            $remainingDays = ($allocatedDays + $carriedForwardDays + $extraDays) - $usedDaysThisMonth;
         }
         
         return [
@@ -1506,6 +1548,7 @@ class LeaveController extends Controller
             'allocated_days' => $allocatedDays + $extraDays,
             'carried_forward_days' => $carriedForwardDays,
             'used_days' => $usedDays,
+            'used_this_month' => $usedDaysThisMonth,
             'remaining_days' => max(0, $remainingDays),
             'is_unlimited' => $leaveType->is_unlimited
         ];
