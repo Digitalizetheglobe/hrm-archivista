@@ -317,11 +317,15 @@
     }
     .event-item-new.birthday-event:hover  { border-color: rgba(232,89,12,0.2); background: var(--primary-bg); }
     .event-item-new.anniversary-event:hover { border-color: rgba(34,197,94,0.2); background: rgba(34,197,94,0.05); }
+    .event-avatar-new {
+        width: 42px; height: 42px; min-width: 42px; max-width: 42px;
+        border-radius: 50%; overflow: hidden; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #f1f5f9; border: 2px solid var(--border);
+    }
     .event-avatar-new img {
-        width: 42px; height: 42px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid var(--border);
+        width: 100%; height: 100%; border-radius: 50%;
+        object-fit: cover; display: block;
     }
     .event-item-new.birthday-event .event-avatar-new img   { border-color: rgba(232,89,12,0.35); }
     .event-item-new.anniversary-event .event-avatar-new img { border-color: rgba(34,197,94,0.35); }
@@ -467,7 +471,7 @@
                             <div class="d-flex align-items-center gap-3">
                                 <div class="profile-avatar-wrap">
                                     @php $profile = \App\Models\Utility::get_file('uploads/avatar/'); @endphp
-                                    <img src="{{ !empty($emp->user->avatar) ? $profile . $emp->user->avatar : $profile . 'avatar.png' }}" alt="Profile">
+                                    <img src="{{ !empty($emp->user->avatar) && file_exists(storage_path('app/public/uploads/avatar/' . $emp->user->avatar)) ? $profile . $emp->user->avatar : asset('assets/images/user/avatar.png') }}" alt="Profile" onerror="this.onerror=null; this.src='{{ asset('assets/images/user/avatar.png') }}';">
                                     <span class="profile-online-dot"></span>
                                 </div>
                                 <div>
@@ -842,9 +846,9 @@
                                 @foreach($monthlyEvents as $event)
                                 <div class="event-item-new {{ $event['type'] == 'birthday' ? 'birthday-event' : 'anniversary-event' }}">
                                     <div class="event-avatar-new">
-                                        <img src="{{ !empty($event['avatar']) && $event['avatar'] != 'default-avatar.png' ? \App\Models\Utility::get_file('uploads/avatar/') . $event['avatar'] : \App\Models\Utility::get_file('uploads/avatar/') . 'avatar.png' }}"
+                                        <img src="{{ !empty($event['avatar']) && $event['avatar'] != 'default-avatar.png' && file_exists(storage_path('app/public/uploads/avatar/' . $event['avatar'])) ? \App\Models\Utility::get_file('uploads/avatar/') . $event['avatar'] : asset('assets/images/user/avatar.png') }}"
                                              alt="{{ $event['employee_name'] }}"
-                                             onerror="this.onerror=null; this.src='{{ \App\Models\Utility::get_file('uploads/avatar/') . 'avatar.png' }}'">
+                                             onerror="this.onerror=null; this.src='{{ asset('assets/images/user/avatar.png') }}';">
                                     </div>
                                     <div class="flex-grow-1" style="min-width:0;">
                                         <div class="event-name">{{ $event['employee_name'] }}</div>

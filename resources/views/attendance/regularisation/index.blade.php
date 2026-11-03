@@ -43,7 +43,7 @@
                             </thead>
                             <tbody>
                                 @forelse ($regularisations as $regularisation)
-                                    <tr>
+                                    <tr id="regularisation-row-{{ $regularisation->id }}">
                                         @if (\Auth::user()->type != 'employee')
                                             <td class="text-start">{{ !empty($regularisation->employee) ? $regularisation->employee->name : __('N/A') }}</td>
                                         @endif
@@ -161,6 +161,55 @@
     </style>
     
 
+<script>
+$(document).on("submit", "#regularisation-action-form", function(e) {
+    e.preventDefault();
+    var form = $(this);
+    var submitBtn = $(document.activeElement);
+    var status = submitBtn.is("input[type=submit], button[type=submit]") ? submitBtn.val() : form.find("input[name=status]:focus").val();
+    var formData = form.serializeArray();
+    if (status) {
+        formData = formData.filter(function(item) { return item.name !== "status"; });
+        formData.push({ name: "status", value: status });
+    }
+    var regId = form.find("input[name=regularisation_id]").val();
+    var submitBtns = form.find("input[type=submit], button[type=submit]");
+    submitBtns.prop("disabled", true);
+    $.ajax({
+        url: form.attr("action"),
+        type: "POST",
+        data: $.param(formData),
+        headers: {
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        success: function(response) {
+            $("#commonModal").modal("hide");
+            if (response && response.is_success) {
+                show_toastr("Success", response.message || "Status updated successfully.", "success");
+                var row = $("#regularisation-row-" + regId);
+                if (row.length) {
+                    var newStatus = response.status || status;
+                    var badgeClass = (newStatus === "Approved") ? "bg-success" : ((newStatus === "Pending") ? "bg-warning" : "bg-danger");
+                    row.find("td:eq(6)").html('<span class="badge ' + badgeClass + '">' + newStatus + '</span>');
+                    row.find(".action-btn.bg-success").remove();
+                }
+            } else {
+                show_toastr("Error", (response && response.error) ? response.error : "Failed to update status", "error");
+            }
+        },
+        error: function(xhr) {
+            submitBtns.prop("disabled", false);
+            var errorMsg = "Something went wrong. Please try again.";
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMsg = xhr.responseJSON.error;
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            show_toastr("Error", errorMsg, "error");
+        }
+    });
+});
+</script>
 @endpush
 
 

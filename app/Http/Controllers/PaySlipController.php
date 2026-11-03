@@ -6,13 +6,8 @@ use App\Exports\PayslipExport;
 use App\Models\Allowance;
 use App\Models\Commission;
 use App\Models\Employee;
-use App\Models\LoanDeduction;
-use App\Models\EmployeeLoan;
-use App\Models\SalaryArrears;
-use App\Models\PetrolAllowance;
 use App\Models\AttendanceEmployee;
 use App\Models\Leave as LocalLeave;
-use App\Models\OtherDeduction;
 use App\Models\Deduction;
 use App\Models\EmployeePayableDay;
 use App\Models\Department;
@@ -1477,17 +1472,7 @@ class PaySlipController extends Controller
      */
     private function getSalaryAdvance($employeeId, $year, $month)
     {
-        $monthDate = $year . '-' . $month . '-01';
-        
-        $totalAdvance = LoanDeduction::whereHas('loan', function($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId);
-            })
-            ->whereYear('month', $year)
-            ->whereMonth('month', $month)
-            ->where('is_deducted', true)
-            ->sum('emi_amount');
-
-        return $totalAdvance;
+        return 0; // LoanDeduction model removed
     }
 
     /**
@@ -1521,11 +1506,11 @@ class PaySlipController extends Controller
             $payslip->loan = Employee::loan($employee->id, $month);
             
             // Calculate and set salary arrears
-            $arrearsAmount = \App\Models\SalaryArrears::getArrearsAmount($employee->id, $month);
+            $arrearsAmount = 0; // SalaryArrears model removed
             $payslip->salary_arrears = $arrearsAmount;
             
             // Calculate and set petrol allowance
-            $petrolAllowanceAmount = \App\Models\PetrolAllowance::getPetrolAllowanceAmount($employee->id, $month);
+            $petrolAllowanceAmount = 0; // PetrolAllowance model removed
             $payslip->petrol_allowance = $petrolAllowanceAmount;
             
             // Calculate total allowance

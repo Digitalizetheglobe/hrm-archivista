@@ -5,15 +5,10 @@ namespace App\Exports;
 use App\Models\Employee;
 use App\Models\Termination;
 use App\Models\Resignation;
-use App\Models\SalaryArrears;
-use App\Models\PetrolAllowance;
-use App\Models\LoanDeduction;
-use App\Models\EmployeeLoan;
+use App\Models\Deduction;
 use App\Models\AttendanceEmployee;
 use App\Models\Leave as LocalLeave;
-use App\Models\OtherDeduction;
 use App\Models\SalaryProcessingStatus;
-use App\Models\EmployeePayableDay;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -120,10 +115,7 @@ class SalaryProcessingExport implements FromCollection, WithHeadings, WithStyles
             $totalLeave = $this->paySlipController->calculateTotalLeave($employee->id, $this->year, $this->month);
 
             // Calculate LOP - if payable days were edited, adjust LOP accordingly
-            $customPayableDays = EmployeePayableDay::where('employee_id', $employee->id)
-                ->where('month', (int)$this->month)
-                ->where('year', (int)$this->year)
-                ->first();
+            $customPayableDays = null; // EmployeePayableDay model removed
 
             if ($customPayableDays) {
                 $lopDays = max(0, $monthlyDays - $payableDays);
@@ -149,10 +141,10 @@ class SalaryProcessingExport implements FromCollection, WithHeadings, WithStyles
             $salaryAdvance = $this->getSalaryAdvance($employee->id, $this->year, $this->month);
 
             // Get Salary Arrears
-            $salaryArrears = SalaryArrears::getArrearsAmount($employee->id, $this->year . '-' . $this->month);
+            $salaryArrears = 0; // SalaryArrears model removed
 
             // Get Petrol Allowance
-            $petrolAllowance = PetrolAllowance::getPetrolAllowanceAmount($employee->id, $this->year . '-' . $this->month);
+            $petrolAllowance = 0; // PetrolAllowance model removed
 
             // Calculate Gross Salary: Monthly Salary + Salary Arrears + Petrol Allowance
             $grossSalary = $monthlySalary + $salaryArrears + $petrolAllowance;
@@ -165,8 +157,9 @@ class SalaryProcessingExport implements FromCollection, WithHeadings, WithStyles
             // Professional Tax (PT) - ₹200 fixed for all employees
             $professionalTax = 200;
 
-            // Get Other Deductions from other_deductions table
-            $otherDeductions = OtherDeduction::getDeductionAmount($employee->id, $this->year . '-' . $this->month);
+            // Get Other Deductions
+            $monthKey = $this->year . '-' . str_pad((string)$this->month, 2, '0', STR_PAD_LEFT);
+            $otherDeductions = Deduction::amountFor($employee->id, 'Other Deduction', $monthKey);
 
             // Calculate Net Amount Payable (Total Deductions): LOP deduction + PT + Salary Advance + Other Deductions
             $netAmountPayable = $lopDeductionAmount + $professionalTax + $salaryAdvance + $otherDeductions;
@@ -348,15 +341,7 @@ class SalaryProcessingExport implements FromCollection, WithHeadings, WithStyles
 
     private function getSalaryAdvance($employeeId, $year, $month)
     {
-        $totalAdvance = LoanDeduction::whereHas('loan', function($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId);
-            })
-            ->whereYear('month', $year)
-            ->whereMonth('month', $month)
-            ->where('is_deducted', true)
-            ->sum('emi_amount');
-
-        return $totalAdvance;
+        return 0; // LoanDeduction model removed
     }
 }
 

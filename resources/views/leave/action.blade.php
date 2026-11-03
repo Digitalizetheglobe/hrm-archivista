@@ -1,4 +1,4 @@
-{{ Form::open(['url' => 'leave/changeaction', 'method' => 'post']) }}
+{{ Form::open(['url' => 'leave/changeaction', 'method' => 'post', 'id' => 'leave-action-form']) }}
 <div class="modal-body">
     <div class="row">
         <div class="col-12">

@@ -38,7 +38,7 @@
                    role="button" aria-haspopup="false" aria-expanded="false" style="background-color: white;">
                     <span class="theme-avtar" style="background-color: white;">
                         <img alt="#"
-                             src="{{ !empty($users->avatar) ? $profile . $users->avatar : $profile . 'avatar.png' }}"
+                             src="{{ !empty($users->avatar) && file_exists(storage_path('app/public/uploads/avatar/' . $users->avatar)) ? $profile . $users->avatar : asset('assets/images/user/avatar.png') }}" onerror="this.onerror=null; this.src='{{ asset('assets/images/user/avatar.png') }}';"
                              class="header-avtar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; background-color: white;">
                     </span>
                     <span class="hide-mob ms-2" style="background-color: white;">{{ 'Hi, ' . Auth::user()->name . '!' }}

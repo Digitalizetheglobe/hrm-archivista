@@ -572,6 +572,15 @@ class AttendanceRegularisationController extends Controller
         $regularisation->approved_at = now();
         $regularisation->save();
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'is_success' => true,
+                'status' => $status,
+                'id' => $regularisation->id,
+                'message' => __('Regularisation status successfully updated.')
+            ]);
+        }
+
         return redirect()->route('attendance-regularisation.index');
     }
 

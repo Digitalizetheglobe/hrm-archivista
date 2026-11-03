@@ -917,9 +917,25 @@ class LeaveController extends Controller
             } else {
                 $resp = Utility::sendEmailTemplate('leave_status', [$employee->email], $uArr);
             }
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'is_success' => true,
+                    'status' => $request->status,
+                    'id' => $leave->id,
+                    'message' => __('Leave status successfully updated.')
+                ]);
+            }
             return redirect()->route('leave.index')->with('success', __('Leave status successfully updated.') . ((!empty($resp) && $resp['is_success'] == false && !empty($resp['error'])) ? '<br> <span class="text-danger">' . $resp['error'] . '</span>' : ''));
         }
 
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'is_success' => true,
+                    'status' => $request->status,
+                    'id' => $leave->id,
+                    'message' => __('Leave status successfully updated.')
+                ]);
+            }
         return redirect()->route('leave.index')->with('success', __('Leave status successfully updated.'));
     }
     public function saveCustomEmail(Request $request)

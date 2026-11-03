@@ -267,7 +267,7 @@
                                     <tbody>
                                         @foreach ($leaves as $leave)
                                             @if($leave->status == 'Approved')
-                                                <tr>
+                                                <tr id="leave-row-{{ $leave->id }}" data-leave-id="{{ $leave->id }}">
                                                     @if (\Auth::user()->type != 'employee')
                                                         <td>
                                                             <input type="checkbox" class="form-check-input leave-checkbox" value="{{ $leave->id }}">
@@ -380,7 +380,7 @@
                                     <tbody>
                                         @foreach ($leaves as $leave)
                                             @if($leave->status == 'Pending')
-                                                <tr>
+                                                <tr id="leave-row-{{ $leave->id }}" data-leave-id="{{ $leave->id }}">
                                                     @if (\Auth::user()->type != 'employee')
                                                         <td>
                                                             <input type="checkbox" class="form-check-input leave-checkbox" value="{{ $leave->id }}">
@@ -493,7 +493,7 @@
                                     <tbody>
                                         @foreach ($leaves as $leave)
                                             @if($leave->status == 'Reject')
-                                                <tr>
+                                                <tr id="leave-row-{{ $leave->id }}" data-leave-id="{{ $leave->id }}">
                                                     <td>
                                                         <input type="checkbox" class="form-check-input leave-checkbox" value="{{ $leave->id }}">
                                                     </td>
@@ -670,6 +670,65 @@
                     });
                 }
             });
+
+            // AJAX submission for Leave Action (Approve / Reject) without page reload
+            $(document).on('submit', '#leave-action-form', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var submitBtn = $(document.activeElement);
+                var status = submitBtn.is('input[type=submit], button[type=submit]') ? submitBtn.val() : form.find('input[name=status]:focus').val();
+                var formData = form.serializeArray();
+                if (status) {
+                    formData = formData.filter(function(item) { return item.name !== 'status'; });
+                    formData.push({ name: 'status', value: status });
+                }
+                var leaveId = form.find('input[name=leave_id]').val();
+                var submitBtns = form.find('input[type=submit], button[type=submit]');
+                submitBtns.prop('disabled', true);
+
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: $.param(formData),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        $('#commonModal').modal('hide');
+                        if (response && response.is_success) {
+                            show_toastr('Success', response.message || 'Leave status successfully updated.', 'success');
+                            var row = $('#pending').find('#leave-row-' + leaveId);
+                            if (row.length) {
+                                var newStatus = response.status || status;
+                                var targetTab = (newStatus === 'Approved') ? $('#approved') : $('#rejected');
+                                var targetTbody = targetTab.find('tbody');
+                                
+                                var badge = row.find('.status-badge5');
+                                if (newStatus === 'Approved') {
+                                    badge.removeClass('bg-warning bg-danger').addClass('bg-success').text('Approved');
+                                } else {
+                                    badge.removeClass('bg-warning bg-success').addClass('bg-danger').text(newStatus);
+                                }
+                                
+                                // Move row from Pending table to target table so current tab view stays clean
+                                row.detach().appendTo(targetTbody);
+                            }
+                        } else {
+                            show_toastr('Error', (response && response.error) ? response.error : 'Failed to update leave status', 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        submitBtns.prop('disabled', false);
+                        var errorMsg = 'Something went wrong. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        show_toastr('Error', errorMsg, 'error');
+                    }
+                });
+            });
         });
     </script>
     -->
@@ -752,6 +811,9 @@
                             }
                         });
                     }
+                });
+            });
+
                 });
             });
         });
