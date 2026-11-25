@@ -1454,12 +1454,25 @@ class LeaveController extends Controller
      */
     private function calculateEmployeeLeaveBalance($employee, $leaveType, $monthStart, $monthEnd)
     {
-        // Get allocated days based on employee type
-        $allocatedDays = $this->getAllocatedDaysForEmployee($employee, $leaveType);
-        
         $currentMonth = date('Y-m', strtotime($monthStart));
         $currentYear = date('Y', strtotime($monthStart));
         $yearStart = $currentYear . '-01-01';
+
+        // All leaves reset prior to October 2026: if selected month is before 2026-10, everything is 0
+        if (strtotime($monthStart) < strtotime('2026-10-01')) {
+            return [
+                'leave_type' => $leaveType,
+                'allocated_days' => 0,
+                'carried_forward_days' => 0,
+                'used_days' => 0,
+                'used_this_month' => 0,
+                'remaining_days' => 0,
+                'is_unlimited' => $leaveType->is_unlimited
+            ];
+        }
+
+        // Get allocated days based on employee type
+        $allocatedDays = $this->getAllocatedDaysForEmployee($employee, $leaveType);
 
         // Helper closure to calculate actual leave days respecting half-day duration
         $sumLeaveDays = function($query) {
@@ -1527,25 +1540,28 @@ class LeaveController extends Controller
             $extraDays = (float)$currentBalance->extra_days;
         }
         
+        // Starting point for yearly calculation is 2026-10-01
+        $effectiveYearStart = max($yearStart, '2026-10-01');
+
         if ($leaveType->is_unlimited) {
             $remainingDays = -1; // Unlimited
             $usedDays = $usedDaysThisMonth;
         } elseif ($leaveType->type === 'yearly') {
-            // For yearly leave types, calculate cumulative used days in the year up to selected month end
+            // For yearly leave types, calculate cumulative used days up to selected month end from 2026-10-01
             $yearQuery = LocalLeave::where('employee_id', $employee->id)
                 ->where('leave_type_id', $leaveType->id)
                 ->where('status', 'Approved')
-                ->where(function($query) use ($yearStart, $monthEnd) {
-                    $query->where(function($subQuery) use ($yearStart, $monthEnd) {
-                        $subQuery->where('start_date', '>=', $yearStart)
+                ->where(function($query) use ($effectiveYearStart, $monthEnd) {
+                    $query->where(function($subQuery) use ($effectiveYearStart, $monthEnd) {
+                        $subQuery->where('start_date', '>=', $effectiveYearStart)
                                ->where('end_date', '<=', $monthEnd);
-                    })->orWhere(function($subQuery) use ($yearStart, $monthEnd) {
-                        $subQuery->where('start_date', '>=', $yearStart)
+                    })->orWhere(function($subQuery) use ($effectiveYearStart, $monthEnd) {
+                        $subQuery->where('start_date', '>=', $effectiveYearStart)
                                ->where('start_date', '<=', $monthEnd)
                                ->where('end_date', '>', $monthEnd);
-                    })->orWhere(function($subQuery) use ($yearStart, $monthEnd) {
-                        $subQuery->where('start_date', '<', $yearStart)
-                               ->where('end_date', '>=', $yearStart)
+                    })->orWhere(function($subQuery) use ($effectiveYearStart, $monthEnd) {
+                        $subQuery->where('start_date', '<', $effectiveYearStart)
+                               ->where('end_date', '>=', $effectiveYearStart)
                                ->where('end_date', '<=', $monthEnd);
                     });
                 });
@@ -1581,6 +1597,16 @@ class LeaveController extends Controller
         $totalLeaves = 0;
         $totalCredited = 0;
         $totalUsed = 0;
+
+        // All leaves reset prior to October 2026: if selected month is before 2026-10, return 0
+        if (strtotime($monthStart) < strtotime('2026-10-01')) {
+            return [
+                'total_leaves' => 0,
+                'credited_leaves' => 0,
+                'used_leaves' => 0,
+                'remaining_leaves' => 0
+            ];
+        }
         
         foreach ($employees as $employee) {
             $leaveTypes = LeaveType::where('created_by', \Auth::user()->creatorId())->get();

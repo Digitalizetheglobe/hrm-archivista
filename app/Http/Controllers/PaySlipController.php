@@ -1029,6 +1029,7 @@ class PaySlipController extends Controller
         $year = substr($formate_month_year, 0, 4);
 
         $employees = Employee::where('created_by', \Auth::user()->creatorId())
+            ->where('employee_type', 'Payroll')
             ->whereHas('user', function($query) {
                 $query->where('type', 'employee');
             });

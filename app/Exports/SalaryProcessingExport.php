@@ -38,6 +38,7 @@ class SalaryProcessingExport implements FromCollection, WithHeadings, WithStyles
     public function collection()
     {
         $employees = Employee::where('created_by', \Auth::user()->creatorId())
+            ->where('employee_type', 'Payroll')
             ->whereHas('user', function($query) {
                 $query->where('type', 'employee');
             });
