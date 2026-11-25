@@ -261,7 +261,37 @@ class SetSalaryController extends Controller
         $employee = Employee::findOrFail($id);
         $payrollData = PayrollData::where('employee_id', $id)->first();
 
-        return view('setsalary.set_salary_page', compact('employee', 'payrollData'));
+        // If payroll data has no component amounts set yet (or all 0) but employee has set_salary,
+        // provide default standard breakdown:
+        // Basic: 40%, HRA: 16%, Medical: 6%, Conveyance: 4%, Education: 4%, Executive: 30%, PT: 200, PF: 1800
+        $hasSavedComponents = $payrollData && (
+            (float)$payrollData->basic > 0 ||
+            (float)$payrollData->hra > 0 ||
+            (float)$payrollData->medical > 0 ||
+            (float)$payrollData->conveyance > 0 ||
+            (float)$payrollData->education > 0 ||
+            (float)$payrollData->executive > 0
+        );
+
+        $defaultComponents = [];
+        if (!$hasSavedComponents && (float)$employee->set_salary > 0) {
+            $salary = (float)$employee->set_salary;
+            $basic = round($salary * 0.40, 2);
+            $defaultComponents = [
+                'basic'            => $basic,
+                'hra'              => round($salary * 0.16, 2),
+                'medical'          => round($salary * 0.06, 2),
+                'conveyance'       => round($salary * 0.04, 2),
+                'education'        => round($salary * 0.04, 2),
+                'executive'        => round($salary * 0.30, 2),
+                'professional_tax' => 200,
+                'pf'               => ($basic >= 15000 ? 1800 : round($basic * 0.12, 2)),
+                'esi'              => ($salary <= 21000 ? round($basic * 0.0075, 2) : 0),
+                'tds'              => 0,
+            ];
+        }
+
+        return view('setsalary.set_salary_page', compact('employee', 'payrollData', 'defaultComponents'));
     }
 
     /**
@@ -274,18 +304,50 @@ class SetSalaryController extends Controller
         }
 
         $request->validate([
-            'set_salary'      => 'required|numeric|min:0',
-            'basic'           => 'nullable|numeric|min:0',
-            'medical'         => 'nullable|numeric|min:0',
-            'hra'             => 'nullable|numeric|min:0',
-            'conveyance'      => 'nullable|numeric|min:0',
-            'education'       => 'nullable|numeric|min:0',
-            'executive'       => 'nullable|numeric|min:0',
-            'esi'             => 'nullable|numeric|min:0',
-            'pf'              => 'nullable|numeric|min:0',
-            'professional_tax'=> 'nullable|numeric|min:0',
-            'tds'             => 'nullable|numeric|min:0',
+            'set_salary'        => 'required|numeric|min:0',
+            'basic'             => 'nullable|numeric|min:0',
+            'medical'           => 'nullable|numeric|min:0',
+            'hra'               => 'nullable|numeric|min:0',
+            'conveyance'        => 'nullable|numeric|min:0',
+            'education'         => 'nullable|numeric|min:0',
+            'executive'         => 'nullable|numeric|min:0',
+            'esi'               => 'nullable|numeric|min:0',
+            'pf'                => 'nullable|numeric|min:0',
+            'professional_tax'  => 'nullable|numeric|min:0',
+            'tds'               => 'nullable|numeric|min:0',
+            'custom_allowances' => 'nullable|array',
+            'custom_deductions' => 'nullable|array',
         ]);
+
+        // Process custom allowances
+        $customAllowances = [];
+        if ($request->has('custom_allowances') && is_array($request->custom_allowances)) {
+            foreach ($request->custom_allowances as $item) {
+                $name = trim($item['name'] ?? '');
+                $amount = isset($item['amount']) && is_numeric($item['amount']) ? (float)$item['amount'] : null;
+                if ($name !== '' && $amount !== null) {
+                    $customAllowances[] = [
+                        'name' => $name,
+                        'amount' => $amount,
+                    ];
+                }
+            }
+        }
+
+        // Process custom deductions
+        $customDeductions = [];
+        if ($request->has('custom_deductions') && is_array($request->custom_deductions)) {
+            foreach ($request->custom_deductions as $item) {
+                $name = trim($item['name'] ?? '');
+                $amount = isset($item['amount']) && is_numeric($item['amount']) ? (float)$item['amount'] : null;
+                if ($name !== '' && $amount !== null) {
+                    $customDeductions[] = [
+                        'name' => $name,
+                        'amount' => $amount,
+                    ];
+                }
+            }
+        }
 
         // Update the employee's set salary
         $employee = Employee::findOrFail($id);
@@ -296,16 +358,18 @@ class SetSalaryController extends Controller
         PayrollData::updateOrCreate(
             ['employee_id' => $id],
             [
-                'basic'            => $request->basic ?? 0,
-                'medical'          => $request->medical ?? 0,
-                'hra'              => $request->hra ?? 0,
-                'conveyance'       => $request->conveyance ?? 0,
-                'education'        => $request->education ?? 0,
-                'executive'        => $request->executive ?? 0,
-                'esi'              => $request->esi ?? 0,
-                'pf'               => $request->pf ?? 0,
-                'professional_tax' => $request->professional_tax ?? 0,
-                'tds'              => $request->tds ?? 0,
+                'basic'             => $request->basic ?? 0,
+                'medical'           => $request->medical ?? 0,
+                'hra'               => $request->hra ?? 0,
+                'conveyance'        => $request->conveyance ?? 0,
+                'education'         => $request->education ?? 0,
+                'executive'         => $request->executive ?? 0,
+                'custom_allowances' => $customAllowances,
+                'esi'               => $request->esi ?? 0,
+                'pf'                => $request->pf ?? 0,
+                'professional_tax'  => $request->professional_tax ?? 0,
+                'tds'               => $request->tds ?? 0,
+                'custom_deductions' => $customDeductions,
             ]
         );
 

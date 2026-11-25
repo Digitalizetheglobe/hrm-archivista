@@ -19,10 +19,17 @@ class PayrollData extends Model
         'conveyance',
         'education',
         'executive',
+        'custom_allowances',
         'esi',
         'pf',
         'professional_tax',
         'tds',
+        'custom_deductions',
+    ];
+
+    protected $casts = [
+        'custom_allowances' => 'array',
+        'custom_deductions' => 'array',
     ];
 
     public $timestamps = true;

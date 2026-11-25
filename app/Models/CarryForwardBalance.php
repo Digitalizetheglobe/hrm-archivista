@@ -78,6 +78,11 @@ class CarryForwardBalance extends Model
             return 0;
         }
 
+        // All leaves reset prior to October 2026: do not carry forward from months before 2026-10
+        if (strtotime($currentMonth . '-01') < strtotime('2026-10-01')) {
+            return 0;
+        }
+
         // Get current month balance
         $currentBalance = self::getOrCreateBalance($employeeId, $leaveTypeId, $currentMonth);
         

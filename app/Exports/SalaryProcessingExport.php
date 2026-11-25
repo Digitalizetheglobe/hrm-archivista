@@ -123,12 +123,21 @@ class SalaryProcessingExport implements FromCollection, WithHeadings, WithStyles
                 $lopDays = $this->paySlipController->calculateLOPDays($employee->id, $this->year, $this->month);
             }
 
-            // Get Actual Salary
-            $actualSalary = $employee->salary ?? 0;
+            // Get Actual Salary (set_salary or salary fallback)
+            $actualSalary = !empty($employee->set_salary) ? (float)$employee->set_salary : ((float)($employee->salary ?? 0));
 
-            // Calculate Monthly Salary using standard 30 days
+            // Use Standard Monthly Days (30) for fair salary calculation across all months
             $standardMonthlyDays = 30;
-            $monthlySalary = $standardMonthlyDays > 0 ? ($actualSalary * ($payableDays / $standardMonthlyDays)) : 0;
+            
+            // Limit payable days to standard monthly days for calculation purposes
+            $calculationPayableDays = min($payableDays, $standardMonthlyDays);
+
+            // Calculate Monthly Salary based on actual joining/termination dates
+            if ($monthlyDays < $startDate->daysInMonth) {
+                $monthlySalary = ($actualSalary / $standardMonthlyDays) * $monthlyDays;
+            } else {
+                $monthlySalary = $actualSalary;
+            }
 
             // Calculate Monthly Salary breakdown (percentages of Monthly Salary)
             $basicPay = round($monthlySalary * 0.41, 2); // 41%
@@ -136,6 +145,16 @@ class SalaryProcessingExport implements FromCollection, WithHeadings, WithStyles
             $conveyanceAllowance = round($monthlySalary * 0.21, 2); // 21%
             $specialAllowance = round($monthlySalary * 0.10, 2); // 10%
             $medicalAllowance = round($monthlySalary * 0.03, 2); // 3%
+
+            // Calculate proportion for Earnings based on Paid Days
+            $proportion = ($monthlyDays > 0) ? ($calculationPayableDays / $monthlyDays) : 0;
+
+            // Earnings Actual
+            $earnedBasic = $basicPay * $proportion;
+            $earnedHra = $hra * $proportion;
+            $earnedConveyance = $conveyanceAllowance * $proportion;
+            $earnedSpecial = $specialAllowance * $proportion;
+            $earnedMedical = $medicalAllowance * $proportion;
 
             // Get Salary Advance
             $salaryAdvance = $this->getSalaryAdvance($employee->id, $this->year, $this->month);
@@ -146,23 +165,26 @@ class SalaryProcessingExport implements FromCollection, WithHeadings, WithStyles
             // Get Petrol Allowance
             $petrolAllowance = 0; // PetrolAllowance model removed
 
-            // Calculate Gross Salary: Monthly Salary + Salary Arrears + Petrol Allowance
-            $grossSalary = $monthlySalary + $salaryArrears + $petrolAllowance;
+            // Calculate Gross Salary: Actual Earned Breakdown + Arrears + Petrol Allowance
+            $grossSalary = $earnedBasic + $earnedHra + $earnedConveyance + $earnedSpecial + $earnedMedical + $salaryArrears + $petrolAllowance;
 
-            // Calculate LOP deduction amount (LOP days * daily salary)
-            // Note: Set to 0 to avoid double deduction as monthlySalary is already pro-rated
-            $dailySalary = $standardMonthlyDays > 0 ? ($actualSalary / $standardMonthlyDays) : 0;
+            // Calculate LOP deduction amount
             $lopDeductionAmount = 0;
 
             // Professional Tax (PT) - ₹200 fixed for all employees
             $professionalTax = 200;
 
-            // Get Other Deductions
+            // Get Other Deductions & Statutory Deductions
             $monthKey = $this->year . '-' . str_pad((string)$this->month, 2, '0', STR_PAD_LEFT);
+            $mlwfAmount = Deduction::amountFor($employee->id, 'MLWF', $monthKey);
+            $tdsAmount = Deduction::amountFor($employee->id, 'TDS', $monthKey);
+            if ($tdsAmount <= 0) {
+                $tdsAmount = \App\Models\PayrollData::tdsFor($employee->id);
+            }
             $otherDeductions = Deduction::amountFor($employee->id, 'Other Deduction', $monthKey);
 
-            // Calculate Net Amount Payable (Total Deductions): LOP deduction + PT + Salary Advance + Other Deductions
-            $netAmountPayable = $lopDeductionAmount + $professionalTax + $salaryAdvance + $otherDeductions;
+            // Calculate Net Amount Payable (Total Deductions): LOP + PT + Advance + Other Deductions + MLWF + TDS
+            $netAmountPayable = $lopDeductionAmount + $professionalTax + $salaryAdvance + $otherDeductions + $mlwfAmount + $tdsAmount;
 
             // Calculate Final Salary: Gross Salary - Net Amount Payable
             $finalPayableSalary = $grossSalary - $netAmountPayable;

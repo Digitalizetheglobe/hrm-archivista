@@ -65,12 +65,26 @@
     </div>
     
     <!-- Marquee Section for Daily Quote -->
-    <!-- Marquee Section for Daily Quote -->
-    <div class="quote-container dash-h-item" style="display: flex; justify-content: center; align-items: center; flex-grow: 1; min-width: 0;">
-        <marquee behavior="scroll" direction="left" scrollamount="6" style="color: #fd7523; font-size: 16px; font-weight: bold; width: 100%; margin: 0 10px;">
-            " {{ $quote->quote ?? 'Welcome to the DTG! No quote for today.' }} "
-        </marquee>
+    <div class="quote-container dash-h-item" style="display: flex; align-items: center; flex: 1 1 auto; min-width: 0; overflow: hidden; margin: 0 10px;">
+        <div class="marquee-custom-wrapper" style="width: 100%; overflow: hidden; white-space: nowrap;">
+            <div class="marquee-custom-content" style="display: inline-block; padding-left: 0; animation: marqueeScrollLeft 30s linear infinite; color: #fd7523; font-size: 16px; font-weight: bold;">
+                " {{ $quote->quote ?? 'Welcome to the DTG! No quote for today.' }} "
+            </div>
+        </div>
     </div>
+    <style>
+        @keyframes marqueeScrollLeft {
+            0% {
+                transform: translateX(0%);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+        .marquee-custom-wrapper:hover .marquee-custom-content {
+            animation-play-state: paused;
+        }
+    </style>
 
 
 

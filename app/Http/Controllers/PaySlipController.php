@@ -140,6 +140,27 @@ class PaySlipController extends Controller
                 }
 
                 if (!$chek && $chek == null) {
+                    // Capture snapshot of payroll_data at the moment of payslip generation
+                    $payrollData = PayrollData::where('employee_id', $employee->id)->first();
+                    $snapshot = null;
+                    if ($payrollData) {
+                        $snapshot = [
+                            'gross_salary'      => !empty($employee->set_salary) ? (float)$employee->set_salary : 0,
+                            'basic'             => (float)$payrollData->basic,
+                            'medical'           => (float)$payrollData->medical,
+                            'hra'               => (float)$payrollData->hra,
+                            'conveyance'        => (float)$payrollData->conveyance,
+                            'education'         => (float)$payrollData->education,
+                            'executive'         => (float)$payrollData->executive,
+                            'custom_allowances' => $payrollData->custom_allowances ?? [],
+                            'esi'               => (float)$payrollData->esi,
+                            'pf'                => (float)$payrollData->pf,
+                            'professional_tax'  => (float)$payrollData->professional_tax,
+                            'tds'               => (float)($payrollData->tds ?? 0),
+                            'custom_deductions' => $payrollData->custom_deductions ?? [],
+                        ];
+                    }
+
                     $payslipEmployee                       = new PaySlip();
                     $payslipEmployee->employee_id          = $employee->id;
                     $payslipEmployee->net_payble           = $employee->get_net_salary();
@@ -152,6 +173,7 @@ class PaySlipController extends Controller
                     $payslipEmployee->saturation_deduction = Employee::saturation_deduction($employee->id);
                     $payslipEmployee->other_payment        = Employee::other_payment($employee->id);
                     $payslipEmployee->overtime             = Employee::overtime($employee->id);
+                    $payslipEmployee->salary_details       = $snapshot;
                     $payslipEmployee->created_by           = \Auth::user()->creatorId();
                     $payslipEmployee->save();
                     $generatedCount++;

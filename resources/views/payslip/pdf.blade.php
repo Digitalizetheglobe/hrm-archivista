@@ -194,6 +194,12 @@ try {
         abort(500, 'Failed to calculate attendance');
     }
 
+    // Snapshot of payroll data frozen at payslip generation
+    $salarySnapshot = null;
+    if (!empty($payslip->salary_details)) {
+        $salarySnapshot = is_array($payslip->salary_details) ? $payslip->salary_details : json_decode($payslip->salary_details, true);
+    }
+
     $payrollData = \DB::table('payroll_data')->where('employee_id', $employee->id)->first();
 
     // Calculate salary components with error handling
@@ -212,7 +218,15 @@ try {
             'loan_type' => isset($payslip->loan) ? gettype($payslip->loan) : 'N/A'
         ]);
         
-        if ($payrollData) {
+        if (!empty($salarySnapshot)) {
+            // Prioritize frozen snapshot taken when payslip was generated
+            $basicComponent = (float)($salarySnapshot['basic'] ?? 0);
+            $hraComponent = (float)($salarySnapshot['hra'] ?? 0);
+            $medicalComponent = (float)($salarySnapshot['medical'] ?? 0);
+            $conveyanceComponent = (float)($salarySnapshot['conveyance'] ?? 0);
+            $educationAllowance = (float)($salarySnapshot['education'] ?? 0);
+            $executive = (float)($salarySnapshot['executive'] ?? 0);
+        } elseif ($payrollData) {
             $components = \App\Models\PayrollData::componentAmounts($payrollData);
             $basicComponent = $components['basic'];
             $hraComponent = $components['hra'];
@@ -406,7 +420,9 @@ try {
         
         // Keep the existing casual leave calculation
         $deductionForCasualLeave = (float)$casualLeaveDays * $perDaySalary;
-        if (isset($payrollData) && $payrollData) {
+        if (!empty($salarySnapshot)) {
+            $ptDeduction = (float)($salarySnapshot['professional_tax'] ?? 200);
+        } elseif (isset($payrollData) && $payrollData) {
             $ptDeduction = (float)$payrollData->professional_tax;
         } else {
             $ptDeduction = is_numeric($payslip->professional_tax ?? 200) ? (float)($payslip->professional_tax ?? 200) : 200;
@@ -506,6 +522,27 @@ try {
                 ];
                 $totalAllowances += (float)$allowance->amount;
             }
+
+            // Custom allowances from frozen snapshot or live payrollData
+            $customAllowancesList = [];
+            if (!empty($salarySnapshot)) {
+                $customAllowancesList = $salarySnapshot['custom_allowances'] ?? [];
+            } elseif (isset($payrollData) && $payrollData) {
+                if (isset($payrollData->custom_allowances) && is_array($payrollData->custom_allowances)) {
+                    $customAllowancesList = $payrollData->custom_allowances;
+                } elseif (isset($payrollData->custom_allowances) && is_string($payrollData->custom_allowances)) {
+                    $customAllowancesList = json_decode($payrollData->custom_allowances, true) ?: [];
+                }
+            }
+            foreach ($customAllowancesList as $cAllow) {
+                if (!empty($cAllow['name']) && (float)($cAllow['amount'] ?? 0) > 0) {
+                    $employeeAllowances[] = [
+                        'type' => $cAllow['name'],
+                        'amount' => (float)$cAllow['amount']
+                    ];
+                    $totalAllowances += (float)$cAllow['amount'];
+                }
+            }
             
             \Log::info('Employee allowances fetched', [
                 'employee_id' => $employee->id,
@@ -522,8 +559,11 @@ try {
             $totalAllowances = 0;
         }
 
-        // Calculate PF and ESI deductions from payroll_data or fallback to defaults
-        if (isset($payrollData) && $payrollData) {
+        // Calculate PF and ESI deductions from frozen snapshot or payroll_data or fallback to defaults
+        if (!empty($salarySnapshot)) {
+            $pfDeduction = (float)($salarySnapshot['pf'] ?? 0);
+            $esiDeduction = (float)($salarySnapshot['esi'] ?? 0);
+        } elseif (isset($payrollData) && $payrollData) {
             $pfDeduction = (float)$payrollData->pf;
             $esiDeduction = (float)$payrollData->esi;
         } else {
@@ -537,13 +577,35 @@ try {
         $otherDeduction = \App\Models\Deduction::amountFor($employee->id, 'Other Deduction', $salaryMonth);
         $tdsDeduction = \App\Models\Deduction::amountFor($employee->id, 'TDS', $salaryMonth);
         if ($tdsDeduction <= 0) {
-            $tdsDeduction = \App\Models\PayrollData::tdsFor($employee->id);
+            if (!empty($salarySnapshot) && isset($salarySnapshot['tds'])) {
+                $tdsDeduction = (float)$salarySnapshot['tds'];
+            } else {
+                $tdsDeduction = \App\Models\PayrollData::tdsFor($employee->id);
+            }
+        }
+
+        // Custom deductions from frozen snapshot or payrollData
+        $customDeductionsList = [];
+        $customDeductionsTotal = 0;
+        if (!empty($salarySnapshot)) {
+            $customDeductionsList = $salarySnapshot['custom_deductions'] ?? [];
+        } elseif (isset($payrollData) && $payrollData) {
+            if (isset($payrollData->custom_deductions) && is_array($payrollData->custom_deductions)) {
+                $customDeductionsList = $payrollData->custom_deductions;
+            } elseif (isset($payrollData->custom_deductions) && is_string($payrollData->custom_deductions)) {
+                $customDeductionsList = json_decode($payrollData->custom_deductions, true) ?: [];
+            }
+        }
+        foreach ($customDeductionsList as $cDeduct) {
+            if (!empty($cDeduct['name']) && (float)($cDeduct['amount'] ?? 0) > 0) {
+                $customDeductionsTotal += (float)$cDeduct['amount'];
+            }
         }
 
         // Calculate gross salary as exactly Set Salary + any Extra DB allowances
         $grossSalaryWithExtra = $grossSalary + $totalAllowances;
 
-        $totalDeductions = (float)$ptDeduction + (float)$loanDeduction + (float)$pfDeduction + (float)$esiDeduction + (float)$mlwfDeduction + (float)$otherDeduction + (float)$tdsDeduction;
+        $totalDeductions = (float)$ptDeduction + (float)$loanDeduction + (float)$pfDeduction + (float)$esiDeduction + (float)$mlwfDeduction + (float)$otherDeduction + (float)$tdsDeduction + (float)$customDeductionsTotal;
         $netSalary = (float)$grossSalaryWithExtra - (float)$totalDeductions;
         
         // Save the correctly calculated net salary to the database
@@ -1315,6 +1377,13 @@ try {
                             }
                             if($otherDeduction > 0) {
                                 $deductionsList[] = ['name' => 'Other Deduction', 'amount' => $otherDeduction];
+                            }
+                            if(!empty($customDeductionsList)) {
+                                foreach($customDeductionsList as $cDeduct) {
+                                    if (!empty($cDeduct['name']) && (float)($cDeduct['amount'] ?? 0) > 0) {
+                                        $deductionsList[] = ['name' => $cDeduct['name'], 'amount' => (float)$cDeduct['amount']];
+                                    }
+                                }
                             }
                             
                             $maxRowsData = max(count($earningsList), count($deductionsList));

@@ -18,7 +18,12 @@ class PaySlip extends Model
         'saturation_deduction',
         'other_payment',
         'overtime',
+        'salary_details',
         'created_by',
+    ];
+
+    protected $casts = [
+        'salary_details' => 'array',
     ];
 
     
